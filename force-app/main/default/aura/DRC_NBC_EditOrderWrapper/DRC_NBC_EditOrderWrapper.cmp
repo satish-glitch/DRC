@@ -1,0 +1,83 @@
+<aura:component controller="DRC_NBC_OrderRejectionHelper"
+                implements="force:hasRecordId,flexipage:availableForAllPageTypes,lightning:actionOverride"
+                access="global">
+
+    <!-- ATTRIBUTES -->
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="isOrder" type="Boolean" default="false"/>
+    <aura:attribute name="isLoaded" type="Boolean" default="false"/>
+    <aura:attribute name="navigationLocation" type="String"/>
+    <aura:attribute name="showLWC" type="Boolean" default="false"/>
+
+    <aura:attribute name="record" type="Object"/>
+    <aura:attribute name="simpleRecord" type="Object"/>
+    <aura:attribute name="errors" type="Object"/>
+
+    <!-- INIT -->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <!-- SPINNER -->
+    <aura:if isTrue="{!not(v.isLoaded)}">
+        <lightning:spinner size="large"/>
+    </aura:if>
+
+    <!-- SHOW LWC -->
+    <aura:if isTrue="{!and(v.isLoaded, v.showLWC)}">
+        <c:dRC_NBC_EditOrder recordId="{!v.recordId}" oncancel="{!c.handleLWCCancel}"/>
+    </aura:if>
+
+    <!-- SHOW REJECTION FORM -->
+    <aura:if isTrue="{!and(v.isLoaded, not(v.showLWC))}">
+
+        <!-- Load Record -->
+        <force:recordData 
+            aura:id="recordLoader"
+            recordId="{!v.recordId}"
+            layoutType="FULL"
+            mode="EDIT"
+            targetFields="{!v.simpleRecord}"
+            targetRecord="{!v.record}"
+            targetError="{!v.errors}"
+            fields="Status,DRC_NBC_Reject_Reason_Text__c"/>
+
+        <!-- MODAL BACKDROP -->
+        <div class="slds-backdrop slds-backdrop_open"></div>
+
+        <!-- MODAL CONTAINER -->
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+
+                <!-- HEADER -->
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title slds-hyphenate">Reject Order</h2>
+                    <lightning:buttonIcon 
+                        iconName="utility:close" 
+                        alternativeText="Close" 
+                        variant="bare-inverse" 
+                        size="large" 
+                        class="slds-modal__close"
+                        onclick="{!c.handleCancel}"/>
+                </header>
+
+                <!-- BODY -->
+                <div class="slds-modal__content slds-p-around_medium">
+                    <aura:if isTrue="{!not(empty(v.simpleRecord))}">
+                        <lightning:textarea 
+                            name="rejectionText"
+                            label="Rejection Reason"
+                            value="{!v.simpleRecord.DRC_NBC_Reject_Reason_Text__c}"
+                            required="true"
+                            class="slds-m-top_small"/>
+                    </aura:if>
+                </div>
+
+                <!-- FOOTER -->
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="neutral" label="Cancel" onclick="{!c.handleCancel}"/>
+                    <lightning:button variant="brand" label="Reject Order" onclick="{!c.handleSave}" class="slds-m-left_small"/>
+                </footer>
+
+            </div>
+        </section>
+    </aura:if>
+</aura:component>

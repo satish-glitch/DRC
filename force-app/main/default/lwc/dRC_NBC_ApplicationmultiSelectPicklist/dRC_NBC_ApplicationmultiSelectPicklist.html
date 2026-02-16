@@ -1,0 +1,52 @@
+<template>
+    <lightning-card title={label}>
+        <div class="slds-m-around_medium">
+
+            <!-- Search Box -->
+            <lightning-input 
+                type="search" 
+                label="Search" 
+                value={searchKey} 
+                onchange={handleSearch}>
+            </lightning-input>
+
+            <!-- Select / Clear All -->
+            <div class="slds-m-vertical_x-small slds-grid slds-justify_between">
+                <a onclick={handleSelectAll}>Select All</a>
+                <a onclick={handleClearAll}>Clear All</a>
+            </div>
+
+            <!-- Dropdown List -->
+            <template if:true={showDropdown}>
+                <div class="slds-box slds-m-top_x-small" style="max-height: 200px; overflow-y: auto;">
+                    <template for:each={filteredOptions} for:item="opt">
+                        <div key={opt.value} class="slds-m-vertical_x-small">
+                            <lightning-input 
+                                type="checkbox" 
+                                label={opt.label} 
+                                value={opt.value} 
+                                checked={opt.checked}
+                                onchange={handleSelect}>
+                            </lightning-input>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Selected Pills -->
+            <template if:true={selectedItems.length}>
+                <div class="slds-m-top_small">
+                    <template for:each={selectedItems} for:item="item">
+                        <lightning-pill 
+                            key={item.value} 
+                            label={item.label} 
+                            name={item.value} 
+                            onremove={removeSelected}>
+                        </lightning-pill>
+                    </template>
+                </div>
+            </template>
+
+        </div>
+    </lightning-card>
+</template>

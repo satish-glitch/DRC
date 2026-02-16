@@ -1,0 +1,87 @@
+/* ============================================
+   AGGRESSIVE MODAL SIZE OVERRIDE
+   This CSS targets the component specifically
+   ============================================ */
+
+/* Target the modal backdrop and container */
+:host .slds-modal__container {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    min-width: 1200px !important;
+    max-height: 90vh !important;
+}
+
+/* Increase modal content area height */
+:host .slds-modal__content {
+    max-height: calc(90vh - 200px) !important;
+    min-height: 500px !important;
+    overflow-y: auto !important;
+    padding: 1.5rem !important;
+}
+
+/* Target modal header */
+:host .slds-modal__header {
+    padding: 1rem 1.5rem !important;
+}
+
+/* Target modal footer */
+:host .slds-modal__footer {
+    padding: 1rem 1.5rem !important;
+}
+
+/* Make sure the backdrop doesn't interfere */
+:host .slds-backdrop {
+    position: fixed !important;
+}
+
+/* Ensure tables are responsive */
+:host .slds-table {
+    width: 100% !important;
+}
+
+/* Alternative approach - target by template structure */
+.slds-modal__container {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    min-width: 1200px !important;
+    max-height: 90vh !important;
+}
+
+.slds-modal__content {
+    max-height: calc(90vh - 200px) !important;
+    min-height: 500px !important;
+    overflow-y: auto !important;
+}
+
+/* Make sections take full width */
+.slds-section {
+    width: 100% !important;
+}
+
+/* Ensure grid items display properly in wider modal */
+.slds-grid {
+    width: 100% !important;
+}
+
+/* ============================================
+   BOLD CHECKBOX LABELS
+   ============================================ */
+
+/* Make checkbox labels bold */
+.checkbox-bold-label label {
+    font-weight: bold !important;
+}
+
+/* Alternative approach - target all checkbox labels in the component */
+lightning-input[type="checkbox"] label {
+    font-weight: bold !important;
+}
+
+/* Most specific approach - using CSS custom property */
+.checkbox-bold-label {
+    --lwc-labelFontWeight: bold;
+}
+
+.checkbox-bold-label label.slds-form-element__label {
+    font-weight: 700 !important;
+}

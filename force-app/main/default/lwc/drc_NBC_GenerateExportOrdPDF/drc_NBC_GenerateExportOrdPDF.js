@@ -1,0 +1,86 @@
+import { LightningElement, api, wire } from 'lwc';
+import { CurrentPageReference } from 'lightning/navigation';
+import savePdfToContentVersion from '@salesforce/apex/DRC_NBC_GeneratePdfController.saveOrderPdfToContent';
+import { CloseActionScreenEvent } from 'lightning/actions';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+
+export default class Drc_NBC_GenerateExportOrdPDF extends LightningElement {
+    @api recordId;
+    errorFound = false;
+    errorMessage;
+    isLoading = false;
+    vfPageUrl;
+
+    @wire(CurrentPageReference)
+    getStateParameters(currentPageReference) {
+        if (currentPageReference) {
+            this.recordId = currentPageReference.state?.recordId;
+            console.log('Record ID:', this.recordId);
+        }
+    }
+ 
+    connectedCallback() {
+        if (this.recordId) {
+            this.isLoading = true;
+            this.vfPageUrl = '/apex/DRC_NBC_OrderPI_Export_Template?id=' + this.recordId;
+            this.isLoading = false;
+        }
+       
+    }
+    savePdf() {
+        this.isLoading = true;
+        this.errorFound = false;
+        const vfPageUrl = this.vfPageUrl + '&pdf=true';
+        
+        savePdfToContentVersion({
+            recordId: this.recordId,
+            vfPageUrl: vfPageUrl,
+        })
+            .then(() => {
+                this.isLoading = false;
+                this.showToast('Success', 'PDF saved successfully.', 'success');
+                // Close modal and refresh page
+                setTimeout(() => {
+                    this.dispatchEvent(new CloseActionScreenEvent());
+                    // Use Salesforce standard refresh instead of window.location.reload()
+                    eval("$A.get('e.force:refreshView').fire();");
+                }, 800);
+            })
+            .catch((error) => {
+                this.isLoading = false;
+                this.errorFound = true;
+                this.errorMessage = this.getErrorMessage(error);
+                this.showToast('Error', error, 'error');
+                console.error('Error saving PDF:', error);
+            });
+    }
+
+    getErrorMessage(error) {
+        if (typeof error === 'string') {
+            return error;
+        } else if (Array.isArray(error?.body)) {
+            return error.body.map(e => e.message).join(', ');
+        } else if (Array.isArray(error?.body?.pageErrors)) {
+            return error.body.pageErrors.map(e => e.message).join(', ');
+        } else if (typeof error?.body?.message === 'string') {
+            return error.body.message;
+        }
+        return 'An unknown error occurred while saving the PDF';
+    }
+
+    showToast(title, error, variant) {
+        const errorMessage = this.getErrorMessage(error);
+        
+        if (errorMessage) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: title,
+                message: errorMessage,
+                variant: variant
+            }));
+        }
+    }
+
+    handleCancel() {
+        this.dispatchEvent(new CloseActionScreenEvent());
+    }
+}

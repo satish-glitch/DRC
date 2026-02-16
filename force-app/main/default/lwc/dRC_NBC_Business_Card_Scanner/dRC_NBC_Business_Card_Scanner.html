@@ -1,0 +1,181 @@
+<template>
+    <lightning-card>
+         <!-- title="Business Card Scanner" icon-name="action:camera"> -->
+        <template if:true={isLoading}>
+            <div class="demo-only demo-only_viewport" style="height:6rem;position:relative">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                    <span class="slds-assistive-text">Please wait we are processing your card</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </template>
+        <template if:false={isLoading}>
+            <div class="slds-form-element" style="padding :2%;">
+                <div style="padding-left: 13px;text-align: center;">
+                    <lightning-input type="file" name="fileUpload" label="Upload File" accept=".png, .jpg, .jpeg"
+                        onchange={handleFileChange}></lightning-input>
+                </div>
+                <template if:true={imageSrc}>
+                    <img src={imageSrc} alt="Business card photo" style="max-width: 100%;"/>
+                </template>
+                <template if:true={apiResponse}>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" name = 'name' label="Name" value={apiResponse.name} readonly={isReadOnly} required
+                                onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" name = 'job_title' label="Job Title" value={apiResponse.job_title}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Company Name"  name = 'company_name' value={apiResponse.company_name}
+                                readonly={isReadOnly} onchange={handleInputChange} required>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Phone Number" name = 'phone_numbers' value={apiResponse.phone_numbers}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Email" name = 'email_addresses' value={apiResponse.email_addresses}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <!-- <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Address" name = 'address' value={apiResponse.address}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout> -->
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="City"  name = 'city' value={apiResponse.city}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Country"  name = 'country' value={apiResponse.country}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Postal Code"  name = 'postal_code' value={apiResponse.postal_code}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="State"  name = 'state' value={apiResponse.state}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Street"  name = 'street' value={apiResponse.street}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <lightning-layout>
+                        <lightning-layout-item size="10">
+                            <lightning-input type="text" label="Website"  name = 'website_url' value={apiResponse.website_url}
+                                readonly={isReadOnly} onchange={handleInputChange}>
+                            </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
+                            <lightning-button-icon icon-name="utility:edit" alternative-text="Edit"
+                                onclick={toggleEdit}>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    <div class="slds-m-top_medium" style="text-align: center;">
+                        <lightning-button label="Save" onclick={handleCreateLead}>
+                        </lightning-button>
+                    </div>
+                </template>
+            </div>
+        </template>
+        <!-- <template if:false={isReadOnly}>
+            <div class="slds-m-top_medium" style="text-align: center;">
+                <lightning-button label="Save" onclick={handleSave}>
+                </lightning-button>
+            </div>
+        </template> -->
+    </lightning-card>
+</template>

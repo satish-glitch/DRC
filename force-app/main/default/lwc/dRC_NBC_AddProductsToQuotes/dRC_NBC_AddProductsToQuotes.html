@@ -1,0 +1,461 @@
+<template>
+    <div class="slds-modal__content slds-p-around_large" style="position: sticky; top: 0; z-index: 1000; background: white; text-align:center;padding-top:0.5rem;">
+        <h1 class="slds-text-heading_medium slds-m-vertical_small">
+            Edit Quote and Quote Line Items
+        </h1>
+    </div>
+    <div class="slds-modal__content slds-p-around_medium" style="max-height: 60vh; overflow-y: auto;">
+        <!-- Basic Info Section -->
+        <div class={getBasicInfoClass}>
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action" 
+                        onclick={toggleBasicInfo}
+                        aria-expanded={isBasicInfoOpen}
+                        aria-controls="basic-info-content">
+                    <lightning-icon icon-name={getBasicInfoIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small">Quote Information</span>
+                </button>
+            </h3>
+            <div id="basic-info-content" class="slds-section__content">
+                <lightning-record-edit-form object-api-name="Quote" record-id={recordId}>
+                    <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="Name" onchange={handleFieldChange}></lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field 
+                                field-name="ExpirationDate" 
+                                onchange={handleFieldChange}
+                                required>
+                            </lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field 
+                                field-name="DRC_NBC_Lead_Time__c" 
+                                onchange={handleFieldChange}
+                                required>
+                            </lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="Status" onchange={handleFieldChange} required></lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="DRC_NBC_Type__c" onchange={handleFieldChange} required></lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="DRC_NBC_Payemnt_Term__c" onchange={handleFieldChange} required></lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="DRC_NBC_Inco_terms__c" onchange={handleFieldChange} required></lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="CurrencyIsoCode" onchange={handleFieldChange} required></lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="Description" onchange={handleFieldChange}></lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="DRC_NBC_Special_Requirements__c" onchange={handleFieldChange}></lightning-input-field>
+                        </div>
+                    </div>
+                </lightning-record-edit-form>
+            </div>
+        </div>
+
+        <!-- PREPARED FOR SECTION -->
+        <div class={getPreparedClass}>
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action"
+                        onclick={togglePrepared}
+                        aria-expanded={isPreparedOpen}
+                        aria-controls="prepared-for-content">
+                    <lightning-icon icon-name={getPreparedIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small">Prepared For</span>
+                </button>
+            </h3>
+
+            <div id="prepared-for-content" class="slds-section__content">
+                <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
+                    <!-- New Contact Selection Start -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <div class="slds-form-element slds-is-required">
+                            <label class="slds-form-element__label">
+                                <abbr class="slds-required" title="required">*</abbr>
+                                Contact
+                            </label>
+
+                            <div class="slds-form-element__control search-container">
+                                <!-- SEARCH INPUT -->
+                            <lightning-input 
+                                    type="search"
+                                    variant="label-hidden"
+                                    name="contactSearch"
+                                    placeholder="Search Contact..."
+                                    value={selectedContactName}
+                                    onchange={handleContactInputChange}
+                                    onfocus={handleContactInputFocus}
+                                    onblur={handleContactInputBlur}
+                                    class="search-input">
+                                </lightning-input>
+
+                                <template if:true={showContactSuggestions}>
+                                    <div class="slds-dropdown slds-dropdown_fluid suggestions-box">
+                                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                            <template if:true={filteredContacts.length}>
+                                                <template for:each={filteredContacts} for:item="opt">
+                                                    <li key={opt.value} class="slds-listbox__item" role="presentation">
+                                                        <div class="slds-listbox__option slds-listbox__option_plain"
+                                                            data-id={opt.value}
+                                                            data-name={opt.label}
+                                                            onclick={handleContactSelect}>
+                                                            <span>{opt.label}</span>
+                                                        </div>
+                                                    </li>
+                                                </template>
+                                            </template>
+                                            <template if:false={filteredContacts.length}>
+                                                <li class="slds-listbox__item">
+                                                    <div class="slds-listbox__option slds-listbox__option_plain">
+                                                        No results found
+                                                    </div>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- New Contact Selection End -->
+
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-input label="Email" 
+                                         value={selectedContactEmail} 
+                                         onchange={handleContactFieldChange}
+                                         required disabled>
+                        </lightning-input>
+                    </div>
+
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-input label="Phone" 
+                                         value={selectedContactPhone} 
+                                         onchange={handleContactFieldChange}
+                                         required 
+                                         disabled>
+                        </lightning-input>
+                    </div>
+
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-input label="Fax" 
+                                         value={selectedContactFax}
+                                         onchange={handleContactFieldChange} 
+                                         disabled>
+                        </lightning-input>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Details Section -->
+        <div class={getFinancialClass}>
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action" 
+                        onclick={toggleFinancial}
+                        aria-expanded={isFinancialOpen}
+                        aria-controls="financial-content">
+                    <lightning-icon icon-name={getFinancialIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small">Financial Details</span>
+                </button>
+            </h3>
+            <div id="financial-content" class="slds-section__content">
+                <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
+                    <!-- Other Tax Amount -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-input 
+                            type="number"
+                            name="DRC_NBC_Other_Tax_Amount__c"
+                            label="Other Tax Amount"
+                            value={quoteRec.DRC_NBC_Other_Tax_Amount__c}
+                            onchange={handleFieldChange}>
+                        </lightning-input>
+                    </div>
+
+                    <!-- TCS Amount -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-input 
+                            type="number"
+                            name="DRC_NBC_TCS_Amount__c"
+                            label="TCS Amount"
+                            value={quoteRec.DRC_NBC_TCS_Amount__c}
+                            onchange={handleFieldChange}>
+                        </lightning-input>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Address Selection Section -->
+        <div class={getAddressClass}>
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action" 
+                        onclick={toggleAddressInfo}
+                        aria-expanded={isAddressOpen}
+                        aria-controls="address-info-content">
+                    <lightning-icon icon-name={getAddressIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small">Address Information</span>
+                </button>
+            </h3>
+            <div id="address-info-content" class="slds-section__content">
+                <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
+                    <!-- Billing Address -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-input
+                            type="text"
+                            label="Billing Address"
+                            value={formattedBillingAddress}
+                            disabled>
+                        </lightning-input>
+                    </div>
+                    <!-- Shipping Address -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-combobox
+                            name="shipping"
+                            label="Shipping Address"
+                            value={selectedShippingId}
+                            options={shippingAddressOptions}
+                            onchange={handleAddressChange}
+                            required>
+                        </lightning-combobox>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <template if:false={showLoading}>
+        <div class={getProductClass}>
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action" 
+                        onclick={toggleProduct}
+                        aria-expanded={isProductOpen}
+                        aria-controls="product-info-content">
+                    <lightning-icon icon-name={getProductIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small">Product Information</span>
+                </button>
+            </h3>
+            <div id="product-info-content" class="slds-section__content">
+                <template if:true={showAddProducts}>
+                    <div class="slds-grid slds-grid_align-spread slds-p-horizontal_small slds-m-bottom_small" style="padding-top:1rem">
+                        <div class="slds-text-heading_small" style="flex: 1; text-align: right;">
+                            <lightning-button 
+                                label="Add Products"
+                                icon-name="utility:add"
+                                icon-position="left"
+                                variant="brand"
+                                class="add-products-btn"
+                                onclick={handleAddRow}>
+                            </lightning-button>
+                        </div>
+                    </div>
+                </template>
+                
+                <lightning-card>
+                    <template if:true={showFilterData}>
+                        <template if:true={hasProducts}>
+                            <div class="slds-scrollable" style="margin-top:0px; max-height: 400px; overflow-y: auto;">
+                                <table class="slds-table slds-scrollable slds-table_bordered slds-table_striped">
+                                    <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                                        <tr>
+                                            <th>Product Name <span style="color: red;">*</span></th>
+                                            <th style="text-align: center;">FG Code</th>
+                                            <th style="text-align: center;">HSN Code</th>
+                                            <th>Quantity <span style="color: red;">*</span></th>
+                                            <th style="text-align: center;">UOM</th>
+                                           <!--
+                                            <th style="padding-right: 2.5rem;">Packing Size</th>
+                                            <th style="text-align: center;">Packing Quantity</th>
+                                            -->
+                                            <th style="padding-right: 2.5rem;">Sales Price</th>
+                                            <th style="padding-right: 2.5rem;">Description</th>                              
+                                            <th style="text-align: center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={filteredData} for:item="data" for:index="index">
+                                            <tr key={data}>
+                                                <!-- Product Name -->
+                                                <template if:true={data.recordData.showSearch}>
+                                                    <td style="position: relative;">
+                                                        <lightning-input
+                                                            style="width: 200px;"
+                                                            value={data.recordData.ProductName}
+                                                            name="ProductName"
+                                                            data-index={index}
+                                                            onchange={handleValueChange}
+                                                            placeholder="Search Product...">
+                                                        </lightning-input>
+
+                                                        <!-- Search Results -->
+                                                        <template if:true={data.recordData.searchResults}>
+                                                            <div class="slds-box slds-m-top_xx-small custom-dropdown">
+                                                                <template for:each={data.recordData.searchResults} for:item="product">
+                                                                    <div key={product.Id}
+                                                                        class="slds-p-around_x-small"
+                                                                        style="cursor: pointer;"
+                                                                        data-id={product.Id}
+                                                                        data-index={index}
+                                                                        onclick={handleProductSelect}>
+                                                                        {product.Product2.Name}
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </template>
+
+                                                        <template if:true={data.recordData.noResultsFound}>
+                                                            <div class="slds-box slds-m-top_xx-small"
+                                                                style="position: absolute; z-index: 10; background: white; width: 200px; padding: 8px; color: grey; font-style: italic;">
+                                                                No results found
+                                                            </div>
+                                                        </template>
+                                                    </td>
+                                                </template>
+                                                <template if:false={data.recordData.showSearch}>
+                                                    <td>
+                                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                                            <span>{data.recordData.Name}</span>
+                                                            <lightning-button-icon
+                                                                icon-name="utility:close"
+                                                                variant="bare"
+                                                                alternative-text="Clear product"
+                                                                title="Clear product"
+                                                                data-index={index}
+                                                                onclick={handleClearProduct}
+                                                                class="slds-m-left_xx-small">
+                                                            </lightning-button-icon>
+                                                        </div>
+                                                    </td>
+                                                </template>
+
+                                                <!-- FG Code -->
+                                                <td style="text-align: center;">{data.recordData.DRC_NBC_FG_Code__c}</td>
+                                                
+                                                <!-- HSN Code -->
+                                                <td style="text-align: center;">{data.recordData.DRC_NBC_HSN_SAC_Code__c}</td>
+                                                
+                                                <!-- Quantity -->
+                                                <td class="input-cell">
+                                                    <lightning-input
+                                                        type="number"
+                                                        style="width: 90px;"
+                                                        value={data.recordData.Quantity}
+                                                        name="Quantity"
+                                                        data-index={index}
+                                                        onchange={handleQuantityChange}>
+                                                    </lightning-input>
+                                                </td>
+
+                                                <!-- UOM -->
+                                                <td style="text-align: center; vertical-align: middle;">{data.recordData.DRC_NBC_Unit_Of_Measurement__c}</td>
+
+                                                <!-- Packing Size Column -->
+                                              <!--
+                                                <td class="input-cell">
+                                                    <template if:true={data.recordData.packingSizeOptions.length}>
+                                                        <lightning-combobox
+                                                            style="width: 180px;"
+                                                            name="packingSize"
+                                                            placeholder="Select Packing Size"
+                                                            value={data.recordData.selectedPackingSize}
+                                                            options={data.recordData.packingSizeOptions}
+                                                            data-index={index}
+                                                            onchange={handlePackingSizeChange}>
+                                                        </lightning-combobox>
+                                                    </template>
+                                                    <template if:false={data.recordData.packingSizeOptions.length}>
+                                                        <span style="color: #999; font-style: italic;">-</span>
+                                                    </template>
+                                                </td>
+
+                                                <td style="text-align: center; vertical-align: middle;">
+                                                    <template if:true={data.recordData.packingQuantity}>
+                                                        {data.recordData.packingQuantity}
+                                                    </template>
+                                                    <template if:false={data.recordData.packingQuantity}>
+                                                        <span style="color: #999;">-</span>
+                                                    </template>
+                                                </td>
+                                                -->
+                                                
+                                                <!-- Sales Price -->
+                                                <td class="input-cell">
+                                                    <lightning-input
+                                                        type="number"
+                                                        style="width: 120px;"
+                                                        name="modifiedPrice"
+                                                        data-index={index}
+                                                        value={data.recordData.modifiedPrice}
+                                                        step="0.01"
+                                                        onchange={handleModifiedPriceChange}>
+                                                    </lightning-input>
+                                                </td>
+                                                
+                                                <!-- Description -->
+                                                <td class="input-cell">
+                                                    <lightning-input
+                                                        style="width: 250px;"
+                                                        value={data.recordData.Description}
+                                                        name="Description"
+                                                        data-index={index}
+                                                        onchange={handleValueChange}>
+                                                    </lightning-input>
+                                                </td>
+
+                                                <!-- Actions -->
+                                                <td style="text-align: center;">
+                                                    <lightning-icon
+                                                        class="slds-p-top_medium"
+                                                        style="cursor: pointer;"
+                                                        data-index={index}
+                                                        variant="brand"
+                                                        icon-name="utility:new"
+                                                        label="Add Row"
+                                                        onclick={handleAddRow}>
+                                                    </lightning-icon>
+
+                                                    <lightning-icon
+                                                        data-index={index}
+                                                        data-id={data.recordData.Id}
+                                                        icon-name="action:delete"
+                                                        style="cursor: pointer;"
+                                                        size="x-small"
+                                                        onclick={handleRemoveRow}>
+                                                    </lightning-icon>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+                        <template if:false={hasProducts}>
+                            <div class="slds-text-align_center slds-p-around_medium">
+                                <p class="slds-text-color_weak">No products added yet. Click "Add Products" to get started.</p>
+                            </div>
+                        </template>
+                    </template>
+                </lightning-card>
+                
+               
+            </div>
+        </div>
+         <div style="padding-top: 10px;text-align: center;padding:1rem;">
+                    <button class="slds-button slds-button_neutral" onclick={handleCancel}>Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={handleSave}>Save</button>
+                </div>
+    </template>
+    </div>
+    <div if:true={showLoading} class="slds-is-relative" style="height :200px">
+        <lightning-spinner alternative-text="Loading..." variant="brand"></lightning-spinner>
+    </div>
+
+        <div if:true={showLoading} class="slds-is-relative" style="height :200px">
+            <lightning-spinner alternative-text="Loading..." variant="brand"></lightning-spinner>
+        </div>
+</template>

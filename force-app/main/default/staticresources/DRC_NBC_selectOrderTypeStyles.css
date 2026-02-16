@@ -1,0 +1,4 @@
+/* Hides the SLDS auto-injected close button that appears on the right-middle */
+.slds-modal__close {
+    display: none !important;
+}

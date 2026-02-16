@@ -1,0 +1,39 @@
+<template>
+    <lightning-card title="Birthday Reminder">
+
+        <lightning-tabset variant="scoped">
+            <lightning-tab label="Today's Birthdays">
+                <lightning-datatable 
+                    key-field="Id"
+                    data={todaysBirthdays}
+                    show-row-number-column
+                    hide-checkbox-column
+                    columns={columnsWithDate}
+                    onrowaction={handleRowAction}>
+                </lightning-datatable>
+            </lightning-tab>
+            <lightning-tab label="This Week" title="2nd tab extended title">
+                <lightning-datatable 
+                    key-field="Id"
+                    data={weeksBirthdays}
+                    show-row-number-column
+                    hide-checkbox-column
+                    columns={columnsWithDate}
+                    onrowaction={handleRowAction}>
+                </lightning-datatable>
+            </lightning-tab>
+            <lightning-tab label="This Month">
+                <lightning-datatable 
+                    key-field="Id"
+                    data={monthsBirthdays}
+                    show-row-number-column
+                    hide-checkbox-column
+                    columns={columnsWithDate}
+                    onrowaction={handleRowAction}>
+                </lightning-datatable>
+            </lightning-tab>
+        </lightning-tabset>
+
+    </lightning-card>
+        
+</template>

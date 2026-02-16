@@ -1,0 +1,32 @@
+<aura:component controller="DRC_NBC_OrderRejectionHelper" 
+                implements="force:hasRecordId,flexipage:availableForAllPageTypes,lightning:actionOverride" 
+                access="global">
+    
+    <aura:attribute name="recordId" type="Id"/>
+    <aura:attribute name="isQuote" type="Boolean" default="false"/>
+    <aura:attribute name="isLoaded" type="Boolean" default="false"/>
+    <aura:attribute name="record" type="Object"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    
+    <!-- Optional: Record loader for better object type detection -->
+    <force:recordData aura:id="recordLoader"
+                      recordId="{!v.recordId}"
+                      targetRecord="{!v.record}"
+                      targetFields="['Id']"
+                      recordUpdated="{!c.handleRecordLoaded}"
+                      mode="VIEW"/>
+    
+    <!-- Loading Spinner -->
+    <aura:if isTrue="{!not(v.isLoaded)}">
+        <lightning:spinner size="large"/>
+    </aura:if>
+    
+    <!-- Quote LWC -->
+    <aura:if isTrue="{!and(v.isLoaded, v.isQuote)}">
+        <c:dRC_NBC_AddProductsToQuotes 
+            recordId="{!v.recordId}" 
+            oncancel="{!c.handleLWCCancel}" />
+    </aura:if>
+    
+</aura:component>

@@ -1,0 +1,94 @@
+<template>
+    <!-- Main Container -->
+    <div class="summary-container">
+        
+        <!-- Opportunities Card -->
+        <div class="summary-card">
+            <div class="card-content">
+                <div class="metric-item">
+                    <lightning-icon icon-name="standard:opportunity" size="small" class="metric-icon orange-icon"></lightning-icon>
+                    <div class="metric-label">Total</div>
+                    <div class="metric-count">{accountMetrics.totalOpps}</div>
+                    <div class="metric-amount">₹{formattedTotalAmount}</div>
+                </div>
+                
+                <div class="metric-item">
+                    <lightning-icon icon-name="standard:task2" size="small" class="metric-icon green-icon"></lightning-icon>
+                    <div class="metric-label">Won</div>
+                    <div class="metric-count green-text">{accountMetrics.closedWonOpps}</div>
+                    <div class="metric-amount green-text">₹{formattedWonAmount}</div>
+                </div>
+                
+                <div class="metric-item">
+                    <lightning-icon icon-name="standard:first_non_empty" size="small" class="metric-icon red-icon"></lightning-icon>
+                    <div class="metric-label">Lost</div>
+                    <div class="metric-count red-text">{accountMetrics.lostOpps}</div>
+                    <div class="metric-amount red-text">₹{formattedLostAmount}</div>
+                </div>
+            </div>
+            <div class="card-title">Opportunities</div>
+        </div>
+
+        <!-- Orders Card -->
+        <div class="summary-card">
+            <div class="card-content">
+                <div class="metric-item">
+                    <lightning-icon icon-name="standard:drafts" size="small" class="metric-icon blue-icon"></lightning-icon>
+                    <div class="metric-label">Draft</div>
+                    <div class="metric-count">{accountMetrics.totalDraftOrdersCount}</div>
+                    <div class="metric-amount">₹{formattedDraftOrderAmount}</div>
+                </div>
+                
+                <div class="metric-item">
+                    <lightning-icon icon-name="standard:crypto_transaction_envelope" size="small" class="metric-icon green-icon"></lightning-icon>
+                    <div class="metric-label">Open</div>
+                    <div class="metric-count green-text">{accountMetrics.totalOpenOrdersCount}</div>
+                    <div class="metric-amount green-text">₹{formattedOpenOrderAmount}</div>
+                </div>
+                
+                <div class="metric-item">
+                    <lightning-icon icon-name="utility:lock" size="small" class="metric-icon green-icon"></lightning-icon>
+                    <div class="metric-label">Closed</div>
+                    <div class="metric-count green-text">{accountMetrics.totalClosedOrdersCount}</div>
+                    <div class="metric-amount green-text">₹{formattedClosedOrderAmount}</div>
+                </div>
+                
+                <div class="metric-item">
+                    <lightning-icon icon-name="standard:cancel_checkout" size="small" class="metric-icon gray-icon"></lightning-icon>
+                    <div class="metric-label">Cancelled</div>
+                    <div class="metric-count red-text">{accountMetrics.totalCancelledOrdersCount}</div>
+                    <div class="metric-amount red-text">₹{formattedCancelledOrderAmount}</div>
+                </div>
+            </div>
+            <div class="card-title">Orders</div>
+        </div>
+
+        <!-- Invoices Card -->
+        <div class="summary-card">
+            <div class="card-content">
+                <div class="metric-item">
+                    <lightning-icon icon-name="utility:oop_total" size="small" class="metric-icon blue-icon"></lightning-icon>
+                    <div class="metric-label">Total Amt</div>
+                    <div class="metric-count">{accountMetrics.totalInvoiceCount}</div>
+                    <div class="metric-amount">₹{accountMetrics.totalInvoiceAmount}</div>
+                </div>
+                
+                <div class="metric-item">
+                    <lightning-icon icon-name="utility:warning" size="small" class="metric-icon red-icon"></lightning-icon>
+                    <div class="metric-label">Overdue</div>
+                    <div class="metric-count red-text">{accountMetrics.totalOverdueCount}</div>
+                    <div class="metric-amount red-text">₹{accountMetrics.totalOverdueAmount}</div>
+                </div>
+                
+                <div class="metric-item">
+                    <lightning-icon icon-name="utility:currency" size="small" class="metric-icon green-icon"></lightning-icon>
+                    <div class="metric-label">Balance</div>
+                    <div class="metric-count green-text">{accountMetrics.totalCurrentCount}</div>
+                    <div class="metric-amount green-text">₹{accountMetrics.totalCurrentBalance}</div>
+                </div>
+            </div>
+            <div class="card-title">Invoices</div>
+        </div>
+        
+    </div>
+</template>

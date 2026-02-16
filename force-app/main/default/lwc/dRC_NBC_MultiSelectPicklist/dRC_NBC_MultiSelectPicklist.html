@@ -1,0 +1,28 @@
+<template>
+    <div class="slds-grid slds-wrap">
+        <template for:each={options} for:item="option">
+            <template if:true={isDesktop}>
+                <div key={option.value} class="slds-col slds-size_1-of-4">
+                    <input 
+                        type="checkbox" 
+                        value={option.value}
+                        checked={option.checked}
+                        onchange={handleChange}
+                    />
+<label>&nbsp;&nbsp;&nbsp;&nbsp;{option.label}</label>
+                </div>
+            </template>
+            <template if:true={isMobile}>
+                <div key={option.value} class="slds-col slds-size_3-of-6 slds-p-around_xx-small">
+                    <input 
+                        type="checkbox" 
+                        value={option.value} 
+                        checked={option.checked}
+                        onchange={handleChange}
+                    />
+<label>&nbsp;&nbsp;&nbsp;&nbsp;{option.label}</label>
+                </div>
+            </template>
+        </template>
+    </div>
+</template>

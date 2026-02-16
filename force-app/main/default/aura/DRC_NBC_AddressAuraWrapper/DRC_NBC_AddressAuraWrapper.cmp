@@ -1,0 +1,11 @@
+<aura:component 
+    implements="flexipage:availableForAllPageTypes,force:lightningQuickAction,force:hasRecordId,lightning:actionOverride"
+    access="global">
+
+    <!-- Get Record Id when used as a Quick Action -->
+    <aura:attribute name="recordId" type="String" />
+
+    <!-- Include your LWC -->
+    <c:dRC_NBC_AddressNewForm></c:dRC_NBC_AddressNewForm>
+
+</aura:component>

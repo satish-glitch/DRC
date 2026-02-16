@@ -1,0 +1,164 @@
+<apex:page standardController="Quote" extensions="DRC_NBC_QuoteEmailSenderController" showHeader="true" sidebar="true">
+    <apex:sectionHeader title="Send Quote Email" subtitle="{!quoteRecord.Name}"/>
+    
+    <apex:form >
+        <apex:pageMessages />
+        
+        <!-- Email Details Section -->
+        <apex:pageBlock title="Email Details">
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="Cancel" action="{!cancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="To" for="toAddr"/>
+                    <apex:inputTextarea value="{!toAddresses}" id="toAddr" rows="2" style="width: 90%;" 
+                                        html-placeholder="Enter email addresses separated by semicolon (;)"/>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="CC" for="ccAddr"/>
+                    <apex:inputTextarea value="{!ccAddresses}" id="ccAddr" rows="2" style="width: 90%;" 
+                                        html-placeholder="Enter CC email addresses separated by semicolon (;)"/>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="BCC" for="bccAddr"/>
+                    <apex:inputTextarea value="{!bccAddresses}" id="bccAddr" rows="2" style="width: 90%;" 
+                                        html-placeholder="Enter BCC email addresses separated by semicolon (;)"/>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Subject" for="subject"/>
+                    <apex:inputText value="{!emailSubject}" id="subject" style="width: 90%;"/>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        
+        <!-- Email Body Section -->
+        <apex:pageBlock title="Email Body">
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Body" for="emailBody"/>
+                    <apex:inputTextarea value="{!emailBody}" id="emailBody" rows="25" style="width: 90%;" 
+                                        richText="true"/>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        
+        <!-- Attachments Section -->
+        <apex:pageBlock title="Attachments">
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="Load Files" action="{!loadContentDocuments}" 
+                                    rendered="{!NOT(hasLoadedDocs)}" reRender="attachmentSection"/>
+                <apex:commandButton value="Refresh Files" action="{!loadContentDocuments}" 
+                                    rendered="{!hasLoadedDocs}" reRender="attachmentSection"/>
+            </apex:pageBlockButtons>
+            
+            <apex:outputPanel id="attachmentSection">
+                <apex:pageBlockSection columns="1" rendered="{!hasLoadedDocs}">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel >
+                            <apex:outputText value="Select files to attach to the email:" 
+                                             rendered="{!contentDocuments.size > 0}" 
+                                             style="font-weight: bold; display: block; margin-bottom: 10px;"/>
+                            
+                            <apex:pageBlockTable value="{!contentDocuments}" var="doc" 
+                                                 rendered="{!contentDocuments.size > 0}"
+                                                 styleClass="attachmentTable">
+                                <apex:column headerValue="Select" width="50px" headerClass="centerAlign" styleClass="centerAlign">
+                                    <apex:inputCheckbox value="{!doc.isSelected}"/>
+                                </apex:column>
+                                
+                                <apex:column headerValue="File Name" headerClass="centerAlign" styleClass="centerAlign">
+                                    <apex:outputText value="{!doc.fileName}"/>
+                                </apex:column>
+                                
+                                <apex:column headerValue="Type" width="80px" headerClass="centerAlign" styleClass="centerAlign">
+                                    <apex:outputText value="{!doc.fileType}"/>
+                                </apex:column>
+                                
+                                <apex:column headerValue="Size" width="80px" headerClass="centerAlign" styleClass="centerAlign">
+                                    <apex:outputText value="{!doc.fileSize}"/>
+                                </apex:column>
+                                
+                                <apex:column headerValue="Last Modified" width="150px" headerClass="centerAlign" styleClass="centerAlign">
+                                    <apex:outputText value="{0,date,dd-MMM-yyyy HH:mm}">
+                                        <apex:param value="{!doc.lastModifiedDate}"/>
+                                    </apex:outputText>
+                                </apex:column>
+                            </apex:pageBlockTable>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                
+                <!-- Send Button Below Attachments -->
+                <apex:pageBlockSection columns="1" rendered="{!hasLoadedDocs}">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputPanel style="text-align: center; padding: 15px;">
+                            <apex:commandButton value="Send Email" action="{!sendEmail}" 
+                                                styleClass="sendButton"/>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+    
+    <style>
+        /* General Table Styles */
+        .pbBody table {
+            width: 100%;
+        }
+        .pbSubheader {
+            background-color: #f4f6f9;
+        }
+        
+        /* Center align table headers and cells */
+        .attachmentTable .centerAlign {
+            text-align: center !important;
+            vertical-align: middle !important;
+        }
+        
+        .attachmentTable th {
+            text-align: center !important;
+            background-color: #f2f2f2;
+            font-weight: bold;
+            padding: 8px;
+        }
+        
+        .attachmentTable td {
+            text-align: center !important;
+            vertical-align: middle !important;
+            padding: 8px;
+        }
+        
+        /* Send Button Styling */
+        .sendButton {
+            font-size: 14px !important;
+            padding: 10px 40px !important;
+            background-color: #0176d3 !important;
+            color: Green !important;
+            border: none !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            transition: background-color 0.3s ease;
+        }
+        
+        .sendButton:hover {
+            background-color: #014486 !important;
+        }
+        
+        /* Rich Text Editor Styling */
+        #emailBody {
+            min-height: 400px;
+        }
+        
+        /* Page Messages Styling */
+        .messageText {
+            font-size: 13px;
+        }
+    </style>
+</apex:page>

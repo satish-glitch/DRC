@@ -1,0 +1,162 @@
+/* Main container */
+.summary-container {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+/* Individual summary cards */
+.summary-card {
+    flex: 1;
+    min-width: 280px;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 0.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Card content area */
+.card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.4rem; /* REDUCED from 0.5rem */
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Individual metric items */
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    min-width: 40px;
+}
+
+/* Icon styling */
+.metric-icon {
+    margin-bottom: 0.2rem; /* REDUCED from 0.25rem */
+}
+
+.orange-icon {
+    --slds-c-icon-color-foreground-default: #ff6b35;
+}
+
+.green-icon {
+    --slds-c-icon-color-foreground-default: #3bb757;
+}
+
+.red-icon {
+    --slds-c-icon-color-foreground-default: #ea001e;
+}
+
+.blue-icon {
+    --slds-c-icon-color-foreground-default: #1589ee;
+}
+
+.gray-icon {
+    --slds-c-icon-color-foreground-default: #706e6b;
+}
+
+/* Metric labels */
+.metric-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #3e3e3c;
+    margin-bottom: 0.1rem; /* REDUCED from 0.15rem */
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Metric counts */
+.metric-count {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #181818;
+    margin-bottom: 0.03rem; /* REDUCED from 0.05rem */
+    line-height: 1.0;
+}
+
+/* Metric amounts */
+.metric-amount {
+    font-size: 0.875rem;
+    color: #706e6b;
+    font-weight: 500;
+}
+
+/* Color variants for text */
+.green-text {
+    color: #3bb757 !important;
+}
+
+.red-text {
+    color: #ea001e !important;
+}
+
+/* Card title at bottom */
+.card-title {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #1589ee;
+    padding-top: 0.3rem; /* REDUCED from 0.35rem */
+    border-top: 0.5px solid #f3f3f3;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .summary-container {
+        flex-direction: column;
+    }
+    
+    .summary-card {
+        min-width: 100%;
+    }
+    
+    .card-content {
+        justify-content: space-around;
+    }
+    
+    .metric-item {
+        min-width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .card-content {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .metric-item {
+        flex-direction: row;
+        text-align: left;
+        width: 100%;
+        padding: 0.5rem;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+    
+    .metric-icon {
+        margin-bottom: 0;
+        margin-right: 1rem;
+    }
+    
+    .metric-details {
+        flex: 1;
+    }
+}

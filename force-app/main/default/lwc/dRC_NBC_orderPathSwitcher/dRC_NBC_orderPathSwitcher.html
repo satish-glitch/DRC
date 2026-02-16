@@ -1,0 +1,25 @@
+<template>
+    <template if:true={stepItems}>
+        <div class="slds-path">
+            <div class="slds-grid slds-path__track">
+                <div class="slds-grid slds-path__scroller-container">
+                    <div class="slds-path__scroller" role="application">
+                        <div class="slds-path__scroller_inner">
+                            <ul class="slds-path__nav" role="listbox">
+                                <template for:each={stepItems} for:item="item">
+                                    <li key={item.step} 
+                                        class={item.cssClass}
+                                        role="presentation">
+                                        <a role="option" tabindex="-1" class="slds-path__link">
+                                            <span class="slds-path__title">{item.step}</span>
+                                        </a>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</template>

@@ -1,0 +1,591 @@
+<apex:page renderAs="pdf" controller="Generate_Export_PI_Controller" showHeader="false" sidebar="false" applyBodyTag="false" applyHtmlTag="false" standardStylesheets="false">
+    <html>
+        <head>
+            <style>
+                @page {
+                size: A4;
+                margin-top: 37mm;
+                margin-bottom: 17mm;
+                @top-left {
+                content: element(header);
+                }
+                @bottom-left {
+                content: element(footer);
+                }
+                }
+                
+                body {
+                font-family: Arial, sans-serif;
+                font-size: 9pt;
+                color: #000;
+                line-height: 1.3;
+                }
+                .page-header {
+                position: running(header);
+                width: 100%;
+                padding-bottom: 2px;
+                padding-left: 10px;
+                }
+                
+                .page-footer {
+                position: running(footer);
+                text-align: center; 
+                font-size: 7pt; 
+                margin-top: 5px; 
+                border-top: 1px 
+                solid #000; 
+                padding-top: 5px;
+                }
+                
+                /* Header Section */
+                .company-header-wrapper {
+                position: relative;
+                margin-bottom: 17px;
+                text-align: center;
+                }
+                .logo-left {
+                position: absolute;
+                left: 0;
+                top: 0;
+                }
+                .company-header h1 {
+                font-size: 12pt;
+                font-weight: bold;
+                margin: 14px 0 5px 0;
+                color: #000;
+                }
+                
+                .company-header p {
+                margin: 0 0 6px 0;
+                font-size: 8pt;
+                color: #000;
+                padding-left: 90px;
+                }
+                
+                .company-header h2.invoice-title {
+                font-size: 14pt;
+                font-weight: bold;
+                margin: 0;
+                }
+                
+                .header-divider {
+                border-bottom: 2px solid #000;
+                margin: 5px 0;
+                }
+                .header-divider1 {
+                border-bottom: 1px solid #000;
+                margin: 5px 0;
+                }
+                .invoice-title {
+                font-size: 14pt;
+                font-weight: bold;
+                margin: 0;
+                }
+                
+                
+                .shipping-details {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 15px;
+                font-size: 8pt;
+                gap: 10px;
+                }
+                
+                .shipping-column {
+                flex: 1;
+                }
+                
+                .shipping-column p {
+                display: flex;
+                margin: 3px 0;
+                }
+                
+                .shipping-column p strong {
+                width: 180px;
+                flex-shrink: 0;
+                }
+                
+                .shipping-column p span {
+                flex: 1;
+                }
+                
+                .items-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 8px;
+                font-size: 8pt;
+                }
+                
+                .items-table th,
+                .items-table td {
+                border-top: 1px solid #000;
+                border-bottom: 1px solid #000;
+                border-left: none;
+                border-right: none;
+                padding: 4px 6px;
+                }
+                
+                .items-table th {
+                text-align: left;
+                font-weight: bold;
+                }
+                
+                .items-table td.right {
+                text-align: right;
+                }
+                
+                .items-table td.center {
+                text-align: center;
+                }
+                
+                .amount-words {
+                font-size: 8pt;
+                font-weight: bold;
+                margin: 10px 0;
+                text-transform: uppercase;
+                }
+                
+                .document-instruction-wrapper {
+                display: flex;
+                justify-content: flex-start;
+                margin: 15px 0;
+                position: relative;
+                page-break-inside: avoid;
+                
+                }
+                
+                .documents-section {
+                width: 100%;
+                font-size: 8pt;
+                position: relative;
+                page-break-inside: avoid;
+                
+                }
+                
+                .documents-section h3 {
+                font-size: 9pt;
+                font-weight: bold;
+                margin-bottom: 5px;
+                }
+                
+                .documents-section ul {
+                margin: 0 0 15px 20px;
+                padding-left: 0;
+                }
+                
+                .documents-section li {
+                margin: 2px 0;
+                list-style-type: decimal;
+                padding-left: 5px;
+                }
+                
+                /* Special Instructions aligned toward middle-right */
+                .SpecialInstruction-inline {
+                  position: absolute;
+                top: 0;
+                left: 320px;
+                width: 300px;
+                font-size: 8pt;
+                padding-left: 30px;
+                margin-top: -1px;
+                page-break-inside: avoid;
+                
+                }
+                
+                .SpecialInstruction-inline h3 {
+                font-size: 9pt;
+                font-weight: bold;
+                margin-bottom: 5px;
+                text-align: left;
+                }
+                
+                .SpecialInstruction-inline p {
+                margin: 0;
+                text-align: left;
+                white-space: pre-wrap;
+                page-break-inside: avoid;
+                
+                }
+                
+                
+                .bank-details {
+                margin: 15px 0;
+                font-size: 7pt;
+                page-break-inside: avoid;
+                
+                }
+                
+                .bank-details h3 {
+                font-size: 8pt;
+                font-weight: bold;
+                margin: 0 0 8px 0;
+                }
+                
+                .bank-details p {
+                margin: 2px 0;
+                }
+                
+                .declaration {
+                margin: 10px 0;
+                font-size: 7pt;
+                text-align: justify;
+                font-style: italic;
+                page-break-inside: avoid;
+                }
+                
+                .terms-section {
+                margin-top: 20px;
+                font-size: 7pt;
+                page-break-inside: avoid;
+                }
+                
+                .terms-section h3 {
+                font-size: 9pt;
+                margin: 10px 0 5px 0;
+                font-weight: bold;
+                }
+                
+                .terms-section p {
+                margin: 3px 0;
+                text-align: justify;
+                }
+            </style>
+        </head>
+        
+        <body>
+            <!-- Company Header - Wrapped in page-header div to repeat on every page -->
+            <div class="page-header">
+                <div class="company-header-wrapper">
+                    <div class="logo-left">
+                        <apex:image url="{!URLFOR($Resource.DRC_NBC_DR_Logo)}" styleClass="company-logo" />
+                    </div>
+                    <div class="company-header">
+                        <h1><strong>D.R. COATS INK &amp; RESINS PVT. LTD.</strong></h1>
+                        <p>230, NEW SONAL LINK IND ESTATE, BLDG NO 2, LINK ROAD, MALAD W MUMBAI INDIA 400064</p>
+                        <h2 class="invoice-title">PROFORMA INVOICE</h2>
+                    </div>
+                </div>
+                <div class="header-divider"></div>
+            </div>
+            <!-- Company Footer - Add this -->
+            <div class="page-footer">
+                <p><strong>D.R. COATS INK &amp; RESINS PVT. LTD.</strong> 230, NEW SONAL LINK IND ESTATE, BLDG NO 2, LINK ROAD, MALAD W MUMBAI INDIA 400064</p>
+                <p>T: 91 022 6866 0700 F: 91-22-28888189 W: www.drcoats.com</p>
+            </div>
+            <!-- Invoice Details Section -->
+            <div class="invoice-details">
+                <!-- Top Row: Invoice Number and Buyers Order -->
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                    <tr>
+                        <td style="width: 40%; vertical-align: top; padding-right: 20px;">
+                            <p style="margin: 0; font-size: 8pt;"><strong>INVOICE NO. &amp; DATE</strong></p>
+                        </td>
+                        <td style="width: 60%; vertical-align: top; padding-left: 25px;">
+                            <p style="margin: 0; font-size: 8pt;"><strong>Buyers Order No.</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: top; padding-right: 20px;">
+                            <p style="margin: 0; font-size: 8pt;">SOEXP/2526/{!exportSequence} DT {!formattedEffectiveDate}</p>
+                        </td>
+                        <td style="vertical-align: top; padding-left: 25px;">
+                            <p style="margin: 0; font-size: 8pt;">{!orderRecord.PoNumber}</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <!-- Bottom Row: Shipper and To Shipped -->
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr>
+                        <td style="width: 40%; vertical-align: top; padding-right: 20px;">
+                            <p style="margin: 0; font-size: 8pt;"><strong>SHIPPER</strong></p>
+                        </td>
+                        <td style="width: 60%; vertical-align: top; padding-left: 25px;">
+                            <p style="margin: 0; font-size: 8pt;"><strong>Buyers Order Date: </strong>{!formattedEffectiveDate}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="vertical-align: top; padding-right: 20px;">
+                            <p style="margin: 0; font-size: 8pt; font-weight: bold;">D.R. COATS INK &amp; RESINS PVT. LTD.</p>
+                            <p style="margin: 0; font-size: 8pt;">230, NEW SONAL LINK IND ESTATE, BLDG NO 2,</p>
+                            <p style="margin: 0; font-size: 8pt;">LINK ROAD, MALAD W MUMBAI -400064</p>
+                            <p style="margin: 0; font-size: 8pt;">INDIA</p>
+                        </td>
+                        <td style="vertical-align: top; padding-top: 5px; padding-left: 25px;">
+                            <p style="margin: 0; font-size: 8pt;"><strong>TO SHIPPED</strong></p>
+                            <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!orderRecord.ShippingStreet}</p>
+                            <p style="margin: 0; font-size: 8pt;">{!orderRecord.ShippingCity}</p>
+                            <p style="margin: 0; font-size: 8pt;">{!orderRecord.ShippingState} {!orderRecord.ShippingPostalCode} {!orderRecord.ShippingCountry}</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="header-divider"></div>
+            
+            <!-- Consignee and Notified Party Section (Separate Section) -->
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px;">
+                <tr>
+                    <td style="width: 40%; vertical-align: top; padding-right: 20px;">
+                        <p style="margin: 0; font-size: 8pt;"><strong>Consignee</strong></p>
+                        <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!consigneeName}</p>
+                        <p style="margin: 0; font-size: 8pt;">{!consigneeAddress}</p>
+                        <p style="margin: 0; font-size: 8pt;">{!consigneeCity} {!consigneePostalCode} {!consigneeCountry}</p>
+                        <p style="margin: 0; font-size: 8pt;">TEL NO : {!consigneePhone} FAX NO :</p>
+                        <p style="margin: 0; font-size: 8pt;">{!consigneeEmail}</p>
+                    </td>
+                    <td style="width: 60%; vertical-align: top; padding-left: 25px;">
+                        <p style="margin: 0; font-size: 8pt;"><strong>Notified Party</strong></p>
+                        <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!orderRecord.DRC_NBC_Notify_Party__c}</p>
+                    </td>
+                </tr>
+            </table>
+            
+            <!-- Consignee Bank -->
+            <div style="margin-bottom: 15px;">
+                <p style="font-size: 8pt; margin: 0;"><strong>Consignee bank :</strong></p>
+            </div>
+            <div class="header-divider"></div>
+            
+            <!-- First Shipping Details Table -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 7pt;">
+                <tr>
+                    <td style="width: 15%; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>PRE CARRIAGE BY</strong>
+                    </td>
+                    <td style="width: 25%; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>PLACE OF RECEIPT BY CARRIAGE</strong>
+                    </td>
+                    <td style="width: 25%; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>COUNTRY OF ORIGIN OF GOODS</strong>
+                    </td>
+                    <td style=" width: 25%; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>COUNTRY OF FINAL DESTINATION</strong>
+                    </td>
+                </tr>                
+                <tr>
+                    <td style="vertical-align: top; font-size: 8pt; text-align: center; margin-right: 10px;">
+                        {!orderRecord.DRC_NBC_Shipment_Method__c}
+                    </td>
+                    <td style="vertical-align: top; padding: 2px 5px; font-size: 8pt; text-align: Center">
+                        {!orderRecord.DRC_NBC_PLACE_OF_RECEIPT_BY_CARRIAG__c}
+                    </td>
+                    <td style="vertical-align: top; padding: 2px 5px; font-size: 8pt; text-align: Center">
+                        {!orderRecord.DRC_NBC_Country_Of_Origin__c}
+                    </td>
+                    <td style="vertical-align: top; padding: 2px 5px;font-size: 8pt; text-align: Center">
+                        {!orderRecord.DRC_NBC_Country_of_Final_Destination__c}
+                    </td>
+                </tr>
+            </table>
+            <div class="header-divider"></div>         
+            <!-- Second Shipping Details Table -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 7pt;">
+                <!-- Row 1: Headers -->
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>VESSSEL/FLIGHT NO.</strong>
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>PORT OF LOADING</strong>
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>PORT OF DISCHARGE</strong>
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>FINAL DESTINATION</strong>
+                    </td>
+                </tr>              
+                <!-- Row 2: Values -->
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Vessel_no_Flight_no__c}
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Port_Of_Loading__c}
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Port_Of_Discharge__c}
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Final_Destination__c}
+                    </td>                   
+                </tr>                
+                <!-- Row 3: Headers -->
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>PAYMENT TERMS </strong>
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>INCO TERMS </strong>
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>TRANS SHIPMENT</strong>
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>PART SHIPMENT</strong>
+                    </td>
+                </tr>               
+                <!-- Row 4: Values -->
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Payment_Terms__c}
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Inco_Terms__c}
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Trans_Shipment__c}
+                    </td>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Part_Shipment__c}
+                    </td>
+                </tr>              
+                <!-- Row 5: Headers -->
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>CURRENCY CODE </strong>
+                    </td>
+                </tr>                
+                <!-- Row 6: Values -->
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.CurrencyIsoCode}
+                    </td>
+                </tr>                             
+            </table>            
+            <!-- Items Table -->
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">No.</th>
+                        <th style="width: 20%;">MARKS &amp; NOS.</th>
+                        <th style="width: 20%;">DESCRIPTION OF GOODS</th>
+                        <th style="width: 5%;">Hazardous</th>
+                        <th style="width: 8%;">HSC Code</th>
+                        <th style="width: 8%;">KIND OF PKG</th>
+                        <th style="width: 10%;">QUANTITY IN KGS</th>
+                        <th style="width: 9%;">RATE CIF {!orderRecord.CurrencyIsoCode}</th>
+                        <th style="width: 10%;">AMOUNT CIF {!orderRecord.CurrencyIsoCode}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <apex:variable var="rowNum" value="{!1}" />
+                    <apex:repeat value="{!items}" var="item">
+                        <tr>
+                            <td class="left">{!rowNum}</td>
+                            <td class="left">{!item.marksAndNos}</td>
+                            <td class="left"><strong>{!item.description}</strong></td>
+                            <td class="left">{!item.hazardous}</td>
+                            <td class="left">{!item.hscCode}</td>
+                            <td class="left">{!item.kindOfPackage}</td>
+                            <td class="right">{!item.quantityKgs}</td>
+                            <td class="right">{!item.rate}</td>
+                            <td class="right">{!item.amount}</td>
+                        </tr>
+                        <apex:variable var="rowNum" value="{!rowNum + 1}" />
+                    </apex:repeat>
+                </tbody>
+            </table>
+            
+            <!-- Total Section -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 8pt; font-weight: bold; margin: 10px 0;">
+                <div style="text-align: left; margin-left: 10px; max-width: 70%; word-wrap: break-word; white-space: normal;">
+                    {!orderRecord.CurrencyIsoCode} {!amountInWords}
+                </div>
+                <div style="text-align: right; margin-top: -13px;">
+                    TOTAL {!totalAmount} {!orderRecord.CurrencyIsoCode}
+                </div>
+            </div>
+            
+            <div class="header-divider1"></div>
+            
+            <apex:outputPanel rendered="{!NOT(
+                                        AND(
+                                        ISBLANK(orderRecord.DRC_NBC_Special_Instructions__c),
+                                        requiredDocuments.size = 0
+                                        )
+                                        )}">
+                
+                <div class="document-instruction-wrapper">
+                    <div class="documents-section">
+                        
+                        <!-- Required Documents : Show only if list is not empty -->
+                        <apex:outputPanel rendered="{!requiredDocuments.size > 0}">
+                            <h3>Required Documents</h3>
+                            <ul>
+                                <apex:repeat value="{!requiredDocuments}" var="doc">
+                                    <li>{!doc}</li>
+                                </apex:repeat>
+                            </ul>
+                        </apex:outputPanel>
+                        
+                        <!-- Special Instructions : Show only if not blank -->
+                        <apex:outputPanel rendered="{!NOT(ISBLANK(orderRecord.DRC_NBC_Special_Instructions__c))}">
+                            <div class="SpecialInstruction-inline">
+                                <h3>Special Instruction</h3>
+                                <p>{!orderRecord.DRC_NBC_Special_Instructions__c}</p>
+                            </div>
+                        </apex:outputPanel>
+                        
+                    </div>
+                </div>
+                
+            </apex:outputPanel>
+            
+            
+            <apex:outputPanel rendered="{!LEN(TRIM(bankName)) > 0}">
+                <div class="bank-details">
+                    <h3>OUR BANK DETAILS</h3>
+                    
+                    <p><strong>Beneficiary:</strong> {!beneficiaryName}</p>
+                    <p><strong>Bank Name:</strong> {!bankName}</p>
+                    <p><strong>Bank Address:</strong> {!bankAddress}</p>
+                    <p><strong>Account No.:</strong> {!accountNumber}</p>
+                    <p><strong>SWIFT Code:</strong> {!swiftCode}</p>
+                    <p><strong>IFSC Code:</strong> {!ifscCode}</p>
+                </div>
+            </apex:outputPanel>
+            <!-- Declaration -->
+            <div class="declaration">
+                <strong>Declaration :</strong> To the best of our knowledge , we declare that the above informations are true and correct. Any discrepency with regard to quality and quantity of this consignment should be informed to the shipper within 15 Days from the date of receipt goods. Shipper is not liable or responsible for any consiquential loss or taxes arising at the destination port. All disputes subject to Mumbai/India Juridiction.
+            </div>
+            <div class="header-divider"></div>
+            <!-- Terms and Conditions -->
+            <div class="terms-section">
+                <h3>TERMS AND CONDITIONS OF SALE</h3>
+                <p><strong>1. General</strong></p>
+                <p>1.1 These terms and conditions shall apply to the contract with buyer for the sale and delivery of goods by D.R.COATS INK AND RESINS PVT LTD (herein after referred to as D.R.COATS) and supersede any other terms or conditions stipulated or referred to by buyer. Buyer's placing an order shall constitute acceptance of these terms and conditions of sale.</p>
+                <p>1.2 No variation of these terms and conditions of sale shall be effective unless expressly agreed or confirmed in writing by D.R.COATS.</p>
+                <p>1.3 Buyer shall not assign the contract or any rights hereunder in whole or in part to any third party without the prior written consent of D.R.COATS.</p>
+                <p><strong>2. PRICE AND PAYMENT</strong></p>
+                <p>2.1 Prices are quoted exclusive of all applicable taxes and subject to INCO TERMS 2020 or most current version. Any tax, banking charges, stamp duties,port charges, and destination terminal handling charges, port congestion charges, container deposit, detention and demurrage or any other charges collected by destination delivery agent shall be paid solely by the buyer.</p>
+                <p>2.2 Payment shall be made on the due date in full in the currency of the invoice without any set off, counter claim or with holding by transfer to the bank account identified thereon.</p>
+                <p>2.3. Payment shall be deemed to be duly made when the D.R.COATS has actually received such payment(s) in their bank account.</p>
+                <p>2.4 Any payment received from the buyer may be applied by the seller against any payment obligation under this contract or any other contract.</p>
+                <p>2.5 Any late payment shall bear interest at the rate of 18% per annum from the due date.</p>
+                <p><strong>3. Delivery</strong></p>
+                <p>3.1 The goods shall be delivered in accordance with the chosen rules under the INCOTERMS 2020 or most current version. The goods invoiced and held at the buyer's request at any place for whatever reason shall be at the buyer's sole risk and responsibility.</p>
+                <p>3.2 Transshipment and partial shipment shall be allowed at the seller's option. In case of partial shipment, each lot shall be regarded as a separate and independent contract.</p>
+                <p>3.3 The date of the bill of lading (or the receipt by a common carrier) shall be accepted as the conclusive proof of the date of shipment.</p>
+                <p><strong>4.Transfer of risks and title</strong></p>
+                <p>4.1 Title of the goods shall pass to the buyer only upon payment of the full price to the seller for the goods.</p>
+                <p>4.2 Risk of loss for all goods shall pass to the buyer in accordance with the chosen rules under the INCOTERMS 2020 or most current version.</p>
+                <p><strong>5.Warranty</strong></p>
+                <p>5.1 D.R.Coats warrants to Buyer that the goods supplied will conform to our agreed specifications. We recommend that before using our products in full scale production, the buyer/ consignee should make their own test to determine the suitability of the product for their purposes as the circumstances under which the products are stored, handled, used are beyond our control, we cannot take any responsibility for noncompliance of the product testing procedure by the buyer/ consignee.</p>
+                <p><strong>6.Liability and indemnity</strong></p>
+                <p>6.1 Buyer shall inspect the goods immediately on delivery and any complaint/ claim must be raised within 15 days of arrival of the goods at the destination port with proper documentary proofs. No claims of any kind will be entertained after expiry of such period.</p>
+                <p>6.2 Our maximum liability shall be limited to the value of goods as per invoice and shall not cover any other cost like port charges, warehouse charge, transportation, customs clearance, duties etc. We shall not be liable for any loss of material, loss of income, loss of business or for any consequential or indirect, special or punitive damages to the buyer or any third party.</p>
+                <p><strong>7.Force Majeure</strong></p>
+                <p>7.1 D.R.COATS shall not be responsible for any delay in delivery or failure in performance resulting from any causes beyond its control such as including but not limited to acts of God, fire, explosion, accidents, floods, terrorist attack, civil commotion, epidemic, pandemic, labour dispute, strike, riots, unavailability of labour, raw material, energy supplies, abnormal fluctuation in exchange rates, economic crisis, port congestion, restrictions imposed by laws, regulations, orders of any governmental or regulatory authority, refusal of export and / or import licenses etc. Change in price of raw materials which renders the respective business uneconomical for D.R. COATS shall be considered as unavailability of raw materials. In case of a force majeure event the seller shall have the right to cancel the whole or part of the contract forthwith and the seller shall not be liable for any loss, damages or compensation to the buyer.</p>
+                <p><strong>8.Governing Laws and Jurisdiction</strong></p>
+                <p>8.1 This agreement shall be governed by the laws of India. In the event of any dispute or disagreement it shall be referred for arbitration to be held in Mumbai, India and shall be conducted in the English language according to arbitration and conciliation Act 1996 of India.</p>
+                <p>8.2 Subject to the laws of India and subject to the exclusive jurisdiction of competent courts in Mumbai</p>
+            </div>
+            <!-- Company Footer -->
+            <!--    <div style="text-align: center; font-size: 7pt; margin-top: 20px; border-top: 1px solid #000; padding-top: 10px;">
+<p><strong>D.R. COATS INK &amp; RESINS PVT. LTD.</strong> 230, NEW SONAL LINK IND ESTATE, BLDG NO 2, LINK ROAD, MALAD W MUMBAI INDIA 400064</p>
+<p>T: 91 022 6866 0700 F: 91-22-28888189 W:</p>
+</div>-->
+        </body>
+    </html>
+</apex:page>

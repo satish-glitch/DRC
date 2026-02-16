@@ -1,0 +1,44 @@
+/* Host styles */
+:host {
+    position: relative;
+    display: block;
+}
+
+/* Modal container */
+.slds-modal__container {
+    width: 90% !important;
+    max-width: 90% !important;
+}
+
+/* Custom dropdown for product search */
+.custom-dropdown {
+    position: absolute;
+    z-index: 9999;
+    background: white;
+    width: 90% !important;
+    max-width: 90% !important;
+    max-height: 500px !important;
+    min-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: 1px solid #ccc;
+}
+
+:host .custom-dropdown {
+    position: absolute;
+    z-index: 9999;
+    width: 90% !important;
+    max-width: 90% !important;
+    max-height: 400px !important;
+}
+
+/* Align input columns */
+.input-cell {
+    vertical-align: middle !important;
+    padding-top: 0.25rem !important;
+    padding-right: 2.5rem !important;
+}
+
+.input-cell lightning-input {
+    margin: 0 !important;
+}

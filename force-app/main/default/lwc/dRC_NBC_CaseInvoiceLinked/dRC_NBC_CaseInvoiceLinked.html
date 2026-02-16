@@ -1,0 +1,624 @@
+<template>
+    <template if:true={isModalOpen}>
+        <header class="slds-modal__header">
+            <h2 class="slds-modal__title slds-hyphenate slds-text-heading_large">{saveButtonLabel}</h2>
+            <!-- <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">
+                <strong>{saveButtonLabel}</strong>
+            </h2>-->
+        </header>
+
+        <div class="slds-modal__content slds-p-around_medium" style="max-height: 60vh; overflow-y: auto;">
+            <!-- Case Information Section -->
+            <div class={getCaseInfoClass}>
+                <h3 class="slds-section__title slds-theme_shade">
+                    <button class="slds-button slds-button_reset slds-section__title-action" 
+                            onclick={toggleCaseInfo}
+                            aria-expanded={isCaseInfoOpen}
+                            aria-controls="case-info-content">
+                        <lightning-icon icon-name={getCaseInfoIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                        <span class="slds-truncate slds-p-horizontal_small" title="Case Information">Case Information</span>
+                    </button>
+                </h3>
+                <div class="slds-section__content" id="case-info-content">
+                    <div class="slds-grid slds-wrap slds-gutters">   
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-combobox 
+                                label="Status" 
+                                value={caseData.Status} 
+                                options={statusOptions} 
+                                onchange={handleChange} 
+                                data-field="Status"
+                                required>
+                            </lightning-combobox>
+                        </div>
+                        <!--  <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="parent-case-lookup">
+                                    Parent Case
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-combobox_container">
+                                        <div class={parentCaseLookupClass}>
+                                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                <input 
+                                                    type="text" 
+                                                    class="slds-input slds-combobox__input" 
+                                                    id="parent-case-lookup" 
+                                                    aria-controls="parent-case-listbox"
+                                                    autocomplete="off" 
+                                                    role="combobox" 
+                                                    placeholder="Search Parent Cases..."
+                                                    value={parentCaseSearchTerm}
+                                                    onfocus={handleParentCaseFocus}
+                                                    oninput={handleParentCaseSearch}
+                                                    onblur={handleParentCaseBlur} />
+                                                <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">
+                                                    <lightning-icon icon-name="utility:search" size="x-small" alternative-text="Search"></lightning-icon>
+                                                </span>
+                                            </div>
+                                            <div id="parent-case-listbox" class="slds-dropdown slds-dropdown_fluid" role="listbox">
+                                                <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                    <template if:true={parentCaseOptions.length}>
+                                                        <template for:each={parentCaseOptions} for:item="option">
+                                                            <li key={option.value} role="presentation" class="slds-listbox__item">
+                                                                <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small" 
+                                                                        role="option"
+                                                                        data-value={option.value}
+                                                                        data-label={option.label}
+                                                                        onmousedown={handleParentCaseSelect}>
+                                                                    <span class="slds-media__figure">
+                                                                        <lightning-icon icon-name="standard:case" size="small"></lightning-icon>
+                                                                    </span>
+                                                                    <span class="slds-media__body">
+                                                                        <span class="slds-listbox__option-text slds-listbox__option-text_entity">{option.label}</span>
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={parentCaseOptions.length}>
+                                                        <li role="presentation" class="slds-listbox__item">
+                                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small">
+                                                                <span class="slds-media__body">
+                                                                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">
+                                                                        <template if:true={parentCaseSearchTerm}>
+                                                                            No results found
+                                                                        </template>
+                                                                        <template if:false={parentCaseSearchTerm}>
+                                                                            Loading cases...
+                                                                        </template>
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>-->
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input 
+                                label="Subject" 
+                                value={caseData.Subject} 
+                                onchange={handleChange} 
+                                data-field="Subject"
+                                required>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-combobox 
+                                label="Origin" 
+                                value={caseData.Origin} 
+                                options={originOptions} 
+                                onchange={handleChange} 
+                                data-field="Origin"
+                                required>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-combobox 
+                                label="Priority" 
+                                value={caseData.Priority} 
+                                options={priorityOptions} 
+                                onchange={handleChange} 
+                                data-field="Priority"
+                                required>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-combobox 
+                                label="Issue Type" 
+                                value={caseData.DRC_NBC_Issue_type__c} 
+                                options={issueTypeOptions} 
+                                onchange={handleChange} 
+                                data-field="DRC_NBC_Issue_type__c"
+                                required>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-textarea
+                                label="Action Initiated By DRC" 
+                                value={caseData.DRC_NBC_Action_Inititated_By_DRC__c} 
+                                onchange={handleChange} 
+                                data-field="DRC_NBC_Action_Inititated_By_DRC__c">
+                            </lightning-textarea>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-textarea
+                                label="Preferred Resolution to Customers" 
+                                value={caseData.DRC_NBCPreferred_Resolution_to_Customers__c} 
+                                onchange={handleChange} 
+                                data-field="DRC_NBCPreferred_Resolution_to_Customers__c">
+                            </lightning-textarea>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-textarea
+                                label="Description" 
+                                value={caseData.Description} 
+                                onchange={handleChange} 
+                                data-field="Description"
+                                required>
+                            </lightning-textarea>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element" style="margin-top: 0.8rem; margin-bottom: 0.8rem;">
+                                <div class="slds-form-element__control">
+                                    <lightning-input 
+                                        type="checkbox"
+                                        label="Escalated" 
+                                        checked={caseData.IsEscalated} 
+                                        onchange={handleEscalatedChange}
+                                        class="checkbox-bold-label">
+                                    </lightning-input>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element" style="margin-top: 0.8rem; margin-bottom: 0.8rem;">
+                                <div class="slds-form-element__control">
+                                    <lightning-input 
+                                        type="checkbox"
+                                        label="CAPA File Uploaded?" 
+                                        checked={caseData.DRC_NBC_CAPA_File_Uploaded__c} 
+                                        onchange={handleCapaChange}
+                                        class="checkbox-bold-label">
+                                    </lightning-input>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element slds-is-required">
+                                <label class="slds-form-element__label" for="invoice-lookup">
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Select Invoice to Link
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-combobox_container">
+                                        <div class={invoiceLookupClass}>
+                                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                <input 
+                                                    type="text" 
+                                                    class="slds-input slds-combobox__input" 
+                                                    id="invoice-lookup" 
+                                                    aria-controls="invoice-listbox"
+                                                    autocomplete="off" 
+                                                    role="combobox" 
+                                                    placeholder="Search Invoices..."
+                                                    value={invoiceSearchTerm}
+                                                    onfocus={handleInvoiceFocus}
+                                                    oninput={handleInvoiceSearch}
+                                                    onblur={handleInvoiceBlur} />
+                                                <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">
+                                                    <lightning-icon icon-name="utility:search" size="x-small" alternative-text="Search"></lightning-icon>
+                                                </span>
+                                            </div>
+                                            <div id="invoice-listbox" class="slds-dropdown slds-dropdown_fluid" role="listbox">
+                                                <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                    <template if:true={invoiceOptions.length}>
+                                                        <template for:each={invoiceOptions} for:item="option">
+                                                            <li key={option.value} role="presentation" class="slds-listbox__item">
+                                                                <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small" 
+                                                                        role="option"
+                                                                        data-value={option.value}
+                                                                        data-label={option.label}
+                                                                        onmousedown={handleInvoiceSelectFromDropdown}>
+                                                                    <span class="slds-media__figure">
+                                                                        <lightning-icon icon-name="standard:orders" size="small"></lightning-icon>
+                                                                    </span>
+                                                                    <span class="slds-media__body">
+                                                                        <span class="slds-listbox__option-text slds-listbox__option-text_entity">{option.label}</span>
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={invoiceOptions.length}>
+                                                        <li role="presentation" class="slds-listbox__item">
+                                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small">
+                                                                <span class="slds-media__body">
+                                                                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">
+                                                                        <template if:true={invoiceSearchTerm}>
+                                                                            No results found
+                                                                        </template>
+                                                                        <template if:false={invoiceSearchTerm}>
+                                                                            Type to search...
+                                                                        </template>
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>                         
+                    </div>
+                </div>
+            </div>
+            <!-- Contact Information Section -->
+            <div class={getContactInfoClass}>
+                <h3 class="slds-section__title slds-theme_shade">
+                    <button class="slds-button slds-button_reset slds-section__title-action" 
+                            onclick={toggleContactInfo}
+                            aria-expanded={isContactInfoOpen}
+                            aria-controls="contact-info-content">
+                        <lightning-icon icon-name={getContactInfoIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                        <span class="slds-truncate slds-p-horizontal_small" title="Contact Information">Contact Information</span>
+                    </button>
+                </h3>
+                <div class="slds-section__content" id="contact-info-content">
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="account-lookup">
+                                    Account
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-combobox_container">
+                                        <div class={accountLookupClass}>
+                                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                <input 
+                                                    type="text" 
+                                                    class="slds-input slds-combobox__input" 
+                                                    id="account-lookup" 
+                                                    aria-controls="account-listbox"
+                                                    autocomplete="off" 
+                                                    role="combobox" 
+                                                    placeholder="Search Accounts..."
+                                                    value={accountSearchTerm}
+                                                    onfocus={handleAccountFocus}
+                                                    oninput={handleAccountSearch}
+                                                    onblur={handleAccountBlur} />
+                                                <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">
+                                                    <lightning-icon icon-name="utility:search" size="x-small" alternative-text="Search"></lightning-icon>
+                                                </span>
+                                            </div>
+                                            <div id="account-listbox" class="slds-dropdown slds-dropdown_fluid" role="listbox">
+                                                <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                    <template if:true={accountOptions.length}>
+                                                        <template for:each={accountOptions} for:item="option">
+                                                            <li key={option.value} role="presentation" class="slds-listbox__item">
+                                                                <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small" 
+                                                                        role="option"
+                                                                        data-value={option.value}
+                                                                        data-label={option.label}
+                                                                        onmousedown={handleAccountSelect}>
+                                                                    <span class="slds-media__figure">
+                                                                        <lightning-icon icon-name="standard:account" size="small"></lightning-icon>
+                                                                    </span>
+                                                                    <span class="slds-media__body">
+                                                                        <span class="slds-listbox__option-text slds-listbox__option-text_entity">{option.label}</span>
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={accountOptions.length}>
+                                                        <li role="presentation" class="slds-listbox__item">
+                                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small">
+                                                                <span class="slds-media__body">
+                                                                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">
+                                                                        <template if:true={accountSearchTerm}>
+                                                                            No results found
+                                                                        </template>
+                                                                        <template if:false={accountSearchTerm}>
+                                                                            Type to search...
+                                                                        </template>
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="contact-lookup">
+                                    Contact
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <div class="slds-combobox_container">
+                                        <div class={contactLookupClass}>
+                                            <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                <input 
+                                                    type="text" 
+                                                    class="slds-input slds-combobox__input" 
+                                                    id="contact-lookup" 
+                                                    aria-controls="contact-listbox"
+                                                    autocomplete="off" 
+                                                    role="combobox" 
+                                                    placeholder="Search Contacts..."
+                                                    value={contactSearchTerm}
+                                                    onfocus={handleContactFocus}
+                                                    oninput={handleContactSearch}
+                                                    onblur={handleContactBlur} />
+                                                <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">
+                                                    <lightning-icon icon-name="utility:search" size="x-small" alternative-text="Search"></lightning-icon>
+                                                </span>
+                                            </div>
+                                            <div id="contact-listbox" class="slds-dropdown slds-dropdown_fluid" role="listbox">
+                                                <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                    <template if:true={contactOptions.length}>
+                                                        <template for:each={contactOptions} for:item="option">
+                                                            <li key={option.value} role="presentation" class="slds-listbox__item">
+                                                                <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small" 
+                                                                        role="option"
+                                                                        data-value={option.value}
+                                                                        data-label={option.label}
+                                                                        onmousedown={handleContactSelect}>
+                                                                    <span class="slds-media__figure">
+                                                                        <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
+                                                                    </span>
+                                                                    <span class="slds-media__body">
+                                                                        <span class="slds-listbox__option-text slds-listbox__option-text_entity">{option.label}</span>
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        </template>
+                                                    </template>
+                                                    <template if:false={contactOptions.length}>
+                                                        <li role="presentation" class="slds-listbox__item">
+                                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small">
+                                                                <span class="slds-media__body">
+                                                                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">
+                                                                        <template if:true={contactSearchTerm}>
+                                                                            No results found
+                                                                        </template>
+                                                                        <template if:false={contactSearchTerm}>
+                                                                            Type to search...
+                                                                        </template>
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- REMOVED: Contact Pill Container -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input 
+                                label="Contact Email" 
+                                value={contactEmail} 
+                                disabled>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input 
+                                label="Contact Phone" 
+                                value={contactPhone} 
+                                disabled>
+                            </lightning-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Line Items Selection Section -->
+            <template if:true={selectedInvoiceId}>
+                <template if:true={lineItemOptions.length}>
+                    <div class={getLineItemSelectionClass}>
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <button class="slds-button slds-button_reset slds-section__title-action" 
+                                    onclick={toggleLineItemSelection}
+                                    aria-expanded={isLineItemSelectionOpen}
+                                    aria-controls="line-item-selection-content">
+                                <lightning-icon icon-name={getLineItemSelectionIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Select Invoice Line Items">Select Invoice Line Items</span>
+                            </button>
+                        </h3>
+                        <div class="slds-section__content" id="line-item-selection-content">
+                            <div class="slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-combobox
+                                        name="lineItemSelect"
+                                        label="Select Product Line Item"
+                                        placeholder="Search and select a product..."
+                                        value={selectedLineItemId}
+                                        options={lineItemOptions}
+                                        onchange={handleLineItemComboboxSelect}>
+                                    </lightning-combobox>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </template>
+
+            <!-- Lot Numbers Table from Invoice Lot Object -->
+            <template if:true={selectedLineItemId}>
+                <template if:true={currentLineItemLots.length}>
+                    <div class={getBatchInfoClass}>
+                        <h3 class="slds-section__title slds-theme_shade">
+                            <button class="slds-button slds-button_reset slds-section__title-action" 
+                                    onclick={toggleBatchInfo}
+                                    aria-expanded={isBatchInfoOpen}
+                                    aria-controls="batch-info-content">
+                                <lightning-icon icon-name={getBatchInfoIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                                <span class="slds-truncate slds-p-horizontal_small" title="Lot Numbers">Invoice Lot Numbers & Complaint Quantities</span>
+                            </button>
+                        </h3>
+                        <div class="slds-section__content" id="batch-info-content">
+                            <div class="slds-box slds-m-bottom_small">
+                                <div class="slds-grid slds-wrap slds-gutters_small">
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <strong>Product Name:</strong> {currentLineItem.productName}
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <strong>Product Code:</strong> {currentLineItem.productCode}
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-1">
+                                        <strong>Description:</strong> {currentLineItem.productDescription}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+                                <thead>
+                                    <tr class="slds-line-height_reset">
+                                        <th scope="col">
+                                            <div class="slds-truncate">Lot Number</div>
+                                        </th>
+                                        <th scope="col">
+                                            <div class="slds-truncate">Available Quantity</div>
+                                        </th>
+                                        <th scope="col">
+                                            <div class="slds-truncate">Complaint Quantity</div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={currentLineItemLots} for:item="lot">
+                                        <tr key={lot.lotId}>
+                                            <td>
+                                                <div class="slds-truncate" title={lot.lotNumber}>
+                                                    {lot.lotNumber}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="slds-truncate" title={lot.quantity}>
+                                                    {lot.quantity}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <lightning-input
+                                                    type="number"
+                                                    value={lot.complaintQuantity}
+                                                    data-lot-id={lot.lotId}
+                                                    onchange={handleComplaintQuantityChange}
+                                                    min="0"
+                                                    max={lot.quantity}
+                                                    step="0.01"
+                                                    variant="label-hidden">
+                                                </lightning-input>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+
+                            <div class="slds-m-top_small slds-text-align_right">
+                                <lightning-button 
+                                    variant="neutral" 
+                                    label="Clear Selection" 
+                                    onclick={clearLineItemSelection}>
+                                </lightning-button>
+                                <lightning-button 
+                                    variant="brand" 
+                                    label="Add Lots to Case" 
+                                    onclick={addLotsToCase}
+                                    class="slds-m-left_x-small">
+                                </lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </template>
+
+            <!-- Selected Lots Summary -->
+            <template if:true={selectedLotsGrouped.length}>
+                <div class="slds-section slds-is-open slds-m-top_medium">
+                    <h3 class="slds-section__title slds-theme_shade">
+                        <span class="slds-truncate slds-p-horizontal_small" title="Selected Lots">Selected Lots for Case ({selectedInvoiceLots.length})</span>
+                    </h3>
+                    <div class="slds-section__content">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Product Name</th>
+                                    <th scope="col">Product Code</th>
+                                    <th scope="col">Lot Number</th>
+                                    <th scope="col">Available Qty</th>
+                                    <th scope="col">Complaint Qty</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={selectedLotsGrouped} for:item="product">
+                                    <template for:each={product.lots} for:item="lot">
+                                        <tr key={lot.lotId}>
+                                            <td>{lot.productName}</td>
+                                            <td>{lot.productCode}</td>
+                                            <td>{lot.lotNumber}</td>
+                                            <td>{lot.quantity}</td>
+                                            <td>
+                                                <lightning-input
+                                                    type="number"
+                                                    value={lot.complaintQuantity}
+                                                    data-lot-id={lot.lotId}
+                                                    onchange={handleSelectedLotQuantityChange}
+                                                    min="0"
+                                                    max={lot.quantity}
+                                                    step="0.01"
+                                                    variant="label-hidden">
+                                                </lightning-input>
+                                            </td>
+                                            <td>
+                                                <lightning-button-icon 
+                                                    icon-name="utility:delete" 
+                                                    variant="bare" 
+                                                    alternative-text="Remove"
+                                                    title="Remove this lot"
+                                                    data-lot-id={lot.lotId}
+                                                    onclick={removeLotFromCase}>
+                                                </lightning-button-icon>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <footer class="slds-modal__footer">
+            <lightning-button 
+                variant="neutral" 
+                label="Cancel" 
+                onclick={closeModal}>
+            </lightning-button>
+            <lightning-button 
+                variant="brand" 
+                label={saveButtonLabel}
+                onclick={saveCase}
+                disabled={isSaveDisabled}>
+            </lightning-button>
+        </footer>
+    </template>
+</template>

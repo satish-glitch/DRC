@@ -1,0 +1,77 @@
+<template>
+    <lightning-card title="New Address">
+
+        <lightning-record-edit-form
+            object-api-name="DRC_NBC_Addresses__c"
+            record-id={recordId}
+            onsuccess={handleSuccess}
+            oncancel={handleCancel}>
+
+            <div class="slds-p-around_medium slds-grid slds-wrap">
+
+                <!-- LEFT COLUMN -->
+                <div class="slds-col slds-size_1-of-2">
+
+                    <!-- ADDRESS FIELDS -->
+                    <lightning-input-field 
+                        field-name="DRC_NBC_Address__Street__s">
+                    </lightning-input-field>
+
+                    <lightning-input-field 
+                        field-name="DRC_NBC_Address__City__s">
+                    </lightning-input-field>
+
+                    <lightning-input-field 
+                        field-name="DRC_NBC_Address__PostalCode__s">
+                    </lightning-input-field>
+
+                    <lightning-input-field 
+                        field-name="DRC_NBC_Address__CountryCode__s"
+                        onchange={handleCountryChange}>
+                    </lightning-input-field>
+
+                    <lightning-input-field 
+                        field-name="DRC_NBC_Address__StateCode__s">
+                    </lightning-input-field>
+
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="slds-col slds-size_1-of-2 slds-p-left_small">
+
+                    <!-- ACCOUNT PRE-POPULATED -->
+                    <lightning-input-field 
+                        field-name="DRC_NBC_Account__c"
+                        value={recordId}>
+                    </lightning-input-field>
+
+                    <!-- GST ONLY IF COUNTRY = INDIA -->
+                    <template if:true={isIndia}>
+                        <lightning-input-field 
+                            field-name="DRC_NBC_GST_Number__c">
+                        </lightning-input-field>
+                    </template>
+
+                    <lightning-input-field 
+                        field-name="DRC_NBC_Ship_To_Seq__c">
+                    </lightning-input-field>
+
+                </div>
+
+            </div>
+
+            <!-- FOOTER BUTTONS -->
+            <div class="slds-p-around_medium slds-text-align_center">
+                <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
+                <lightning-button
+                    type="submit"
+                    variant="brand"
+                    class="slds-m-left_small"
+                    label="Save">
+                </lightning-button>
+            </div>
+
+        </lightning-record-edit-form>
+
+    </lightning-card>
+</template>

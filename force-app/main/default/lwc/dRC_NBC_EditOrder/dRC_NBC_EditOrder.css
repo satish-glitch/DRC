@@ -1,0 +1,37 @@
+.custom-dropdown {
+    position: absolute;
+    z-index: 9999;
+    background: white;
+    width: 90% !important;
+    max-width: 90% !important;
+    max-height: 500px !important; /* Increased from 200px */
+    min-height: 200px; /* Optional: ensures minimum height */
+    overflow-y: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: 1px solid #ccc;
+}
+
+:host {
+    position: relative;
+    display: block;
+}
+
+:host .custom-dropdown {
+    position: absolute;
+    z-index: 9999;
+    width: 90% !important;
+    max-width: 90% !important;
+    max-height: 400px !important; /* Increased height here too */
+}
+
+.slds-modal__container {
+    width: 90% !important;
+    max-width: 90% !important;
+}
+
+.right-align {
+    padding-left: 15px!important;
+}
+.right-alignPrice {
+    padding-left: 25px!important;
+}

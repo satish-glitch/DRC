@@ -1,0 +1,14 @@
+.dummy{
+	color : black;
+}
+.statusIn{
+	font-weight: bold;
+	color: green;
+}
+.statusOut{
+	font-weight: bold;
+	color: red;
+}
+.space{
+	margin-bottom: 1rem;
+}

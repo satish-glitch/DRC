@@ -1,0 +1,7 @@
+<template>
+    <lightning-quick-action-panel header="Send Order to BC">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Sending to BC..." size="medium"></lightning-spinner>
+        </template>
+    </lightning-quick-action-panel>
+</template>

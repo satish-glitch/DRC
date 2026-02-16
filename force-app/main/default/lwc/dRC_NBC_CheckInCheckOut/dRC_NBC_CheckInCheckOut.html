@@ -1,0 +1,51 @@
+<template>
+    <lightning-card title="Current Geolocation">
+        <div class="slds-p-around_medium">
+
+            <!-- ✅ Show spinner while loading -->
+            <template if:true={isLoading}>
+                <lightning-spinner
+                    alternative-text="Loading data..."
+                    size="medium"
+                    variant="brand"
+                ></lightning-spinner>
+                <p class="slds-text-align_center slds-m-top_small">Fetching location data...</p>
+            </template>
+
+            <!-- ✅ Show main content when not loading -->
+            <template if:false={isLoading}>
+                <div class="statusIn">
+                    <h4>{statusIn}</h4>
+                </div>
+                <div class="statusOut">
+                    <h4>{statusOut}</h4>
+                </div>
+
+                <div class="distance space">
+                    <p>Distance: {distance}</p>
+                </div>
+
+                <div class="statusIn">
+                    <p>{compliant}</p>
+                </div>
+                <div class="statusOut">
+                    <p>{noncompliant}</p>
+                </div>
+
+                <div class="space">
+                    <lightning-textarea
+                        label={textAreaLable}
+                        onchange={handleChange}
+                    ></lightning-textarea>
+                </div>
+
+                <div class="space">
+                    <lightning-button
+                        label={buttonLabel}
+                        onclick={handleClick}
+                    ></lightning-button>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

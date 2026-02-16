@@ -1,0 +1,525 @@
+<apex:page standardController="Quote" extensions="DRC_NBC_DomesticQuotationPDFController" renderAs="pdf" applyHtmlTag="false" showHeader="false">
+    <head>
+        <style>
+            @page {
+            size: A4;
+            margin-top: 17mm;
+            margin-bottom: 17mm;
+            @top-left {
+            content: element(header);
+            }
+            @bottom-left {
+            content: element(footer);
+            }
+            }
+            
+            body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #333;
+            }           
+            .page-header {
+            position: running(header);
+            width: 100%;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            margin-bottom: 20px;
+            }
+            
+            .page-footer {
+            position: running(footer);
+            text-align: center; 
+            font-size: 7pt; 
+            margin-top: 5px; 
+            border-top: 1px 
+            solid #000; 
+            padding-top: 5px;
+            }
+            .header {
+            position: relative;
+            margin-bottom: 20px;
+            min-height: 120px;
+            }
+            
+            .company-logo {
+            position: absolute;
+            left: 0;
+            top: 0;
+            max-width: 120px;
+            height: auto;
+            }
+            
+            .company-info {
+            text-align: center;
+            margin: 0 auto;
+            padding-top: 10px;
+            }
+            
+            .company-info h2 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            font-weight: bold;
+            }
+            
+            .company-info p {
+            margin: 2px 0;
+            font-size: 11px;
+            line-height: 1.0;
+            }
+            
+            .quote-title-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            }
+            
+            .quote-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            }
+            
+            .date-box {
+            border-radius: 4px;
+            font-size: 11px;
+            }
+            
+            .customer-details {
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            }            
+            
+            .label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+            font-size: 13px;
+            }
+            
+            .info-row {
+            display: flex;
+            }
+            
+            .label {
+            width: 140px;
+            display: inline-block;
+            }
+            .info-row span:not(.label) {
+            font-weight: normal;
+            }
+            .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10px;
+            }
+            
+            .product-table th {
+            border-top: 1px solid #000;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px 4px;
+            border-bottom: 2px solid #000;
+            }
+            
+            .product-table td {
+            padding: 6px 4px;
+            border: none; /* Remove all borders */
+            }
+            
+            .amount-right {
+            text-align: right !important;
+            }
+            /* Totals Section - Fixed Alignment */
+            .totals-section {
+            margin-top: 20px;
+            width: 100%;
+            }
+            
+            .total-row {
+            width: 100%;
+            display: table;
+            table-layout: fixed;
+            padding: 4px 0;
+            }
+            
+            .total-label {
+            display: table-cell;
+            font-weight: bold;
+            text-align: left;
+            vertical-align: top;
+            width: 70%;
+            }
+            
+            .total-amount {
+            display: table-cell;
+            text-align: right;
+            vertical-align: top;
+            width: 30%;
+            min-width: 150px;
+            }
+            
+            /* Ensure nested elements don't add extra spacing */
+            .total-amount > div {
+            margin: 0;
+            padding: 0;
+            }
+            
+            /* For the border lines inside total-amount */
+            .total-amount > div[style*="border-top"] {
+            margin-top: 4px;
+            margin-bottom: 4px;
+            }
+            
+            /* Full-width border for grand total row - only top border */
+            .grand-total-only-top {
+            border-top: 1px solid #000;
+            padding-top: 8px;
+            }
+            
+            /* Single border after subtotal */
+            .subtotal-border {
+            border-bottom: 1px solid #000;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+            }
+            
+            /* Alternative: Add this class to the row that needs full border */
+            .total-row-with-border {
+            border-top: 1px solid #000;
+            padding-top: 8px;
+            }
+            .terms-section {
+            clear: both;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            }
+            
+            .terms-title {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 10px;
+            }
+            
+            .terms-content {
+            font-size: 10px;
+            line-height: 1.6;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <!-- Header Section -->
+        <!-- <div class="page-header">-->
+        <div class="header">
+            <img src="{!URLFOR($Resource.DRC_NBC_DR_Logo)}" alt="Company Logo" class="company-logo"/>    
+            <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">
+                <div class="company-info">
+                    <h2>D.R.Coats Ink &amp; Resins Pvt. Ltd.</h2>
+                    <p>UNIT NO. 230, Building No 2, 2nd floor, New Sonal Link Industrial Estate,</p>
+                    <p>Link Road, Malad West, Mumbai, Maharashtra 400064</p>
+                    <p>Tel: 02268660700</p>
+                    <p>CIN No.: U24220MH2003PTC14211</p>
+                    <p>PAN No.: AABCD8645A | GSTIN: 27AABCD8645A1ZV</p>
+                </div>
+            </apex:outputPanel>
+            
+            <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Export'}">
+                <div class="company-info">
+                    <h2>D.R.Coats Ink &amp; Resins Pvt. Ltd.</h2>
+                    <p>UNIT NO. 230, Building No 2, 2nd floor, New Sonal Link Industrial Estate,</p>
+                    <p>Link Road, Malad West, Mumbai, Maharashtra 400064</p>
+                    <p>Tel: 02268660700</p>
+                    <p>GSTIN: 27AABCD8645A1ZV</p>
+                </div>
+            </apex:outputPanel>
+        </div>
+        <!--   </div>-->
+        <div class="page-footer">
+            <p><strong>D.R. COATS INK &amp; RESINS PVT. LTD.</strong> 230, NEW SONAL LINK IND ESTATE, BLDG NO 2, LINK ROAD, MALAD W MUMBAI INDIA 400064</p>
+            <p>T: 91 022 6866 0700 F: 91-22-28888189 W: www.drcoats.com</p>
+        </div>
+        
+        
+        <!-- Quote Title and Date -->
+        <div class="quote-title-section">
+            <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">
+                <div class="quote-title">
+                    Sales Quote : SQT/2526/{!quoteRecord.DRC_NBC_Import_Starting_Sequence__c}
+                </div>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Export'}">
+                <div class="quote-title">
+                    Sales Quote : SQT/2526/{!quoteRecord.DRC_NBC_Invoice_Export_Sequence_Number__c}
+                </div>
+            </apex:outputPanel>
+            <div>
+                <strong>Date:</strong>
+                <span class="date-box">
+                    <apex:outputText value="{0,date,dd MMMM yyyy}">
+                        <apex:param value="{!quoteRecord.CreatedDate}" />
+                    </apex:outputText>
+                </span>
+            </div>
+            <div class="customer-details">
+                <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">
+                    <strong>Customer Details:</strong> <!-- Removed <br/> -->
+                    <div>{!quoteRecord.Account.Name}</div>
+                    <div>{!quoteRecord.ShippingStreet}</div>
+                    <div>{!quoteRecord.ShippingCity} {!quoteRecord.ShippingPostalCode}</div>
+                    <div>{!quoteRecord.ShippingState}</div>
+                    <div>{!quoteRecord.ShippingCountry}</div>
+                    <br/>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Export'}">
+                    <strong>Customer Details:</strong> <!-- Removed <br/> -->
+                    <div>{!quoteRecord.Account.Name}</div>
+                    <div>{!quoteRecord.ShippingStreet}</div>
+                    <div>{!quoteRecord.ShippingCity} {!quoteRecord.ShippingPostalCode}</div>
+                    <div>{!quoteRecord.ShippingState} {!quoteRecord.ShippingCountry}</div>
+                    <br/>
+                </apex:outputPanel>
+                
+                <apex:outputPanel rendered="{!NOT(ISBLANK(quoteRecord.ExpirationDate))}">
+                    <div class="info-row">
+                        <span class="label" style="font-weight: normal; font-size: 11px">Valid Through:</span>
+                        <span style="font-weight: normal;">
+                            <apex:outputText value="{0,date,dd MMMM yyyy}">
+                                <apex:param value="{!quoteRecord.ExpirationDate}" />
+                            </apex:outputText>
+                        </span>
+                    </div>
+                </apex:outputPanel>
+                
+                <apex:outputPanel rendered="{!NOT(ISBLANK(quoteRecord.DRC_NBC_Inco_terms__c))}">
+                    <div class="info-row">
+                        <span class="label" style="font-weight: normal; font-size: 11px">Inco Terms:</span>
+                        <span style="font-weight: normal;">{!quoteRecord.DRC_NBC_Inco_terms__c}</span>
+                    </div>
+                </apex:outputPanel>
+                
+                <apex:outputPanel rendered="{!NOT(ISBLANK(quoteRecord.DRC_NBC_Payemnt_Term__c))}">
+                    <div class="info-row">
+                        <span class="label" style="font-weight: normal; font-size: 11px">Payment Terms:</span>
+                        <span style="font-weight: normal;">{!quoteRecord.DRC_NBC_Payemnt_Term__c}</span>
+                    </div>
+                </apex:outputPanel>  
+            </div>
+        </div>
+        
+        <!-- Product Table -->
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Description</th>
+                    <th style="width: 10%;">Quantity</th>
+                    <th style="width: 5%;">Unit of Measure</th>
+                    <th style="width: 15%;">Packing Details</th>
+                    <th style="width: 10%;">HSN Code</th>
+                    <th style="width: 5%;">Currency</th>
+                    <th style="width: 10%; text-align: right;">Unit Price</th>
+                    <th style="width: 15%; text-align: right;">Amount</th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+                <apex:repeat value="{!quoteLineItems}" var="item">
+                    <tr>
+                        <td>{!item.Product2.Name}</td>
+                        <td>
+                            <apex:outputText value="{0, number, ###,##0.00}">
+                                <apex:param value="{!item.Quantity}" />
+                            </apex:outputText>
+                        </td>
+                        <td>{!item.DRC_NBC_Unit_Of_Measurement__c}</td>
+                        <td>{!item.Product2.DRC_NBC_KIND_OF_PKG__c}</td>
+                        <td>{!item.Product2.DRC_NBC_HSN_SAC_Code__c}</td>
+                        <!--<td>{!item.Product2.CurrencyIsoCode}</td>-->
+                        <td>{!quoteRecord.CurrencyIsoCode}</td>
+                        <td class="amount-right">
+                            <apex:outputText value="{0, number, ###,##0.00}">
+                                <apex:param value="{!item.UnitPrice}" />
+                            </apex:outputText>
+                        </td>
+                        <td class="amount-right">
+                            <apex:outputText value="{0, number, ###,##0.00}">
+                                <apex:param value="{!item.TotalPrice}" />
+                            </apex:outputText>
+                        </td>
+                    </tr>
+                </apex:repeat>
+            </tbody>
+        </table>
+        
+        <!-- Totals Section -->
+        <div class="totals-section">
+            <div class="total-row subtotal-border">
+                <div class="total-label">Total {!quoteRecord.CurrencyIsoCode}</div>
+                <div class="total-amount">
+                    <apex:outputText value="{0, number, ###,##0.00}">
+                        <apex:param value="{!subtotal}" />
+                    </apex:outputText>
+                </div>
+            </div>
+            
+            <apex:outputPanel rendered="{!AND(quoteRecord.DRC_NBC_Type__c == 'Domestic', quoteRecord.Contact.Account.BillingStateCode != 'MH')}">
+                <div class="total-row">
+                    <div class="total-label" style="font-weight: normal;">IGST 18% </div>
+                    <div class="total-amount">
+                        <apex:outputText value="{0, number, ###,##0.00}">
+                            <apex:param value="{!igstAmount}" />
+                        </apex:outputText>
+                    </div>
+                </div>
+            </apex:outputPanel> 
+            
+            <apex:outputPanel rendered="{!AND(quoteRecord.DRC_NBC_Type__c == 'Domestic', quoteRecord.Contact.Account.BillingStateCode == 'MH')}">
+                <div class="total-row">
+                    <div class="total-label" style="font-weight: normal;">CGST 9% </div>
+                    <div class="total-amount">
+                        <apex:outputText value="{0, number, ###,##0.00}">
+                            <apex:param value="{!cgstAmount}" />
+                        </apex:outputText>
+                    </div>
+                </div>
+                
+                <div class="total-row">
+                    <div class="total-label" style="font-weight: normal;">SGST 9% </div>
+                    <div class="total-amount">
+                        <apex:outputText value="{0, number, ###,##0.00}">
+                            <apex:param value="{!sgstAmount}" />
+                        </apex:outputText>
+                    </div>
+                </div>
+            </apex:outputPanel>
+            
+            <apex:outputPanel rendered="{!otherTaxAmount > 0}">
+                <div class="total-row">
+                    <div class="total-label" style="font-weight: normal;">Other Taxes &amp; Charges Amount</div>
+                    <div class="total-amount">
+                        <apex:outputText value="{0, number, ###,##0.00}">
+                            <apex:param value="{!otherTaxAmount}" />
+                        </apex:outputText>
+                    </div>
+                </div>
+            </apex:outputPanel>
+            
+            <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">
+                <div class="total-row">
+                    <div class="total-label" style="font-weight: normal;">TCS Amount</div>
+                    <div class="total-amount">
+                        <apex:outputText value="{0, number, ###,##0.00}">
+                            <apex:param value="{!tcsAmount}" />
+                        </apex:outputText>
+                    </div>
+                </div>
+            </apex:outputPanel>
+            
+            <div class="total-row grand-total-only-top">
+                <div class="total-label">Total {!quoteRecord.CurrencyIsoCode} Incl</div>
+                <div class="total-amount">
+                    <apex:outputText value="{0, number, ###,##0.00}">
+                        <apex:param value="{!totalAmount}" />
+                    </apex:outputText>
+                </div>
+            </div>         
+        </div>
+        <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">      
+            <!-- Terms and Conditions -->
+            <div class="terms-section">
+                <div class="terms-title">General Terms and Conditions:</div>
+                <div class="terms-content">
+                    1. This quote constitutes an offer to sell and is subject to your acceptance which signifies your agreement to all terms and conditions. 
+                    No variation of these terms and conditions of quote shall be effective unless expressly agreed or confirmed in writing by the company.<br/><br/>
+                    
+                    2. <strong>Delivery</strong><br/>
+                    2.1 The goods shall be delivered in accordance with the chosen rules under the INCOTERMS 2020 or most current version. 
+                    The goods invoiced and held at the buyer’s request at any place for whatever reason shall be at the buyer’s sole risk and responsibility.<br/>
+                    2.2 Partial shipment shall be allowed at the seller’s option. In case of partial shipment, each lot shall be regarded as a separate and independent contract.<br/>
+                    2.3 The date of the invoice and/or the receipt by a common carrier shall be accepted as the conclusive proof of the date of shipment / dispatch.<br/><br/>
+                    
+                    3. <strong>Transfer of risks and title</strong><br/>
+                    3.1 Title of the goods shall pass to the buyer only upon payment of the full price to the seller for the goods.<br/>
+                    3.2 Risk of loss for all goods shall pass to the buyer in accordance with the chosen rules under the INCOTERMS 2020 or most current version.<br/><br/>
+                    
+                    4. <strong>Warranty</strong><br/>
+                    4.1 D R Coats warrants to buyer that the goods supplied will conform to our agreed specifications. 
+                    We recommend that before using our products in full scale production, the buyer/consignee should make their own test to determine the suitability of the product for their purposes. 
+                    As the circumstances under which the products are stored, handled, and used are beyond our control, we cannot take any responsibility for noncompliance of the product testing procedure by the buyer / consignee.<br/><br/>
+                    
+                    5. <strong>Liability and indemnity</strong><br/>
+                    5.1 Buyer shall inspect the goods immediately upon delivery and any complaint / claim must be raised within 7 days of arrival of the goods at the agreed destination with proper documentary proofs. 
+                    No claims of any kind will be entertained after expiry of such period.<br/>
+                    5.2 Our maximum liability shall be limited to the value of goods as per invoice and shall not cover any other cost like warehouse charge, transportation, taxes etc. 
+                    We shall not be liable for any loss of material, loss of income, loss of business or for any consequential or indirect, special or punitive damages to the buyer or any third party.<br/><br/>
+                    
+                    6. <strong>Force Majeure</strong><br/>
+                    6.1 D.R. COATS shall not be responsible for any delay in delivery or failure in performance resulting from any causes beyond its control such as including but not limited to acts of God, fire, explosion, accidents, floods, terrorist attack, civil commotion, epidemic, pandemic, labour dispute, strike, riots, unavailability of labour, raw material, energy supplies, economic crisis, restrictions imposed by laws, regulations, orders of any governmental or regulatory authority. 
+                    Change in price of raw materials which renders the respective business uneconomical for D.R. COATS shall be considered as unavailability of raw materials. 
+                    In case of a force majeure event the seller shall have the right to cancel the whole or part of the contract forthwith and the seller shall not be liable for any loss, damages or compensation to the buyer.<br/><br/>
+                    
+                    7. <strong>Governing Law and Jurisdiction</strong><br/>
+                    7.1 This agreement shall be governed by the law of India. In the event of any dispute or disagreement it shall be referred for arbitration to be held in Mumbai, India and shall be conducted in the English language according to arbitration and conciliation Act 1996 of India.<br/>
+                    7.2 Subject to the laws of India and subject to the exclusive jurisdiction of competent courts of Mumbai.
+                </div>
+            </div>
+        </apex:outputPanel>
+        <!-- Special Instructions (only when not blank) -->
+        <apex:outputPanel rendered="{!LEN(specialInstructions) > 0}">
+            <div class="terms-section">
+                <div class="terms-title">Special Instructions:</div>
+                <div class="terms-content">
+                    {!specialInstructions}
+                </div>
+            </div>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Export'}">
+            <div class="terms-section">
+                <apex:outputPanel rendered="{!specialRequirementList.size > 0}}">
+                    <div class="terms-title">Special Requirements:</div>
+                    <div class="terms-content">
+                        <ol type="A">
+                            <apex:repeat value="{!specialRequirementList}" var="req">
+                                <li>{!req}</li>
+                            </apex:repeat>
+                        </ol>
+                    </div>
+                </apex:outputPanel>
+                <div class="terms-title"><strong>GENERAL TERMS AND CONDITIONS OF SALE:</strong></div>
+                <div class="terms-content">
+                    1. This quote constitutes an offer to sell and is subject to your acceptance which signifies your agreement to all terms and conditions. No variation of these terms and conditions of quote shall be effective unless expressly agreed or confirmed in writing by D.R.COATS.<br/><br/>
+                    
+                    2. Prices are quoted exclusive of all applicable taxes and subject to INCO TERMS 2020 or most current version. Any tax, banking charges, stamp duties, port charges and destination terminal handling charges, port congestion charges, container deposit, detention and demurrage or any other charges collected by destination delivery agent shall be paid solely by the buyer.<br/><br/>
+                    
+                    3. <strong>Delivery</strong><br/>
+                    3.1 The goods shall be delivered in accordance with the chosen rules under the INCOTERMS 2020 or most current version. The goods invoiced and held at the buyer’s request at any place for whatever reason shall be at the buyer’s sole risk and responsibility.<br/>
+                    3.2 Transshipment and partial shipment shall be allowed at the seller’s option. In case of partial shipment, each lot shall be regarded as a separate and independent contract.<br/>
+                    3.3 The date of the bill of lading (or the receipt by a common carrier) shall be accepted as the conclusive proof of the date of shipment.<br/><br/>
+                    
+                    4. <strong>Transfer of risks and title</strong><br/>
+                    4.1 Title of the goods shall pass to the buyer only upon payment of the full price to the seller for the goods.<br/>
+                    4.2 Risk of loss for all goods shall pass to the buyer in accordance with the chosen rules under the INCOTERMS 2020 or most current version.<br/><br/>
+                    
+                    5. <strong>Warranty</strong><br/>
+                    5.1 D R Coats warrants to buyer that the goods supplied will conform to our agreed specifications. We recommend that before using our products in full scale production, the buyer/consignee should make their own test to determine the suitability of the product for their purposes. As the circumstances under which the products are stored, handled, and used are beyond our control, we cannot take any responsibility for noncompliance of the product testing procedure by the buyer / consignee.<br/><br/>
+                    
+                    6. <strong>Liability and indemnity</strong><br/>
+                    6.1 Buyer shall inspect the goods immediately on delivery and any complaint / claim must be raised within 15 days of arrival of the goods at the destination port with proper documentary proofs. No claims of any kind will be entertained after expiry of such period.<br/>
+                    6.2 Our maximum liability shall be limited to the value of goods as per invoice and shall not cover any other cost like port charges, warehouse charge, transportation, customs clearance, duties etc. We shall not be liable for any loss of material, loss of income, loss of business or for any consequential or indirect, special or punitive damages to the buyer or any third party.<br/><br/>
+                    
+                    7. <strong>Force Majeure</strong><br/>
+                    7.1 D.R.COATS shall not be responsible for any delay in delivery or failure in performance resulting from any causes beyond its control such as including but not limited to acts of God, fire, explosion, accidents, floods, terrorist attack, civil commotion, epidemic, pandemic, labour dispute, strike, riots, unavailability of labour, raw material, energy supplies, abnormal fluctuation in exchange rates, economic crisis, port congestion, restrictions imposed by laws, regulations, orders of any governmental or regulatory authority, refusal of export and / or import licenses etc. Change in price of raw materials which renders the respective business uneconomical for D.R.COATS shall be considered as unavailability of raw materials. In case of a force majeure event, the seller shall have the right to cancel the whole or part of the contract forthwith and the seller shall not be liable for any loss, damages or compensation to the buyer.<br/><br/>
+                    
+                    8. <strong>Governing Law and Jurisdiction</strong><br/>
+                    8.1 This agreement shall be governed by the law of India. In the event of any dispute or disagreement it shall be referred for arbitration to be held in Mumbai, India and shall be conducted in the English language according to arbitration and conciliation Act 1996 of India.<br/>
+                    8.2 Subject to the laws of India and subject to the exclusive jurisdiction of competent courts of Mumbai.
+                </div>
+            </div>
+            
+        </apex:outputPanel>
+    </body>
+</apex:page>

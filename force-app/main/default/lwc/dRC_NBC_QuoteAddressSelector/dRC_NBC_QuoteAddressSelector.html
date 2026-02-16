@@ -1,0 +1,61 @@
+<template>
+        <lightning-accordion allow-multiple-sections-open
+                         onsectiontoggle={handleSectionToggle}
+                         active-section-name={activeSections}>
+     <lightning-accordion-section name="Address Information" label="Address Information">
+
+    <lightning-card>
+        <div class="slds-m-around_medium">
+            <div class="slds-grid slds-gutters">
+                <!-- Column 1: Billing Address (Read-only from Account) -->
+                <div class="slds-col slds-size_1-of-2">
+                    <div class="slds-form-element">
+                        <label class="slds-form-element__label">Billing Address (From Account)</label>
+                        <div class="slds-form-element__control">
+                            <div class="slds-box slds-box_x-small slds-theme_shade">
+                                <p class="slds-text-body_regular">{billingAddressDisplay}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Shipping Address (Editable) -->
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning-combobox
+                        name="shipping"
+                        label="Shipping Address"
+                        value={selectedShippingId}
+                        placeholder="Select Shipping Address"
+                        options={shippingAddressOptions}
+                        onchange={handleAddressChange}>
+                    </lightning-combobox>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons Section -->
+        <template if:true={hasChanges}>
+            <div class="slds-m-around_medium">
+                <div class="slds-grid slds-grid_align-end">
+                    <!-- Cancel Button -->
+                    <lightning-button
+                        variant="neutral"
+                        label="Cancel"
+                        onclick={handleCancel}
+                        class="slds-m-right_x-small">
+                    </lightning-button>
+
+                    <!-- Save Button -->
+                    <lightning-button
+                        variant="brand"
+                        label="Save"
+                        onclick={handleSave}>
+                    </lightning-button>
+                </div>
+            </div>
+        </template>
+
+    </lightning-card>
+     </lightning-accordion-section>
+     </lightning-accordion>
+</template>

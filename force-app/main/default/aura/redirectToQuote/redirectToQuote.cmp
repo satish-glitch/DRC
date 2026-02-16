@@ -1,0 +1,6 @@
+<aura:component implements="lightning:availableForFlowActions,force:lightningQuickActionWithoutHeader" access="global">
+    <aura:attribute name="recordId" type="String" access="global" description="ID of the newly created quote record"/>
+    
+    <lightning:navigation aura:id="navService"/>
+    <lightning:workspaceAPI aura:id="workspace"/>
+</aura:component>

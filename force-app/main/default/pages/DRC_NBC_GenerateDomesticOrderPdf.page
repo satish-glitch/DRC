@@ -1,0 +1,470 @@
+<apex:page renderAs="pdf" controller="DRC_NBC_GenerateDomOrderPIController" showHeader="false" sidebar="false" applyBodyTag="false" applyHtmlTag="false" standardStylesheets="false">
+    <html>
+        <head>
+            <style>
+                @page {
+                size: A4;
+                margin-top: 40mm;
+                margin-bottom: 20mm;
+                margin-left: 10mm;
+                margin-right: 10mm;
+                
+                @top-center {
+                content: element(header);
+                width: 100%;
+                }
+                
+                @bottom-center {
+                content: element(footer);
+                width: 100%;
+                }
+                }
+                
+                body {
+                font-family: Arial, sans-serif;
+                font-size: 9pt;
+                color: #000;
+                line-height: 1.3;
+                }
+                
+                /* Header that repeats on every page */
+                .page-header {
+                position: running(header);
+                width: 100%;
+                margin-bottom: 2px;
+                }
+                
+                /* Footer that repeats on every page */
+                .page-footer {
+                position: running(footer);
+                width: 100%;
+                text-align: center;
+                font-size: 7pt;
+                border-top: 1px solid #000;
+                padding-top: 5px;
+                margin-bottom: 2px;
+                
+                }
+                
+                .company-header-wrapper {
+                position: relative;
+                margin-bottom: 10px;
+                height: 100px;
+                }
+                
+                .logo-left {
+                position: absolute;
+                left: 0;
+                top: 0;
+                }
+                
+                .company-logo {
+                max-width: 120px;
+                height: auto;
+                }
+                
+                .company-header {
+                text-align: center;
+                margin: 0 auto;
+                width: 100%;
+                }
+                
+                .company-header h1 {
+                font-size: 12pt;
+                font-weight: bold;
+                margin: 0 0 5px 0;
+                color: #000;
+                }
+                
+                .company-header p {
+                margin: 2px 0;
+                font-size: 8pt;
+                color: #000;
+                }
+                
+                .right-column {
+                text-align: right;
+                }
+                .header-divider {
+                border-bottom: 2px solid #000;
+                margin: 5px 0;
+                }
+                
+                .invoice-title {
+                font-size: 15pt;
+                font-weight: bold;
+                margin: 0;
+                }
+                
+                .header-info {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 10px;
+                position: relative;
+                }
+                
+                .left-column {
+                width: 40%;
+                font-size: 8pt;
+                }
+                
+                .bill-to h3,
+                .ship-to h3 {
+                font-weight: bold;
+                font-size: 9pt;
+                margin-bottom: 5px;
+                }
+                
+                .bill-to p,
+                .ship-to p {
+                margin: 0;
+                line-height: 1.1;
+                }
+                
+                .bill-to h3,
+                .ship-to h3 {
+                margin: 0 0 2px 0;
+                }
+                
+                .bill-to,
+                .ship-to {
+                margin: 0;
+                padding: 0;
+                }
+                
+                .order-left,
+                .order-right {
+                float: left;
+                width: 48%;
+                font-size: 8pt;
+                line-height: 0.9;
+                box-sizing: border-box;
+                margin-bottom: 10px;
+                }
+                
+                .order-left p,
+                .order-right p {
+                display: flex;
+                margin: 5px 0;
+                line-height: 1.3;
+                }
+                
+                .order-left p strong {
+                width: 160px;
+                flex-shrink: 0;
+                display: inline-block;
+                text-align: left;
+                }
+                
+                .order-left p span{
+                flex-grow: 1;
+                display: inline-block;
+                text-align: left;
+                }
+                
+                .order-right {
+                float: right;
+                width: 48%;
+                font-size: 8pt;
+                line-height: 0.9;
+                box-sizing: border-box;
+                }
+                
+                .order-right p {
+                display: flex;
+                margin: 5px 0;
+                line-height: 1.3;
+                }
+                
+                .order-right p strong {
+                flex-shrink: 0;
+                display: inline-block;
+                text-align: left;
+                width: 180px;
+                }
+                
+                .order-right p span {
+                flex: 1;
+                display: inline-block;
+                text-align: right;
+                word-break: break-word;
+                }
+                
+                .items-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 10px;
+                font-size: 8pt;
+                border: none;
+                }
+                
+                .items-table th,
+                .items-table td {
+                border: none;
+                padding: 4px 6px;
+                }
+                
+                .items-table th {
+                text-align: center;
+                font-weight: bold;
+                }
+                
+                .items-table td.right {
+                text-align: right;
+                }
+                
+                .items-table td.center {
+                text-align: center;
+                }
+                
+                .items-table td:nth-child(7),
+                .items-table td:nth-child(8) {
+                text-align: right;
+                }
+                
+                .items-table td {
+                text-align: left !important;
+                }
+                
+                .items-table th {
+                text-align: left !important;
+                }
+                
+                .totals-table {
+                width: 40%;
+                float: right;
+                border-collapse: collapse;
+                font-size: 8pt;
+                margin-top: 10px;
+                border: none;
+                }
+                
+                .totals-table td {
+                padding: 4px 8px;
+                border: none;
+                }
+                
+                .totals-table td.label {
+                font-weight: bold;
+                text-align: left;
+                }
+                
+                .totals-table td.value {
+                text-align: right;
+                }
+                
+                .totals-table tr.total-row td {
+                font-weight: bold;
+                }
+                
+                .items-table thead th {
+                border-top: 1px solid #000;
+                border-bottom: 1px solid #000;
+                }
+                
+                .totals-table tr:first-child td.value {
+                border-bottom: 1px solid #000;
+                }
+                
+                .totals-table tr.total-row td.value {
+                border-top: 1px solid #000;
+                border-bottom: 1px solid #000;
+                font-weight: bold;
+                }
+                
+                .terms-section {
+                clear: both;
+                margin-top: 20px;
+                font-size: 7pt;
+                page-break-inside: avoid;
+                }
+                
+                .terms-section h3 {
+                font-size: 9pt;
+                margin: 10px 0 5px 0;
+                font-weight: bold;
+                }
+                
+                .terms-section p {
+                margin: 3px 0;
+                text-align: justify;
+                }
+            </style>
+        </head>
+        <body>
+            <!-- Repeating Header for all pages -->
+            <div class="page-header">
+                <div class="company-header-wrapper">
+                    <div class="logo-left">
+                        <apex:image url="{!URLFOR($Resource.DRC_NBC_DR_Logo)}" styleClass="company-logo" />
+                    </div>
+                    <apex:outputText value="{!$Label.DRC_NBC_Domestic_CompanyAddressHTML}" escape="false"/>   
+                </div>
+                <div class="header-divider"></div>
+                
+            </div>
+            
+            <!-- Repeating Footer for all pages -->
+            <div class="page-footer">
+                <p><strong>D.R. COATS INK &amp; RESINS PVT. LTD.</strong></p>
+                <p>230, NEW SONAL LINK IND ESTATE, BLDG NO 2, LINK ROAD, MALAD W MUMBAI INDIA 400064</p>
+                <p>T: 91 022 6866 0700 | F: 91-22-28888189 | W: www.drcoats.com</p>
+            </div>
+            
+            <div class="right-column">
+                <h2 class="invoice-title">Order Confirmation</h2>
+            </div>
+            
+            <!-- Page Content Starts Here -->
+            <div class="header-info">
+                <div class="left-column">
+                    <div class="bill-to">
+                        <h3>Bill To</h3>
+                        <p>{!customerName}</p>
+                        <p>{!billingAddress}</p>
+                        <p>{!billingCity} {!billingState} {!billingPostalCode}</p>
+                        <p>{!billingCountry}</p>
+                    </div>
+                    
+                    <div class="ship-to">
+                        <h3>Ship To</h3>
+                        <p>{!customerName}</p>
+                        <p>{!shippingAddress}</p>
+                        <p>{!shippingCity} {!shippingState} {!shippingPostalCode}</p>
+                        <p>{!shippingCountry}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="order-left">
+                <p><strong>Bill-to Customer No. </strong><span>{!billToCustomer}</span></p>
+                <p><strong>Document Date</strong>
+                    <span>
+                        <apex:outputText value="{0,date,dd-MM-yy}">
+                            <apex:param value="{!orderDate}" />
+                        </apex:outputText>
+                    </span>
+                </p>
+                <p><strong>Shipment Date </strong>
+                    <span>
+                        <apex:outputText value="{0,date,dd-MM-yy}">
+                            <apex:param value="{!shipmentDate}" />
+                        </apex:outputText>
+                    </span>
+                </p>
+                <p><strong>Order No. </strong><span>SODOM/2526/{!importSequence}</span></p>
+                <p><strong>Payment Terms </strong><span>{!paymentTerms}</span></p>
+                <p><strong>Shipment Method </strong><span>{!shipmentMethod}</span></p>
+                <p><strong>Prepayment Payment </strong><span>{!prepaymentPayment}</span></p>
+                <p><strong>Purchase Order No. </strong><span>{!purchaseOrderNo}</span></p>
+            </div>    
+            <div class="order-right">
+                <p><strong>Phone No- </strong><span>{!phoneNumber}</span></p>
+                <p><strong>Home Page </strong><span>{!website}</span></p>
+                <p><strong>E-Mail </strong><span>{!email}</span></p>
+                <p><strong>Bank </strong><span>{!Bank}</span></p>
+                <p><strong>Account No. </strong><span>{!AccountNo}</span></p>
+                <p><strong>SalesPerson </strong><span>{!salesPerson}</span></p>
+                <p><strong>Customer GST Reg No. </strong><span>{!CustomerGSTRegNo}</span></p>
+                <p><strong>Transporter Name </strong><span>{!transporter}</span></p>
+                <p><strong>Agent </strong><span>{!agent}</span></p>
+            </div>         
+            <div style="clear: both;"></div>
+            
+            <!-- Items Table -->
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">No.</th>
+                        <th style="width: 15%;">Item Reference No.</th>
+                        <th style="width: 25%;">Description</th>
+                        <th style="width: 12%;">HSN/SAC</th>
+                        <th style="width: 12%;">Quantity</th>
+                        <th style="width: 12%;">Unit of Measure</th>
+                        <th style="width: 9%;">Unit Price</th>
+                        <th style="width: 9%;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <apex:variable var="rowNum" value="{!1}" />
+                    <apex:repeat value="{!items}" var="item">
+                        <tr>
+                            <td class="center">{!rowNum}</td>
+                            <td>{!item.referenceNo}</td>
+                            <td>{!item.Description}</td>
+                            <td class="center">{!item.HSN_SAC}</td>
+                            <td class="right">{!item.quantity}</td>
+                            <td class="center">{!item.unit}</td>
+                            <td class="right">{!item.unitPrice}</td>
+                            <td class="right">{!item.amount}</td>
+                        </tr>
+                        <apex:variable var="rowNum" value="{!rowNum + 1}" />
+                    </apex:repeat>
+                </tbody>
+            </table>
+            <div style="border-top: 1px solid #000; width: 100%; margin-left: auto; margin-top: 4px; margin-bottom: 4px;"></div>
+            
+            <!-- Totals Section -->
+            <table class="totals-table">
+                <tr>
+                    <td class="label">Total INR</td>
+                    <td class="value">{!totalWithoutTax}</td>
+                </tr>
+                <apex:outputPanel layout="none" rendered="{!cgst != 0 && cgst != null}">
+                    <tr>
+                        <td class="label">CGST Amount</td>
+                        <td class="value">{!cgst}</td>
+                    </tr>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!sgst != 0 && sgst != null}">
+                    <tr>
+                        <td class="label">SGST Amount</td>
+                        <td class="value">{!sgst}</td>
+                    </tr>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!igst != 0 && igst != null}">
+                    <tr>
+                        <td class="label">IGST Amount</td>
+                        <td class="value">{!igst}</td>
+                    </tr>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!otherTaxes != 0 && otherTaxes != null}">
+                    <tr>
+                        <td class="label">Other Taxes Amt</td>
+                        <td class="value">{!otherTaxes}</td>
+                    </tr>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!charges != 0 && charges != null}">
+                    <tr>
+                        <td class="label">Charges Amount</td>
+                        <td class="value">{!charges}</td>
+                    </tr>
+                </apex:outputPanel>
+                <apex:outputPanel layout="none" rendered="{!tcs != 0 && tcs != null}">
+                    <tr>
+                        <td class="label">TCS Amount</td>
+                        <td class="value">{!tcs}</td>
+                    </tr>
+                </apex:outputPanel>
+                <tr class="total-row">
+                    <td class="label">Total INR Incl. Tax</td>
+                    <td class="value">{!totalWithTax}</td>
+                </tr>
+            </table>
+            
+            <!-- Terms and Conditions -->
+            <div class="terms-section">
+                <h3>General terms and condition:</h3>
+                <p>1. Unless stated otherwise, all prices indicated are ex-works (Incoterms) basis.</p>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_TermCondition_1}" escape="false"/>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_TermCondition_2}" escape="false"/>                  
+                <h3>General Provisions:</h3>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part1}" escape="false"/>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part2}" escape="false"/>
+            </div>
+        </body>
+    </html>
+</apex:page>

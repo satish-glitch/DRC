@@ -1,0 +1,16 @@
+<apex:component controller="QuoteLineItemTableController" access="global">
+    <apex:attribute name="quoteId"
+                    type="Id"
+                    description="Quote Id"
+                    assignTo="{!quoteRecordId}" />
+
+    <apex:repeat value="{!quoteLineItems}" var="item">
+        <tr>
+            <td>{!item.Description}</td>
+            <td>{!item.Product2.Name}</td>
+            <td>₹ {!item.UnitPrice}</td>
+            <td>{!item.Quantity}</td>
+            <td>₹ {!item.TotalPrice}</td>
+        </tr>
+    </apex:repeat>
+</apex:component>

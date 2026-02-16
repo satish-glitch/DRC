@@ -1,0 +1,7 @@
+.custom-container{
+	color : black;
+}
+
+.button-container lightning-button:not(:last-child) {
+    margin-right: 10px;
+}

@@ -1,0 +1,12 @@
+<template>
+    <template if:true={chemistryList}>
+            <ul style="margin-top: 0.5rem; padding-left: 1.5rem; list-style-type: disc;">
+                <template for:each={chemistryList} for:item="item">
+                    <li key={item}>{item}</li>
+                </template>
+            </ul>
+    </template>
+    <template if:false={chemistryList}>
+        <p>No chemistry selected.</p>
+    </template>
+</template>
