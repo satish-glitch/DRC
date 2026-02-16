@@ -33,7 +33,7 @@
         <name>StaticResource</name>
     </types>
     <types>
-        <members>DRC_NBC_DomesticQuotationTemplate</members>
+        <members>*</members>
         <name>ApexPage</name>
     </types>
     <version>65.0</version>
