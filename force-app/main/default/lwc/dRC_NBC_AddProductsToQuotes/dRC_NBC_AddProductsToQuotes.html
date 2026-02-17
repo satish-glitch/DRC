@@ -268,10 +268,8 @@
                                             <th style="text-align: center;">HSN Code</th>
                                             <th>Quantity <span style="color: red;">*</span></th>
                                             <th style="text-align: center;">UOM</th>
-                                           <!--
                                             <th style="padding-right: 2.5rem;">Packing Size</th>
                                             <th style="text-align: center;">Packing Quantity</th>
-                                            -->
                                             <th style="padding-right: 2.5rem;">Sales Price</th>
                                             <th style="padding-right: 2.5rem;">Description</th>                              
                                             <th style="text-align: center;">Action</th>
@@ -355,7 +353,6 @@
                                                 <td style="text-align: center; vertical-align: middle;">{data.recordData.DRC_NBC_Unit_Of_Measurement__c}</td>
 
                                                 <!-- Packing Size Column -->
-                                              <!--
                                                 <td class="input-cell">
                                                     <template if:true={data.recordData.packingSizeOptions.length}>
                                                         <lightning-combobox
@@ -381,8 +378,7 @@
                                                         <span style="color: #999;">-</span>
                                                     </template>
                                                 </td>
-                                                -->
-                                                
+                                           
                                                 <!-- Sales Price -->
                                                 <td class="input-cell">
                                                     <lightning-input

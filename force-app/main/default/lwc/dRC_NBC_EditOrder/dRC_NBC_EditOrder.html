@@ -664,10 +664,8 @@
                                             <th style="text-align: center;">HSN Code</th>
                                             <th>Quantity <span style="color: red;">*</span></th>
                                             <th style="text-align: center;">UOM</th>
-                                            <!--
                                             <th style="padding-right: 2.5rem;">Packing Size</th>
                                             <th style="text-align: center;">Packing Quantity</th>
-                                            -->
                                             <template if:true={isSamplePaid}>
                                                 <th style="padding-right: 2.5rem;">Sales Price</th>
                                             </template>
@@ -741,7 +739,7 @@
                                                 <td style="text-align: center; vertical-align: middle;">{data.recordData.UOM}</td>
 
                                                 <!-- Packing Size Column -->
-                                               <!-- <td class="input-cell">
+                                                <td class="input-cell">
                                                     <template if:true={data.recordData.packingSizeOptions.length}>
                                                         <lightning-combobox
                                                             style="width: 180px;"
@@ -766,8 +764,7 @@
                                                         <span style="color: #999;">-</span>
                                                     </template>
                                                 </td>
-                                                -->
-                                                
+                                              
                                                 <!-- Sales Price -->
                                                 <template if:true={isSamplePaid}>
                                                     <td class="input-cell">
