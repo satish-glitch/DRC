@@ -79,7 +79,10 @@
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="DRC_NBC_Select_Bank__c" onchange={handleFieldChange}></lightning-input-field>
                             </div>
-                        </template>                                    
+                        </template>    
+                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="DRC_NBC_Warehouse__c" onchange={handleFieldChange}></lightning-input-field>
+                        </div>                                
                         <template if:true={isExport}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="CurrencyIsoCode" onchange={handleFieldChange} required></lightning-input-field>

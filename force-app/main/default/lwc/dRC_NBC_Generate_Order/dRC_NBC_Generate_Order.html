@@ -144,6 +144,17 @@
                                         </lightning-input-field>
                                     </lightning-record-edit-form>
                                 </div>
+                                 <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-record-edit-form 
+                                        object-api-name="Order"
+                                        record-type-id={selectedRecordTypeId}>
+                                        <lightning-input-field 
+                                            field-name="DRC_NBC_Warehouse__c" 
+                                            data-field="DRC_NBC_Warehouse__c"
+                                            onchange={handleInputFieldChange}>
+                                        </lightning-input-field>
+                                    </lightning-record-edit-form>
+                                </div>
                                 
                                
                                                 <!-- Payment Terms -->

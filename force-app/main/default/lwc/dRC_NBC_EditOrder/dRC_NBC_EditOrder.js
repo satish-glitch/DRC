@@ -912,6 +912,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             DRC_NBC_Inco_Terms__c: this.orderRec.DRC_NBC_Inco_Terms__c,
             DRC_NBC_Warehouse__c: this.orderRec.DRC_NBC_Warehouse__c,
             DRC_NBC_Select_Bank__c: this.orderRec.DRC_NBC_Select_Bank__c,
+            DRC_NBC_Warehouse__c: this.orderRec.DRC_NBC_Warehouse__c,
             DRC_NBC_Terms_and_Conditions__c: this.orderRec.DRC_NBC_Terms_and_Conditions__c,
             PoNumber: this.orderRec.PoNumber,
             DRC_NBC_Other_Tax_Amount__c: this.orderRec.DRC_NBC_Other_Tax_Amount__c,
