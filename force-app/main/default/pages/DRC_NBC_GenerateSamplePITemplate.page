@@ -3,253 +3,254 @@
         <head>
             <style>
                 @page {
-                    size: A4;
-                    margin-top: 60mm;
-                    margin-bottom: 25mm;
-                    margin-left: 10mm;
-                    margin-right: 10mm;
-                    @top-center {
-                        content: element(pageHeader);
-                        width: 100%;
-                    }
-                    @bottom-center {
-                        content: element(pageFooter);
-                        width: 100%;
-                    }
+                size: A4;
+                margin-top: 60mm;
+                margin-bottom: 25mm;
+                margin-left: 10mm;
+                margin-right: 10mm;
+                @top-center {
+                content: element(pageHeader);
+                width: 100%;
                 }
-
+                @bottom-center {
+                content: element(pageFooter);
+                width: 100%;
+                }
+                }
+                
                 body {
-                    font-family: Arial, sans-serif;
-                    font-size: 9pt;
-                    color: #000;
-                    line-height: 1.3;
+                font-family: Arial, sans-serif;
+                font-size: 9pt;
+                color: #000;
+                line-height: 1.3;
                 }
-
+                
                 /* ══════════════════════════════════════════
-                   REPEATING HEADER
-                   All content (logo + full address + title) 
-                   must sit ABOVE the divider line.
-                   We use a real HTML table — safest in Flying Saucer.
+                REPEATING HEADER
+                All content (logo + full address + title) 
+                must sit ABOVE the divider line.
+                We use a real HTML table — safest in Flying Saucer.
                 ══════════════════════════════════════════ */
                 #pageHeader {
-                    position: running(pageHeader);
-                    width: 100%;
+                position: running(pageHeader);
+                width: 100%;
                 }
-
+                
                 /* Outer table: one row, three columns */
                 table.header-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    table-layout: fixed;
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
                 }
-
+                
                 /* Col 1 — Logo */
                 td.hcol-logo {
-                    width: 95px;
-                    vertical-align: top;
-                    padding: 0;
+                width: 95px;
+                vertical-align: top;
+                padding: 0;
                 }
                 .company-logo {
-                    width: 88px;
-                    height: auto;
+                width: 88px;
+                height: auto;
                 }
-
+                
                 /* Col 2 — Company name + all address lines, centred */
                 td.hcol-addr {
-                    vertical-align: top;
-                    text-align: center;
-                    padding: 0 8px;
-                    line-height: 1.25;
+                vertical-align: top;
+                text-align: center;
+                padding: 0 8px;
+                line-height: 1.25;
                 }
                 /* Tighten up whatever the label renders */
                 td.hcol-addr p,
                 td.hcol-addr div {
-                    margin: 1px 0;
-                    padding: 0;
-                    font-size: 8pt;
+                margin: 1px 0;
+                padding: 0;
+                font-size: 8pt;
                 }
                 td.hcol-addr h1,
                 td.hcol-addr .company-name {
-                    font-size: 13pt;
-                    font-weight: bold;
-                    margin: 0 0 2px 0;
-                    padding: 0;
+                font-size: 13pt;
+                font-weight: bold;
+                margin: 0 0 2px 0;
+                padding: 0;
                 }
-
+                
                 /* Col 3 — "Order Confirmation", anchored to bottom */
                 td.hcol-title {
-                    width: 130px;
-                    vertical-align: bottom;
-                    text-align: right;
-                    padding: 0;
-                    padding-bottom: 3px;
+                width: 130px;
+                vertical-align: bottom;
+                text-align: right;
+                padding: 0;
+                padding-bottom: 3px;
                 }
                 .invoice-title {
-                    font-size: 11pt;
-                    font-weight: bold;
-                    white-space: nowrap;
+                font-size: 11pt;
+                font-weight: bold;
+                white-space: nowrap;
                 }
-
+                
                 /* Divider — flush below the table, above body */
                 .header-divider {
-                    border-top: 2px solid #000;
-                    margin-top: 5px;
+                border-top: 2px solid #000;
+                margin-top: 5px;
                 }
-
+                
                 /* ══════════════════════════════════════════
-                   REPEATING FOOTER — no logo, centred text
+                REPEATING FOOTER — no logo, centred text
                 ══════════════════════════════════════════ */
                 #pageFooter {
-                    position: running(pageFooter);
-                    width: 100%;
-                    border-top: 1px solid #000;
-                    padding-top: 5px;
-                    text-align: center;
-                    font-size: 7.5pt;
-                    color: #000;
-                    line-height: 1.6;
+                position: running(pageFooter);
+                width: 100%;
+                border-top: 1px solid #000;
+                padding-top: 5px;
+                text-align: center;
+                font-size: 7.5pt;
+                color: #000;
+                line-height: 1.6;
                 }
-
+                
                 /* ── BILL TO / SHIP TO ── */
                 .left-column {
-                    width: 50%;
-                    font-size: 8pt;
+                width: 50%;
+                font-size: 8pt;
                 }
                 .left-column h3 {
-                    font-weight: bold;
-                    font-size: 8.5pt;
-                    margin: 6px 0 2px 0;
+                font-weight: bold;
+                font-size: 8.5pt;
+                margin: 6px 0 2px 0;
                 }
                 .left-column p {
-                    margin: 1px 0;
-                    line-height: 1.2;
-                    font-size: 8pt;
+                margin: 1px 0;
+                line-height: 1.2;
+                font-size: 8pt;
                 }
                 .header-info {
-                    display: flex;
-                    flex-direction: row;
-                    justify-content: space-between;
-                    align-items: flex-start;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
                 }
-
+                
                 /* ── ORDER DETAIL COLUMNS ── */
                 .order-left {
-                    float: left;
-                    width: 48%;
-                    font-size: 8pt;
-                    line-height: 0.9;
-                    box-sizing: border-box;
+                float: left;
+                width: 48%;
+                font-size: 8pt;
+                line-height: 0.9;
+                box-sizing: border-box;
                 }
                 .order-right {
-                    float: right;
-                    width: 48%;
-                    font-size: 8pt;
-                    line-height: 0.9;
-                    box-sizing: border-box;
+                float: right;
+                width: 48%;
+                font-size: 8pt;
+                line-height: 0.9;
+                box-sizing: border-box;
                 }
                 .order-left p,
                 .order-right p {
-                    display: flex;
-                    margin: 2px 0;
-                    line-height: 0.9;
+                display: flex;
+                margin: 1px 1px;
+                line-height: 0.9;
                 }
                 .order-left p strong {
-                    width: 160px;
-                    flex-shrink: 0;
-                    display: inline-block;
-                    text-align: left;
+                width: 160px;
+                flex-shrink: 0;
+                display: inline-block;
+                text-align: left;
                 }
                 .order-left p span {
-                    flex-grow: 1;
-                    display: inline-block;
-                    text-align: left;
+                flex-grow: 1;
+                display: inline-block;
+                text-align: left;
                 }
                 .order-right p strong {
-                    flex-shrink: 0;
-                    display: inline-block;
-                    text-align: left;
-                    width: 180px;
+                flex-shrink: 0;
+                display: inline-block;
+                text-align: left;
+                width: 180px;
                 }
                 .order-right p span {
-                    flex: 1;
-                    display: inline-block;
-                    text-align: right;
-                    word-break: break-word;
+                flex: 1;
+                display: inline-block;
+                text-align: right;
+                word-break: break-word;
                 }
-
+                
                 /* ── ITEMS TABLE ── */
                 .items-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 10px;
-                    font-size: 8pt;
-                    border: none;
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 10px;
+                margin-top: 5px;
+                font-size: 8pt;
+                border: none;
                 }
                 .items-table th,
                 .items-table td {
-                    border: none;
-                    padding: 4px 6px;
+                border: none;
+                padding: 4px 6px;
                 }
                 .items-table th {
-                    text-align: center;
-                    font-weight: bold;
+                text-align: center;
+                font-weight: bold;
                 }
                 .items-table td.right  { text-align: right; }
                 .items-table td.center { text-align: center; }
                 .items-table thead th {
-                    border-top: 1px solid #000;
-                    border-bottom: 1px solid #000;
+                border-top: 1px solid #000;
+                border-bottom: 1px solid #000;
                 }
-
+                
                 /* ── TOTALS TABLE ── */
                 .totals-table {
-                    width: 40%;
-                    float: right;
-                    border-collapse: collapse;
-                    font-size: 8pt;
-                    margin-top: 10px;
-                    border: none;
+                width: 40%;
+                float: right;
+                border-collapse: collapse;
+                font-size: 8pt;
+                margin-top: 10px;
+                border: none;
                 }
                 .totals-table td {
-                    padding: 4px 8px;
-                    border: none;
+                padding: 4px 8px;
+                border: none;
                 }
                 .totals-table td.label {
-                    font-weight: bold;
-                    text-align: left;
+                font-weight: bold;
+                text-align: left;
                 }
                 .totals-table td.value { text-align: right; }
                 .totals-table tr.total-row td.value {
-                    border-top: 1px solid #000;
-                    border-bottom: 1px solid #000;
-                    font-weight: bold;
+                border-top: 1px solid #000;
+                border-bottom: 1px solid #000;
+                font-weight: bold;
                 }
-
+                
                 /* ── TERMS ── */
                 .terms-section {
-                    clear: both;
-                    margin-top: 20px;
-                    font-size: 7pt;
-                    page-break-inside: avoid;
+                clear: both;
+                margin-top: 20px;
+                font-size: 7pt;
+                page-break-inside: avoid;
                 }
                 .terms-section h3 {
-                    font-size: 9pt;
-                    margin: 10px 0 5px 0;
-                    font-weight: bold;
+                font-size: 9pt;
+                margin: 10px 0 5px 0;
+                font-weight: bold;
                 }
                 .terms-section p {
-                    margin: 3px 0;
-                    text-align: justify;
+                margin: 3px 0;
+                text-align: justify;
                 }
             </style>
         </head>
         <body>
-
+            
             <!-- ═══ REPEATING HEADER ═══
-                 Real HTML <table> for reliable Flying Saucer column layout.
-                 ALL content (logo, full address, title) is inside this table
-                 so everything renders ABOVE the divider line.
-            -->
+Real HTML <table> for reliable Flying Saucer column layout.
+ALL content (logo, full address, title) is inside this table
+so everything renders ABOVE the divider line.
+-->
             <div id="pageHeader">
                 <table class="header-table">
                     <tr>
@@ -257,30 +258,30 @@
                         <td class="hcol-logo">
                             <apex:image url="{!URLFOR($Resource.DRC_NBC_DR_Logo)}" styleClass="company-logo" />
                         </td>
-
+                        
                         <!-- Col 2: Full company address from label (centred) -->
                         <td class="hcol-addr">
                             <apex:outputText value="{!$Label.DRC_NBC_Domestic_CompanyAddressHTML}" escape="false"/>
                         </td>
-
+                        
                         <!-- Col 3: Title bottom-right -->
                         <td class="hcol-title">
                             <span class="invoice-title">Order Confirmation</span>
                         </td>
                     </tr>
                 </table>
-
+                
                 <!-- Divider sits immediately below table, just above body -->
                 <div class="header-divider"></div>
             </div>
-
+            
             <!-- ═══ REPEATING FOOTER ═══ -->
             <div id="pageFooter">
                 <strong>D.R. COATS INK &amp; RESINS PVT. LTD.</strong>&#160;
                 230, NEW SONAL LINK IND ESTATE, BLDG NO 2, LINK ROAD, MALAD W MUMBAI INDIA 400064<br/>
                 T: 91 022 6866 0700 | F: 91-22-28888189 | W: www.drcoats.com
             </div>
-
+            
             <!-- BILL TO / SHIP TO -->
             <div class="header-info">
                 <div class="left-column">
@@ -289,7 +290,7 @@
                     <p>{!billingAddress}</p>
                     <p>{!billingCity} {!billingState} {!billingPostalCode}</p>
                     <p>{!billingCountry}</p>
-
+                    
                     <h3>Ship To:</h3>
                     <p>{!customerName}</p>
                     <p>{!shippingAddress}</p>
@@ -297,7 +298,7 @@
                     <p>{!shippingCountry}</p>
                 </div>
             </div>
-
+            
             <!-- ORDER DETAIL COLUMNS -->
             <div class="order-left">
                 <p><strong>Bill-to Customer No.</strong><span>{!billToCustomer}</span></p>
@@ -321,7 +322,7 @@
                 <p><strong>Courier Number</strong><span>{!couriernumber}</span></p>
                 <p><strong>Delivery Status</strong><span>{!deliveryStatus}</span></p>
             </div>
-
+            
             <div class="order-right">
                 <p><strong>Phone No.</strong><span>{!phoneNumber}</span></p>
                 <p><strong>Home Page:</strong><span>{!website}</span></p>
@@ -329,13 +330,13 @@
                 <p><strong>Bank</strong><span>{!Bank}</span></p>
                 <p><strong>Account No.</strong><span>{!AccountNo}</span></p>
                 <p><strong>SalesPerson</strong><span>{!salesPerson}</span></p>
-                <p><strong>Customer GST Reg No</strong><span>27AALFT1174H1ZZ</span></p>
+                <p><strong>Customer GST Reg No</strong><span>{!customerGST}</span></p>
                 <p><strong>Sample Name</strong><span>{!SampleName}</span></p>
                 <p><strong>Sample Type</strong><span>{!sampleType}</span></p>
             </div>
-
+            
             <div style="clear: both;"></div>
-
+            
             <!-- ITEMS TABLE -->
             <table class="items-table">
                 <thead>
@@ -367,15 +368,20 @@
                     </apex:repeat>
                 </tbody>
             </table>
-
+            
             <!-- TOTALS -->
             <table class="totals-table">
+                <tr class="total-row">
+                    <td class="label">Sample Shiiping Cost</td>
+                    <td class="value">{!sampleShipping}</td>
+                </tr>
                 <tr class="total-row">
                     <td class="label">Total INR Incl. Tax</td>
                     <td class="value">{!totalWithTax}</td>
                 </tr>
+                
             </table>
-
+            
             <!-- TERMS AND CONDITIONS -->
             <div class="terms-section">
                 <h3>General terms and condition:</h3>
@@ -386,7 +392,7 @@
                 <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part1}" escape="false"/>
                 <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part2}" escape="false"/>
             </div>
-
+            
         </body>
     </html>
 </apex:page>
