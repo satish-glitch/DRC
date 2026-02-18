@@ -15,8 +15,8 @@
     position: absolute;
     z-index: 9999;
     background: white;
-    width: 90% !important;
-    max-width: 90% !important;
+    width: 70% !important;
+    max-width: 70% !important;
     max-height: 500px !important;
     min-height: 200px;
     overflow-y: auto;
@@ -27,16 +27,16 @@
 :host .custom-dropdown {
     position: absolute;
     z-index: 9999;
-    width: 90% !important;
-    max-width: 90% !important;
+    width: 65% !important;
+    max-width: 70% !important;
     max-height: 400px !important;
 }
 
 /* Align input columns */
 .input-cell {
     vertical-align: middle !important;
-    padding-top: 0.25rem !important;
-    padding-right: 2.5rem !important;
+    padding-top: 0.30rem !important;
+    padding-right: 1.5rem !important;
 }
 
 .input-cell lightning-input {

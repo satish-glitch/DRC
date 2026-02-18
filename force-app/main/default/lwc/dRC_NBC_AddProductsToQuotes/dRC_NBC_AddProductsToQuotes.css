@@ -2,8 +2,8 @@
     position: absolute;
     z-index: 9999;
     background: white;
-    width: 90% !important;
-    max-width: 90% !important;
+    width: 70% !important;
+    max-width: 70% !important;
     max-height: 500px !important; /* Increased from 200px */
     min-height: 200px; /* Optional: ensures minimum height */
     overflow-y: auto;
@@ -19,8 +19,8 @@
 :host .custom-dropdown {
     position: absolute;
     z-index: 9999;
-    width: 90% !important;
-    max-width: 90% !important;
+    width: 60% !important;
+    max-width: 60% !important;
     max-height: 400px !important; /* Increased height here too */
 }
 
@@ -34,4 +34,15 @@
 }
 .right-alignPrice {
     padding-left: 25px!important;
+}
+
+/* Align input columns */
+.input-cell {
+    vertical-align: middle !important;
+    padding-top: 0.10rem !important;
+    padding-right: 1.5rem !important;
+}
+
+.input-cell lightning-input {
+    margin: 0 !important;
 }
