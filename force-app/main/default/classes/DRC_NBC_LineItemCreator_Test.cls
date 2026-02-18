@@ -73,7 +73,7 @@ private class DRC_NBC_LineItemCreator_Test {
             Pricebook2Id = stdPricebookId,
             DRC_NBC_Shipping_Address__c = shipAddr.Id,
             DRC_NBC_Cust_Order_Number__c = 'BC-ORD-001',
-            DRC_NBC_Location_Code__c = 'CFS - JNPT',
+            DRC_NBC_Warehouse__c = 'CFS - JNPT',
             DRC_NBC_Other_Tax_Amount__c = 50,
             DRC_NBC_TCS_Amount__c = 25
         );
@@ -104,7 +104,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         List<OrderItem> items = [SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice, 
                                  DRC_NBC_Discount__c, Product2.DRC_NBC_FG_Code__c,
                                  Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -126,7 +126,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         List<OrderItem> items = [SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice, 
                                  DRC_NBC_Discount__c, Product2.DRC_NBC_FG_Code__c,
                                  Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -177,7 +177,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateFailureHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         List<OrderItem> items = [SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice, 
                                  DRC_NBC_Discount__c, Product2.DRC_NBC_FG_Code__c,
                                  Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -199,7 +199,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateExceptionHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         List<OrderItem> items = [SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice, 
                                  DRC_NBC_Discount__c, Product2.DRC_NBC_FG_Code__c,
                                  Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -221,7 +221,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         List<OrderItem> items = [SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice, 
                                  DRC_NBC_Discount__c, Product2.DRC_NBC_FG_Code__c,
                                  Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -243,7 +243,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateLineNumberTrackingHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         List<OrderItem> items = [SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice, 
                                  DRC_NBC_Discount__c, Product2.DRC_NBC_FG_Code__c,
                                  Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -265,7 +265,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         
         List<OrderItem> items = [SELECT Id, DRC_NBC_Discount__c FROM OrderItem WHERE OrderId = :ord.Id];
         items[0].DRC_NBC_Discount__c = 10;
@@ -295,7 +295,7 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
         
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                     DRC_NBC_Location_Code__c, RecordType.Name FROM Order LIMIT 1];
+                     DRC_NBC_Warehouse__c, RecordType.Name FROM Order LIMIT 1];
         List<OrderItem> items = [SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice, 
                                  DRC_NBC_Discount__c, Product2.DRC_NBC_FG_Code__c,
                                  Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,

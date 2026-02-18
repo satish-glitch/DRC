@@ -367,7 +367,6 @@ public class DRC_NBC_OrderController {
                     ordToUpdate.ShippingStateCode = shipToAddr.DRC_NBC_Address__StateCode__s;
                     ordToUpdate.ShippingPostalCode = shipToAddr.DRC_NBC_Address__PostalCode__s;
                     ordToUpdate.ShippingCountryCode = shipToAddr.DRC_NBC_Address__CountryCode__s;
-                    ordToUpdate.DRC_NBC_Location_Code__c = shipToAddr.DRC_NBC_Warehouse__c;
                 }
                 
                 // Set the back-reference from the address to the order

@@ -73,7 +73,7 @@ private class DRC_NBC_UpdateOrderAndLineItems_Test {
             Pricebook2Id = stdPricebookId,
             DRC_NBC_Shipping_Address__c = shipAddr.Id,
             DRC_NBC_Cust_Order_Number__c = 'BC-ORD-001',
-            DRC_NBC_Location_Code__c = 'CFS - JNPT',
+            DRC_NBC_Warehouse__c = 'CFS - JNPT',
             DRC_NBC_Other_Tax_Amount__c = 50,
             DRC_NBC_TCS_Amount__c = 25
         );
@@ -151,7 +151,7 @@ private class DRC_NBC_UpdateOrderAndLineItems_Test {
         
         Order ord = [SELECT Id, AccountId, OrderNumber, DRC_NBC_Cust_Order_Number__c, 
                      Account.DRC_NBC_Customer_Number__c, DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c,
-                     DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, DRC_NBC_Location_Code__c,
+                     DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, DRC_NBC_Warehouse__c,
                      DRC_NBC_Other_Tax_Amount__c, DRC_NBC_TCS_Amount__c, RecordType.Name
                      FROM Order LIMIT 1];
         

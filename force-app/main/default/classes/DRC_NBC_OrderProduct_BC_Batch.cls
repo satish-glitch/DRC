@@ -26,7 +26,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             Order.DRC_NBC_Cust_Order_Number__c,
             Order.Account.DRC_NBC_Customer_Number__c,
             Order.RecordType.Name,
-            Order.DRC_NBC_Location_Code__c,
+            Order.DRC_NBC_Warehouse__c,
             Product2.DRC_NBC_FG_Code__c,
             Product2.DRC_NBC_GST_Group_Code__c,
             Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -302,7 +302,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
     private DRC_NBC_Integration_Payload.OrderLinePayload mapOrderItemToPayload(OrderItem item, Integer lineNo) {
         System.debug('  >> Mapping OrderItem to Payload (Line No: ' + lineNo + ')');
         
-        String warehouseLabel = item.Order.DRC_NBC_Location_Code__c;
+        String warehouseLabel = item.Order.DRC_NBC_Warehouse__c;
         System.debug('  Warehouse Label: ' + warehouseLabel);
         List<Warehouse_Location_Code__mdt> metaList = [
             SELECT DRC_NBC_Code__c

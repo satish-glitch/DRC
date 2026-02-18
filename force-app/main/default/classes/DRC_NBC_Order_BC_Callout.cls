@@ -63,7 +63,7 @@ this.orderId = orderId;
                 OrderNumber, 
                 PoDate,
                 PoNumber,
-                DRC_NBC_Location_Code__c,
+                DRC_NBC_Warehouse__c,
                 ShipToContactId,
                 DRC_NBC_Cust_Order_Number__c, 
                 Status,
@@ -100,7 +100,7 @@ this.orderId = orderId;
     public static DRC_NBC_Integration_Payload.OrderPayload mapOrderToBCPayload(Order ord) {
         // Fetch Warehouse Location Metadata
         Warehouse_Location_Code__mdt warehouseMeta;
-        String warehouseLabel = ord.DRC_NBC_Location_Code__c;
+        String warehouseLabel = ord.DRC_NBC_Warehouse__c;
         String locationType = 'Warehouse Location';
         
         List<Warehouse_Location_Code__mdt> metaList = [

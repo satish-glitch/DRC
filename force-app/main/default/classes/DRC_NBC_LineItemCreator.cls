@@ -105,9 +105,9 @@ public class DRC_NBC_LineItemCreator {
         // Get Location Code from Warehouse metadata (ONCE, outside loop)
         String locationCode = '';
         if (ord != null && ord.DRC_NBC_Shipping_Address__r != null && 
-            String.isNotBlank(ord.DRC_NBC_Location_Code__c)) {
+            String.isNotBlank(ord.DRC_NBC_Warehouse__c)) {
             
-            String warehouseLabel = ord.DRC_NBC_Location_Code__c;
+            String warehouseLabel = ord.DRC_NBC_Warehouse__c;
             List<Warehouse_Location_Code__mdt> metaList = [
                 SELECT DRC_NBC_Code__c FROM Warehouse_Location_Code__mdt
                 WHERE MasterLabel = :warehouseLabel AND DRC_NBC_Type__c = 'Warehouse Location'

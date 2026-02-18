@@ -246,14 +246,14 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 Order.DRC_NBC_Other_Tax_Amount__c, DRC_NBC_Total_Price__c, Order.DRC_NBC_Cust_Order_Number__c,
                 Order.Account.DRC_NBC_Customer_Number__c, Order.RecordType.Name, Product2.DRC_NBC_FG_Code__c,
                 Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c, DRC_NBC_Unit_Of_Measurement__c,
-                Order.DRC_NBC_Location_Code__c
+                Order.DRC_NBC_Warehouse__c
                 FROM OrderItem WHERE OrderId = :orderId ORDER BY CreatedDate ASC
             ];
             
             // Step 3: Get Order for Tax amounts
             Order ord = [
                 SELECT DRC_NBC_Other_Tax_Amount__c, DRC_NBC_TCS_Amount__c, DRC_NBC_Cust_Order_Number__c, 
-                RecordType.Name, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, DRC_NBC_Location_Code__c
+                RecordType.Name, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, DRC_NBC_Warehouse__c
                 FROM Order WHERE Id = :orderId LIMIT 1
             ];
             
@@ -477,8 +477,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             DRC_NBC_Integration_Payload.OrderPayload payload = DRC_NBC_Order_BC_Callout.mapOrderToBCPayload(ord);
             
             // Fetch Location_Code from metadata if not already set
-            if (String.isNotBlank(ord.DRC_NBC_Location_Code__c)) {
-                String warehouseLabel = ord.DRC_NBC_Location_Code__c;
+            if (String.isNotBlank(ord.DRC_NBC_Warehouse__c)) {
+                String warehouseLabel = ord.DRC_NBC_Warehouse__c;
                 System.debug('Class DRC_NBC_UpdateOrderAndLineItems warehouseLabel>>>  '+ warehouseLabel);
                 List<Warehouse_Location_Code__mdt> metaList = [
                     SELECT DRC_NBC_Code__c FROM Warehouse_Location_Code__mdt

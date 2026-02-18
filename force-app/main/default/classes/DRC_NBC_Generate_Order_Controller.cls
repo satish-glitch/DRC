@@ -175,9 +175,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     WHERE Id = :orderObj.DRC_NBC_Shipping_Address__c
                     LIMIT 1
                 ];
-                if (addr.DRC_NBC_Warehouse__c != null) {
-                    orderObj.DRC_NBC_Location_Code__c = addr.DRC_NBC_Warehouse__c;
-                }
+                
             }
 
             insert orderObj;
