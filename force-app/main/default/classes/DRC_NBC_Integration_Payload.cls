@@ -165,6 +165,7 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String trackingId;
         public String paymentTerms;
         public String incoTerms;
+        public Boolean PartiallyShipped;
     }
     
     public class CustomerCreditLimitPayload {

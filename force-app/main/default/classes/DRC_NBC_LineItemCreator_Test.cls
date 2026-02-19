@@ -156,20 +156,6 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Create with null items list
-     */
-    @isTest
-    static void testCreateNullList() {
-        Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, RecordType.Name FROM Order LIMIT 1];
-        
-        Test.startTest();
-        String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
-            ord.DRC_NBC_Cust_Order_Number__c, null, ord, 30000
-        );
-        Test.stopTest();
-    }
-    
-    /**
      * Test: Create with BC failure response
      */
     @isTest

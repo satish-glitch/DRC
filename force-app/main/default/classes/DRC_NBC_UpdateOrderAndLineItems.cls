@@ -1,7 +1,7 @@
 /**
 * @File Name : DRC_NBC_UpdateOrderAndLineItems.cls
 * @Description : Handles Order and Line Items sync with Business Central using SOAP
-* @Author : Satish
+* @Author : Satish YADAV
 * @Last Modified On : February 06, 2026
 * * 1. Generate Ship-To Code (if missing)
 * 2. Update Order in BC
@@ -246,7 +246,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 Order.DRC_NBC_Other_Tax_Amount__c, DRC_NBC_Total_Price__c, Order.DRC_NBC_Cust_Order_Number__c,
                 Order.Account.DRC_NBC_Customer_Number__c, Order.RecordType.Name, Product2.DRC_NBC_FG_Code__c,
                 Product2.DRC_NBC_GST_Group_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c, DRC_NBC_Unit_Of_Measurement__c,
-                Order.DRC_NBC_Warehouse__c
+                Order.DRC_NBC_Warehouse__c, DRC_NBC_Packing_Quantity__c, DRC_NBC_Packing_Size__c
                 FROM OrderItem WHERE OrderId = :orderId ORDER BY CreatedDate ASC
             ];
             
@@ -493,6 +493,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             String requestBody = buildUpdateOrderSOAPRequest(bcKey, payload, ord);
             
+            System.debug('  Syncing Shipping Address in BC before Order update...');
+            String shipSyncResult = DRC_NBC_UpdateShippingAddress.syncShippingAddress(ord.Id);
+            System.debug('  Shipping Address Sync Result: ' + shipSyncResult);
+            
             HttpRequest req = new HttpRequest();
             req.setEndpoint(BC_ORDER_ENDPOINT);
             req.setMethod('POST');
@@ -576,42 +580,42 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     private static String updateMultipleLineItems(String bcOrderNo, Map<Integer, String> bcLineKeys, 
                                                   List<OrderItem> orderItems, Order ord, Id orderId,
                                                   Map<Integer, BCLineItem> bcLineDetails) {
-        System.debug('    *** UpdateMultiple Started ***');
-        
-        try {
-            String requestBody = buildUpdateMultipleSOAPRequest(bcOrderNo, bcLineKeys, orderItems, ord, bcLineDetails);
-            
-            HttpRequest req = new HttpRequest();
-            req.setEndpoint(BC_LINE_ITEM_ENDPOINT);
-            req.setMethod('POST');
-            req.setHeader('Content-Type', 'text/xml; charset=utf-8');
-            req.setHeader('SOAPAction', SOAP_LINE_NAMESPACE + ':UpdateMultiple');
-            
-            Blob headerValue = Blob.valueOf(BC_USERNAME + ':' + BC_PASSWORD);
-            String authorizationHeader = 'Basic ' + EncodingUtil.base64Encode(headerValue);
-            req.setHeader('Authorization', authorizationHeader);
-            
-            req.setBody(requestBody);
-            req.setTimeout(120000);
-            
-            Http http = new Http();
-            HttpResponse response = http.send(req);
-            
-            System.debug('    UpdateMultiple Response Status: ' + response.getStatusCode());
-            
-            if (response.getStatusCode() == 200) {
-                return 'SUCCESS';
-            } else {
-                System.debug('    Response Body: ' + response.getBody());
-                return 'FAILURE: ' + response.getStatusCode();
-            }
-            
-        } catch (Exception ex) {
-            System.debug('    *** UpdateMultiple Exception: ' + ex.getMessage());
-            System.debug('    Stack Trace: ' + ex.getStackTraceString());
-            return 'ERROR: ' + ex.getMessage();
-        }
-    }
+                                                      System.debug('    *** UpdateMultiple Started ***');
+                                                      
+                                                      try {
+                                                          String requestBody = buildUpdateMultipleSOAPRequest(bcOrderNo, bcLineKeys, orderItems, ord, bcLineDetails);
+                                                          
+                                                          HttpRequest req = new HttpRequest();
+                                                          req.setEndpoint(BC_LINE_ITEM_ENDPOINT);
+                                                          req.setMethod('POST');
+                                                          req.setHeader('Content-Type', 'text/xml; charset=utf-8');
+                                                          req.setHeader('SOAPAction', SOAP_LINE_NAMESPACE + ':UpdateMultiple');
+                                                          
+                                                          Blob headerValue = Blob.valueOf(BC_USERNAME + ':' + BC_PASSWORD);
+                                                          String authorizationHeader = 'Basic ' + EncodingUtil.base64Encode(headerValue);
+                                                          req.setHeader('Authorization', authorizationHeader);
+                                                          
+                                                          req.setBody(requestBody);
+                                                          req.setTimeout(120000);
+                                                          
+                                                          Http http = new Http();
+                                                          HttpResponse response = http.send(req);
+                                                          
+                                                          System.debug('    UpdateMultiple Response Status: ' + response.getStatusCode());
+                                                          
+                                                          if (response.getStatusCode() == 200) {
+                                                              return 'SUCCESS';
+                                                          } else {
+                                                              System.debug('    Response Body: ' + response.getBody());
+                                                              return 'FAILURE: ' + response.getStatusCode();
+                                                          }
+                                                          
+                                                      } catch (Exception ex) {
+                                                          System.debug('    *** UpdateMultiple Exception: ' + ex.getMessage());
+                                                          System.debug('    Stack Trace: ' + ex.getStackTraceString());
+                                                          return 'ERROR: ' + ex.getMessage();
+                                                      }
+                                                  }
     
     // ========================================================================
     // SOAP REQUEST BUILDERS
@@ -692,169 +696,175 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     private static String buildUpdateMultipleSOAPRequest(String bcOrderNo, Map<Integer, String> bcLineKeys, 
                                                          List<OrderItem> orderItems, Order ord,
                                                          Map<Integer, BCLineItem> bcLineDetails) {
-        System.debug('    *** buildUpdateMultipleSOAPRequest Started ***');
-        System.debug('    BC Line Keys to Update: ' + bcLineKeys.keySet());
-        
-        String soapBody = 
-            '<?xml version="1.0" encoding="utf-8"?>' +
-            '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
-            '<soap:Body>' +
-            '<UpdateMultiple xmlns="' + SOAP_LINE_NAMESPACE + '">' +
-            '<SalesOrderLineSalesForce_List>';
-        
-        // Separate product keys from tax keys using bcLineDetails
-        Map<Integer, String> productKeys = new Map<Integer, String>();
-        Map<String, String> taxKeys = new Map<String, String>(); // Map: "TCS" or "OTHER_TAX" -> bcKey
-        Map<String, Integer> taxLineNos = new Map<String, Integer>(); // Map: "TCS" or "OTHER_TAX" -> lineNo
-        
-        for (Integer lineNo : bcLineKeys.keySet()) {
-            String bcKey = bcLineKeys.get(lineNo);
-            BCLineItem bcLine = bcLineDetails.get(lineNo);
-            
-            if (bcLine != null) {
-                if (bcLine.lineType == 'Item') {
-                    productKeys.put(lineNo, bcKey);
-                    System.debug('    Product Key: Line ' + lineNo + ' -> ' + bcKey);
-                } else {
-                    // Tax line
-                    if (bcLine.description != null && bcLine.description.contains('TCS')) {
-                        taxKeys.put('TCS', bcKey);
-                        taxLineNos.put('TCS', lineNo);
-                        System.debug('    TCS Key: Line ' + lineNo + ' -> ' + bcKey);
-                    } else if (bcLine.description != null && bcLine.description.contains('Other Tax')) {
-                        taxKeys.put('OTHER_TAX', bcKey);
-                        taxLineNos.put('OTHER_TAX', lineNo);
-                        System.debug('    Other Tax Key: Line ' + lineNo + ' -> ' + bcKey);
-                    }
-                }
-            }
-        }
-        
-        // Sort product line numbers to maintain order
-        List<Integer> sortedProductLineNos = new List<Integer>(productKeys.keySet());
-        sortedProductLineNos.sort();
-        
-        System.debug('    Sorted Product Lines: ' + sortedProductLineNos);
-        System.debug('    Number of OrderItems: ' + orderItems.size());
-        
-        // Update Product Items - Match by FG Code ONLY (not quantity)
-        Map<String, OrderItem> sfItemsByFGCode = new Map<String, OrderItem>();
-        for (OrderItem item : orderItems) {
-            String fgCode = item.Product2.DRC_NBC_FG_Code__c;
-            sfItemsByFGCode.put(fgCode, item);
-            System.debug('    SF Item mapped: ' + fgCode);
-        }
-        
-        for (Integer lineNo : sortedProductLineNos) {
-            String bcKey = productKeys.get(lineNo);
-            BCLineItem bcLine = bcLineDetails.get(lineNo);
-            
-            if (bcLine == null) {
-                System.debug('    WARNING: BC Line ' + lineNo + ' not found in details');
-                continue;
-            }
-            
-            // Find matching SF item by FG Code ONLY
-            String fgCode = bcLine.itemNo;
-            OrderItem matchedItem = sfItemsByFGCode.get(fgCode);
-            
-            if (matchedItem != null) {
-                System.debug('    Updating Product Line ' + lineNo + ': ' + fgCode + ' (Qty: ' + matchedItem.Quantity + ')');
-                
-                Boolean isSampleOrder = matchedItem.Order.RecordType.Name == 'Sample_Order';
-                Decimal discountPercent = matchedItem.DRC_NBC_Discount__c != null ? matchedItem.DRC_NBC_Discount__c : 0;
-                Decimal totalPrice = matchedItem.DRC_NBC_Total_Price__c != null ? matchedItem.DRC_NBC_Total_Price__c : 0;
-                Decimal lineDiscountAmount = (totalPrice * discountPercent) / 100;
-                
-                if (isSampleOrder) {
-                    totalPrice = 0;
-                    lineDiscountAmount = 0;
-                }
-                
-                soapBody += 
-                    '<SalesOrderLineSalesForce>' +
-                    '<Key>' + escapeXml(bcKey) + '</Key>' +
-                    '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
-                    '<Line_No>' + lineNo + '</Line_No>' +
-                    '<No>' + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c) + '</No>' +
-                    '<Description>' + escapeXml(matchedItem.Description != null ? matchedItem.Description : '') + '</Description>' +
-                    '<Quantity>' + (matchedItem.Quantity != null ? matchedItem.Quantity : 0) + '</Quantity>' +
-                    '<Unit_of_Measure_Code>' + escapeXml(matchedItem.DRC_NBC_Unit_Of_Measurement__c) + '</Unit_of_Measure_Code>' +
-                    '<Unit_Price>' + (isSampleOrder ? 0 : (matchedItem.UnitPrice != null ? matchedItem.UnitPrice : 0)) + '</Unit_Price>' +
-                    '<Line_Amount>' + totalPrice + '</Line_Amount>' +
-                    '<Line_Discount_Percent>' + discountPercent + '</Line_Discount_Percent>' +
-                    '<Line_Discount_Amount>' + lineDiscountAmount + '</Line_Discount_Amount>' +
-                    '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
-                    '<GST_Credit>' + GST_CREDIT_VALUE + '</GST_Credit>' +
-                    '<GST_Group_Code>' + escapeXml(matchedItem.Product2.DRC_NBC_GST_Group_Code__c) + '</GST_Group_Code>' +
-                    '<HSN_SAC_Code>' + escapeXml(matchedItem.Product2.DRC_NBC_HSN_SAC_Code__c) + '</HSN_SAC_Code>' +
-                    '</SalesOrderLineSalesForce>';
-            } else {
-                System.debug('    WARNING: No matching SF item for BC Line ' + lineNo);
-            }
-        }
-        
-        // Update Other Tax Line (if exists and has non-zero amount)
-        if (taxKeys.containsKey('OTHER_TAX') && 
-            ord.DRC_NBC_Other_Tax_Amount__c != null && 
-            ord.DRC_NBC_Other_Tax_Amount__c != 0) {
-            
-            String otherTaxKey = taxKeys.get('OTHER_TAX');
-            Integer otherTaxLineNo = taxLineNos.get('OTHER_TAX');
-            
-            System.debug('    Updating Other Tax Line ' + otherTaxLineNo + ': ' + ord.DRC_NBC_Other_Tax_Amount__c);
-            
-            soapBody += 
-                '<SalesOrderLineSalesForce>' +
-                '<Key>' + escapeXml(otherTaxKey) + '</Key>' +
-                '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
-                '<Line_No>' + otherTaxLineNo + '</Line_No>' +
-                '<Description>Other Tax Amount</Description>' +
-                '<Quantity>1</Quantity>' +
-                '<Unit_Price>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Unit_Price>' +
-                '<Line_Amount>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Line_Amount>' +
-                '<Line_Discount_Percent>0</Line_Discount_Percent>' +
-                '<Line_Discount_Amount>0</Line_Discount_Amount>' +
-                '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
-                '<GST_Credit>_blank_</GST_Credit>' +
-                '</SalesOrderLineSalesForce>';
-        }
-        
-        // Update TCS Amount Line (if exists and has non-zero amount)
-        if (taxKeys.containsKey('TCS') && 
-            ord.DRC_NBC_TCS_Amount__c != null && 
-            ord.DRC_NBC_TCS_Amount__c != 0) {
-            
-            String tcsKey = taxKeys.get('TCS');
-            Integer tcsLineNo = taxLineNos.get('TCS');
-            
-            System.debug('    Updating TCS Line ' + tcsLineNo + ': ' + ord.DRC_NBC_TCS_Amount__c);
-            
-            soapBody += 
-                '<SalesOrderLineSalesForce>' +
-                '<Key>' + escapeXml(tcsKey) + '</Key>' +
-                '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
-                '<Line_No>' + tcsLineNo + '</Line_No>' +
-                '<Description>TCS Amount</Description>' +
-                '<Quantity>1</Quantity>' +
-                '<Unit_Price>' + ord.DRC_NBC_TCS_Amount__c + '</Unit_Price>' +
-                '<Line_Amount>' + ord.DRC_NBC_TCS_Amount__c + '</Line_Amount>' +
-                '<Line_Discount_Percent>0</Line_Discount_Percent>' +
-                '<Line_Discount_Amount>0</Line_Discount_Amount>' +
-                '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
-                '<GST_Credit>_blank_</GST_Credit>' +
-                '</SalesOrderLineSalesForce>';
-        }
-        
-        soapBody += 
-            '</SalesOrderLineSalesForce_List>' +
-            '</UpdateMultiple>' +
-            '</soap:Body>' +
-            '</soap:Envelope>';
-        
-        System.debug('    *** buildUpdateMultipleSOAPRequest Completed ***');
-        return soapBody;
-    }
+                                                             System.debug('    *** buildUpdateMultipleSOAPRequest Started ***');
+                                                             System.debug('    BC Line Keys to Update: ' + bcLineKeys.keySet());
+                                                             
+                                                             String soapBody = 
+                                                                 '<?xml version="1.0" encoding="utf-8"?>' +
+                                                                 '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+                                                                 '<soap:Body>' +
+                                                                 '<UpdateMultiple xmlns="' + SOAP_LINE_NAMESPACE + '">' +
+                                                                 '<SalesOrderLineSalesForce_List>';
+                                                             
+                                                             // Separate product keys from tax keys using bcLineDetails
+                                                             Map<Integer, String> productKeys = new Map<Integer, String>();
+                                                             Map<String, String> taxKeys = new Map<String, String>(); // Map: "TCS" or "OTHER_TAX" -> bcKey
+                                                             Map<String, Integer> taxLineNos = new Map<String, Integer>(); // Map: "TCS" or "OTHER_TAX" -> lineNo
+                                                             
+                                                             for (Integer lineNo : bcLineKeys.keySet()) {
+                                                                 String bcKey = bcLineKeys.get(lineNo);
+                                                                 BCLineItem bcLine = bcLineDetails.get(lineNo);
+                                                                 
+                                                                 if (bcLine != null) {
+                                                                     if (bcLine.lineType == 'Item') {
+                                                                         productKeys.put(lineNo, bcKey);
+                                                                         System.debug('    Product Key: Line ' + lineNo + ' -> ' + bcKey);
+                                                                     } else {
+                                                                         // Tax line
+                                                                         if (bcLine.description != null && bcLine.description.contains('TCS')) {
+                                                                             taxKeys.put('TCS', bcKey);
+                                                                             taxLineNos.put('TCS', lineNo);
+                                                                             System.debug('    TCS Key: Line ' + lineNo + ' -> ' + bcKey);
+                                                                         } else if (bcLine.description != null && bcLine.description.contains('Other Tax')) {
+                                                                             taxKeys.put('OTHER_TAX', bcKey);
+                                                                             taxLineNos.put('OTHER_TAX', lineNo);
+                                                                             System.debug('    Other Tax Key: Line ' + lineNo + ' -> ' + bcKey);
+                                                                         }
+                                                                     }
+                                                                 }
+                                                             }
+                                                             
+                                                             // Sort product line numbers to maintain order
+                                                             List<Integer> sortedProductLineNos = new List<Integer>(productKeys.keySet());
+                                                             sortedProductLineNos.sort();
+                                                             
+                                                             System.debug('    Sorted Product Lines: ' + sortedProductLineNos);
+                                                             System.debug('    Number of OrderItems: ' + orderItems.size());
+                                                             
+                                                             // Update Product Items - Match by FG Code ONLY (not quantity)
+                                                             Map<String, OrderItem> sfItemsByFGCode = new Map<String, OrderItem>();
+                                                             for (OrderItem item : orderItems) {
+                                                                 String fgCode = item.Product2.DRC_NBC_FG_Code__c;
+                                                                 sfItemsByFGCode.put(fgCode, item);
+                                                                 System.debug('    SF Item mapped: ' + fgCode);
+                                                             }
+                                                             
+                                                             for (Integer lineNo : sortedProductLineNos) {
+                                                                 String bcKey = productKeys.get(lineNo);
+                                                                 BCLineItem bcLine = bcLineDetails.get(lineNo);
+                                                                 
+                                                                 if (bcLine == null) {
+                                                                     System.debug('    WARNING: BC Line ' + lineNo + ' not found in details');
+                                                                     continue;
+                                                                 }
+                                                                 
+                                                                 // Find matching SF item by FG Code ONLY
+                                                                 String fgCode = bcLine.itemNo;
+                                                                 OrderItem matchedItem = sfItemsByFGCode.get(fgCode);
+                                                                 
+                                                                 if (matchedItem != null) {
+                                                                     System.debug('    Updating Product Line ' + lineNo + ': ' + fgCode + ' (Qty: ' + matchedItem.Quantity + ')');
+                                                                     
+                                                                     Boolean isSampleOrder = matchedItem.Order.RecordType.Name == 'Sample_Order';
+                                                                     Decimal discountPercent = matchedItem.DRC_NBC_Discount__c != null ? matchedItem.DRC_NBC_Discount__c : 0;
+                                                                     Decimal totalPrice = matchedItem.DRC_NBC_Total_Price__c != null ? matchedItem.DRC_NBC_Total_Price__c : 0;
+                                                                     Decimal lineDiscountAmount = (totalPrice * discountPercent) / 100;
+                                                                     
+                                                                     if (isSampleOrder) {
+                                                                         totalPrice = 0;
+                                                                         lineDiscountAmount = 0;
+                                                                     }
+                                                                     
+                                                                     soapBody += 
+                                                                         '<SalesOrderLineSalesForce>' +
+                                                                         '<Key>' + escapeXml(bcKey) + '</Key>' +
+                                                                         '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
+                                                                         '<Line_No>' + lineNo + '</Line_No>' +
+                                                                         '<No>' + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c) + '</No>' +
+                                                                         '<Description>' + escapeXml(matchedItem.Description != null ? matchedItem.Description : '') + '</Description>' +
+                                                                         '<Quantity>' + (matchedItem.Quantity != null ? matchedItem.Quantity : 0) + '</Quantity>' +
+                                                                         '<Unit_of_Measure_Code>' + escapeXml(matchedItem.DRC_NBC_Unit_Of_Measurement__c) + '</Unit_of_Measure_Code>' +
+                                                                         '<Unit_Price>' + (isSampleOrder ? 0 : (matchedItem.UnitPrice != null ? matchedItem.UnitPrice : 0)) + '</Unit_Price>' +
+                                                                         '<Line_Amount>' + totalPrice + '</Line_Amount>' +
+                                                                         '<Line_Discount_Percent>' + discountPercent + '</Line_Discount_Percent>' +
+                                                                         '<Line_Discount_Amount>' + lineDiscountAmount + '</Line_Discount_Amount>' +
+                                                                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
+                                                                         '<GST_Credit>' + GST_CREDIT_VALUE + '</GST_Credit>' +
+                                                                         '<GST_Group_Code>' + escapeXml(matchedItem.Product2.DRC_NBC_GST_Group_Code__c) + '</GST_Group_Code>' +
+                                                                         '<HSN_SAC_Code>' + escapeXml(matchedItem.Product2.DRC_NBC_HSN_SAC_Code__c) + '</HSN_SAC_Code>' +
+                                                                         '<Packing_Details>' + escapeXml(matchedItem.DRC_NBC_Packing_Size__c) + '</Packing_Details>' +
+                                                                         '<No_of_Pkg_for_Qty>' + escapeXml(matchedItem.DRC_NBC_Packing_Quantity__c) + '</No_of_Pkg_for_Qty>' +
+                                                                         '</SalesOrderLineSalesForce>';
+                                                                 } else {
+                                                                     System.debug('    WARNING: No matching SF item for BC Line ' + lineNo);
+                                                                 }
+                                                             }
+                                                             
+                                                             // Update Other Tax Line (if exists and has non-zero amount)
+                                                             if (taxKeys.containsKey('OTHER_TAX') && 
+                                                                 ord.DRC_NBC_Other_Tax_Amount__c != null && 
+                                                                 ord.DRC_NBC_Other_Tax_Amount__c != 0) {
+                                                                     
+                                                                     String otherTaxKey = taxKeys.get('OTHER_TAX');
+                                                                     Integer otherTaxLineNo = taxLineNos.get('OTHER_TAX');
+                                                                     
+                                                                     System.debug('    Updating Other Tax Line ' + otherTaxLineNo + ': ' + ord.DRC_NBC_Other_Tax_Amount__c);
+                                                                     
+                                                                     soapBody += 
+                                                                         '<SalesOrderLineSalesForce>' +
+                                                                         '<Key>' + escapeXml(otherTaxKey) + '</Key>' +
+                                                                         '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
+                                                                         '<Line_No>' + otherTaxLineNo + '</Line_No>' +
+                                                                         '<Description>Other Tax Amount</Description>' +
+                                                                         '<Quantity>1</Quantity>' +
+                                                                         '<Unit_Price>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Unit_Price>' +
+                                                                         '<Line_Amount>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Line_Amount>' +
+                                                                         '<Line_Discount_Percent>0</Line_Discount_Percent>' +
+                                                                         '<Line_Discount_Amount>0</Line_Discount_Amount>' +
+                                                                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
+                                                                         '<GST_Credit>_blank_</GST_Credit>' +
+                                                                         '<Packing_Details></Packing_Details>' +
+                                                                         '<No_of_Pkg_for_Qty>0</No_of_Pkg_for_Qty>' +
+                                                                         '</SalesOrderLineSalesForce>';
+                                                                 }
+                                                             
+                                                             // Update TCS Amount Line (if exists and has non-zero amount)
+                                                             if (taxKeys.containsKey('TCS') && 
+                                                                 ord.DRC_NBC_TCS_Amount__c != null && 
+                                                                 ord.DRC_NBC_TCS_Amount__c != 0) {
+                                                                     
+                                                                     String tcsKey = taxKeys.get('TCS');
+                                                                     Integer tcsLineNo = taxLineNos.get('TCS');
+                                                                     
+                                                                     System.debug('    Updating TCS Line ' + tcsLineNo + ': ' + ord.DRC_NBC_TCS_Amount__c);
+                                                                     
+                                                                     soapBody += 
+                                                                         '<SalesOrderLineSalesForce>' +
+                                                                         '<Key>' + escapeXml(tcsKey) + '</Key>' +
+                                                                         '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
+                                                                         '<Line_No>' + tcsLineNo + '</Line_No>' +
+                                                                         '<Description>TCS Amount</Description>' +
+                                                                         '<Quantity>1</Quantity>' +
+                                                                         '<Unit_Price>' + ord.DRC_NBC_TCS_Amount__c + '</Unit_Price>' +
+                                                                         '<Line_Amount>' + ord.DRC_NBC_TCS_Amount__c + '</Line_Amount>' +
+                                                                         '<Line_Discount_Percent>0</Line_Discount_Percent>' +
+                                                                         '<Line_Discount_Amount>0</Line_Discount_Amount>' +
+                                                                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
+                                                                         '<GST_Credit>_blank_</GST_Credit>' +
+                                                                         '<Packing_Details></Packing_Details>' +
+                                                                         '<No_of_Pkg_for_Qty>0</No_of_Pkg_for_Qty>' +
+                                                                         '</SalesOrderLineSalesForce>';
+                                                                 }
+                                                             
+                                                             soapBody += 
+                                                                 '</SalesOrderLineSalesForce_List>' +
+                                                                 '</UpdateMultiple>' +
+                                                                 '</soap:Body>' +
+                                                                 '</soap:Envelope>';
+                                                             
+                                                             System.debug('    *** buildUpdateMultipleSOAPRequest Completed ***');
+                                                             return soapBody;
+                                                         }
     
     // ========================================================================
     // RESPONSE PARSERS

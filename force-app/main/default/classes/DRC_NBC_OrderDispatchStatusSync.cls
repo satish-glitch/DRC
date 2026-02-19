@@ -22,7 +22,7 @@ global without sharing class DRC_NBC_OrderDispatchStatusSync {
             // STEP 3: Fetch the Order record
             Order orderRec = [
                 SELECT Id, Status, DRC_NBC_Expected_Delivery_Date__c,DRC_NBC_Tracking_Id__c,
-                DRC_NBC_Payment_Terms__c, DRC_NBC_Inco_Terms__c
+                DRC_NBC_Payment_Terms__c, DRC_NBC_Inco_Terms__c, DRC_NBC_Order_PartiallyShipped__c
                 FROM Order
                 WHERE Id = :payload.orderId
                 LIMIT 1
@@ -30,6 +30,7 @@ global without sharing class DRC_NBC_OrderDispatchStatusSync {
             
             // STEP 4: Apply updates from payload
             if (payload.status != null) orderRec.Status = payload.status;
+            if (payload.PartiallyShipped != null) orderRec.DRC_NBC_Order_PartiallyShipped__c = payload.PartiallyShipped;
             if (payload.trackingId != null) orderRec.DRC_NBC_Tracking_Id__c = payload.trackingId;
             if (payload.expectedDeliveryDate != null) {
                 orderRec.DRC_NBC_Expected_Delivery_Date__c = Date.valueOf(payload.expectedDeliveryDate);
