@@ -232,10 +232,9 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
             // ── Order Info ────────────────────────────────────────────
             '<Order_Date>'                   + escapeXml(orderDateStr)                              + '</Order_Date>' +
             '<External_Document_No>'         + escapeXml(poNumber)                                  + '</External_Document_No>' +
-            '<Salesperson_Code>'             + escapeXml(safeStr(ord.OwnerId))                     + '</Salesperson_Code>' +
-            //   '<Status>'                       + escapeXml(safeStr(ord.Status))                      + '</Status>' +
+            '<Salesperson_Code>'             + escapeXml(safeStr(ord.ShipToContactId))                     + '</Salesperson_Code>' +
             '<Status>Released</Status>' +
-            '<Location_Code>'                + escapeXml(safeStr(ord.DRC_NBC_Warehouse__c))    + '</Location_Code>' +
+            '<Location_Code>'                + escapeXml(ord.DRC_NBC_Warehouse__c)   + '</Location_Code>' +
             '<Payment_Terms_Code>'           + escapeXml(payTerms)                                  + '</Payment_Terms_Code>' +
             '<Shipment_Method_Code>'         + escapeXml(incoTerms)                                 + '</Shipment_Method_Code>' +
             '<Sample_Sales>'                 + isSampleOrder                                        + '</Sample_Sales>' +

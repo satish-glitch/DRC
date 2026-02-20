@@ -1,5 +1,5 @@
 public class DRC_NBC_OrderNumberGenerator_Helper {
-   @future
+    @future
     public static void generateOrderNumbersSync(Id orderIds) {
         List<Order> orders = [
             SELECT Id, DRC_NBC_Type__c, DRC_NBC_Cust_Order_Number__c, Status
@@ -8,9 +8,9 @@ public class DRC_NBC_OrderNumberGenerator_Helper {
         ];
         List<Order> toUpdate = new List<Order>();
         for (Order ord : orders) {
-           /* if (String.isBlank(ord.DRC_NBC_Type__c)) {
-                continue;
-            }  */        
+            /* if (String.isBlank(ord.DRC_NBC_Type__c)) {
+continue;
+}  */        
             if (!String.isBlank(ord.DRC_NBC_Cust_Order_Number__c)) {
                 continue;
             }          
@@ -31,7 +31,6 @@ public class DRC_NBC_OrderNumberGenerator_Helper {
             
             ord.DRC_NBC_Cust_Order_Number__c =
                 'SO' + type + '/' + fiscalYear + '/' + padded;
-            ord.Status = 'Released';
             toUpdate.add(ord);
         }
         
@@ -39,6 +38,7 @@ public class DRC_NBC_OrderNumberGenerator_Helper {
             update toUpdate;
         }
     }
+    
     
     public static Integer getNextNumberFromOrders(String type) {
         System.debug ('type before get prefix>> ' + type);

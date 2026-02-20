@@ -36,7 +36,7 @@ public class DRC_NBC_OrderController {
                        DRC_NBC_Warehouse__c,
                        Description,
                        DRC_NBC_Other_Rejection_Reason__c,
-                       DRC_NBC_Rejection_Reason1__c,
+                       DRC_NBC_Reject_Reason_Text__c,
                        DRC_NBC_Terms_and_Conditions__c,
                        DRC_NBC_Special_Instructions__c,
                        PONumber,
@@ -330,7 +330,7 @@ public class DRC_NBC_OrderController {
                     DRC_NBC_Inco_Terms__c = orderData.DRC_NBC_Inco_Terms__c,
                     DRC_NBC_Warehouse__c = orderData.DRC_NBC_Warehouse__c,
                     DRC_NBC_Other_Rejection_Reason__c = orderData.DRC_NBC_Other_Rejection_Reason__c,
-                    DRC_NBC_Rejection_Reason1__c = orderData.DRC_NBC_Rejection_Reason1__c,
+                    DRC_NBC_Reject_Reason_Text__c = orderData.DRC_NBC_Reject_Reason_Text__c,
                     DRC_NBC_Special_Instructions__c = orderData.DRC_NBC_Special_Instructions__c,
                     DRC_NBC_Terms_and_Conditions__c = orderData.DRC_NBC_Terms_and_Conditions__c,
                     PONumber = orderData.PONumber,
@@ -410,7 +410,7 @@ public class DRC_NBC_OrderController {
                     ordToUpdate.DRC_NBC_Sample_Shipping_Cost__c = orderData.DRC_NBC_Sample_Shipping_Cost__c;
                     ordToUpdate.DRC_NBC_Special_request__c = orderData.DRC_NBC_Special_request__c;
                     ordToUpdate.DRC_NBC_Sample_Amount__c = orderData.DRC_NBC_Sample_Amount__c;
-                    ordToUpdate.DRC_NBC_Rejection_Reason1__c = orderData.DRC_NBC_Rejection_Reason1__c;
+                    ordToUpdate.DRC_NBC_Reject_Reason_Text__c = orderData.DRC_NBC_Reject_Reason_Text__c;
                     ordToUpdate.DRC_NBC_Remarks__c = orderData.DRC_NBC_Remarks__c;
                 }
                 update ordToUpdate;

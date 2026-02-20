@@ -374,6 +374,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             if (!linesToUpdate.isEmpty()) {
                 System.debug('  STEP 1: Updating ' + linesToUpdate.size() + ' existing lines...');
                 updateResult = updateMultipleLineItems(bcOrderNo, linesToUpdate, orderItems, ord, orderId, bcLineDetails);
+                System.debug('  Enqueuing DRC_NBC_OrderReadUpdateQueueable...');
+                System.enqueueJob(new DRC_NBC_OrderReadUpdateQueueable(orderId));
                 System.debug('  Update Result: ' + updateResult);
             }
             
@@ -605,6 +607,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                           
                                                           if (response.getStatusCode() == 200) {
                                                               return 'SUCCESS';
+                                                              
                                                           } else {
                                                               System.debug('    Response Body: ' + response.getBody());
                                                               return 'FAILURE: ' + response.getStatusCode();

@@ -266,6 +266,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                         // Log successful API call
                         System.enqueueJob(new DRC_NBC_OrderReadUpdateQueueable(orderId));
                         logSuccess('OrderItems synced successfully', orderId, response, jsonBody);
+                       // DRC_NBC_OrderNumberGenerator_Helper.OrderStatusToReleased(orderId);
                     } else {
                         System.debug('!!! Sync failed for OrderId: ' + orderId);
                         logError('Callout failed with status: ' + response.getStatusCode(), orderId, response, jsonBody);
@@ -312,7 +313,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         ];
         
         if (!metaList.isEmpty()) {
-             locationCode = metaList[0].DRC_NBC_Code__c;
+            locationCode = metaList[0].DRC_NBC_Code__c;
             System.debug('  Location Code (from metadata): ' + locationCode);
         } else {
             System.debug('  !!! No Location Code found for warehouse: ' + warehouseLabel);
@@ -361,7 +362,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         } else {
             payload.No_of_Pkg_for_Qty = 0;
         }
-
+        
         
         System.debug('  << Payload mapping complete');
         return payload;
@@ -403,6 +404,10 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.HSN_SAC_Code = '';
         payload.GST_Group_Code = '';
         payload.GST_Credit = 'Availment';
+        payload.Packing_Details = '';
+        payload.No_of_Pkg_for_Qty = 0;
+        
+        
         
         System.debug('  << Other Tax payload mapping complete');
         return payload;
@@ -445,6 +450,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.HSN_SAC_Code = '';
         payload.GST_Group_Code = '';
         payload.GST_Credit = 'Availment';
+        payload.Packing_Details = '';
+        payload.No_of_Pkg_for_Qty = 0;
         
         System.debug('  << TCS Amount payload mapping complete');
         return payload;

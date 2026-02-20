@@ -323,7 +323,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     updateRejectionVisibility() {
         this.showRejectionReason = this.orderRec.Status === 'Rejected';
         this.showOtherRejectionText = this.showRejectionReason && 
-                                    this.orderRec.DRC_NBC_Rejection_Reason1__c === 'Other';
+                                    this.orderRec.DRC_NBC_Reject_Reason_Text__c === 'Other';
     }
 
     formatAddress(addr) {
@@ -622,7 +622,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 this.updateRejectionVisibility();
             }
             
-            if (fieldName === 'DRC_NBC_Rejection_Reason1__c') {
+            if (fieldName === 'DRC_NBC_Reject_Reason_Text__c') {
                 this.updateRejectionVisibility();
             }
 
@@ -907,7 +907,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             Type: this.orderRec.Type,
             DRC_NBC_Type__c: this.orderRec.DRC_NBC_Type__c,
             DRC_NBC_Payment_Terms__c: this.orderRec.DRC_NBC_Payment_Terms__c,
-            DRC_NBC_Rejection_Reason1__c: this.orderRec.DRC_NBC_Rejection_Reason1__c,
+            DRC_NBC_Reject_Reason_Text__c: this.orderRec.DRC_NBC_Reject_Reason_Text__c,
             DRC_NBC_Other_Rejection_Reason__c: this.orderRec.DRC_NBC_Other_Rejection_Reason__c,
             DRC_NBC_Inco_Terms__c: this.orderRec.DRC_NBC_Inco_Terms__c,
             DRC_NBC_Warehouse__c: this.orderRec.DRC_NBC_Warehouse__c,
