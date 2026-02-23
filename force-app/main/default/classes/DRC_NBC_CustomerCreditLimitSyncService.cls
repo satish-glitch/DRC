@@ -1,3 +1,5 @@
+// Test Class: DRC_NBC_CustomerCreditLimit_Test
+
 @RestResource(urlMapping = '/CustomerCreditLimitSync/*')
 global with sharing class DRC_NBC_CustomerCreditLimitSyncService {
     

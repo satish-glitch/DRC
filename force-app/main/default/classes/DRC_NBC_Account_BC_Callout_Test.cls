@@ -252,27 +252,27 @@ private class DRC_NBC_Account_BC_Callout_Test {
     
     // Test DRC_NBC_Account_BC_Integration.prepareRequest
     /*@isTest
-    static void test_Integration_PrepareRequest() {
-        Account acc = createTestAccount(false, false, true);
-        
-        DRC_NBC_Integration_Payload.CustomerPayload payload = DRC_NBC_Account_BC_Callout.mapAccountToPayload(acc);
-        String jsonBody = JSON.serialize(payload);
-        
-        DRC_NBC_Account_BC_Integration integration = new DRC_NBC_Account_BC_Integration(
-            'test-endpoint',
-            'POST',
-            jsonBody,
-            acc.Id
-        );
-        
-        Test.startTest();
-        HttpRequest req = integration.prepareRequest();
-        Test.stopTest();
-        
-        System.assertNotEquals(null, req);
-        System.assertEquals('POST', req.getMethod());
-        System.assertEquals(jsonBody, req.getBody());
-    }*/
+static void test_Integration_PrepareRequest() {
+Account acc = createTestAccount(false, false, true);
+
+DRC_NBC_Integration_Payload.CustomerPayload payload = DRC_NBC_Account_BC_Callout.mapAccountToPayload(acc);
+String jsonBody = JSON.serialize(payload);
+
+DRC_NBC_Account_BC_Integration integration = new DRC_NBC_Account_BC_Integration(
+'test-endpoint',
+'POST',
+jsonBody,
+acc.Id
+);
+
+Test.startTest();
+HttpRequest req = integration.prepareRequest();
+Test.stopTest();
+
+System.assertNotEquals(null, req);
+System.assertEquals('POST', req.getMethod());
+System.assertEquals(jsonBody, req.getBody());
+}*/
     
     // Test DRC_NBC_Account_BC_Integration.processResponse with success
     @isTest
@@ -412,4 +412,92 @@ private class DRC_NBC_Account_BC_Callout_Test {
         DRC_NBC_Integration_Payload.CustomerPayload payload = DRC_NBC_Account_BC_Callout.mapAccountToPayload(acc);
         Test.stopTest();
     }
+    
+    @isTest
+    static void test_getNextNumber_WithValidExistingNumbers() {
+        // Account with a well-formed customer number → hits the parts.size()==2 and maxNum logic
+        createAccount('CustDOM/2526-00003', 'India');
+        // Account with a BLANK customer number → hits the isBlank continue branch
+        createAccount('', 'India');
+        
+        Test.startTest();
+        Integer next = DRC_NBC_AccountNumberGenerator_Helper.getNextNumber('CustDOM');
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void test_getNextNumber_WithMalformedNumberNoDash() {
+        // Format has no dash → split('-') gives size 1, not 2 → if(parts.size()==2) is false
+        createAccount('CustDOM/2526BADFORMAT', 'India');
+        
+        Test.startTest();
+        Integer next = DRC_NBC_AccountNumberGenerator_Helper.getNextNumber('CustDOM');
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void test_getNextNumber_WithNonNumericSuffix() {
+        // parts[1] = 'ABC' → Integer.valueOf('ABC') throws → caught silently
+        createAccount('CustDOM/2526-ABC', 'India');
+        
+        Test.startTest();
+        Integer next = DRC_NBC_AccountNumberGenerator_Helper.getNextNumber('CustDOM');
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void test_getNextNumber_PicksHighestExistingNumber() {
+        createAccount('CustDOM/2526-00002', 'India');
+        createAccount('CustDOM/2526-00007', 'India');
+        createAccount('CustDOM/2526-00005', 'India');
+        
+        Test.startTest();
+        Integer next = DRC_NBC_AccountNumberGenerator_Helper.getNextNumber('CustDOM');
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void test_generateAccountNumbersAsync_WithExistingCustomerNumber() {
+        Account acc = createAccount('CustDOM/2526-00001', 'India'); // already has number → skipped
+        
+        Test.startTest();
+        DRC_NBC_AccountNumberGenerator_Helper.generateAccountNumbersAsync(acc.Id);
+        Test.stopTest();
+    }
+    
+    
+    @isTest
+    static void test_generateAccountNumbersAsync_WithoutCustomerNumber() {
+        Account acc = createAccount('', 'India'); // no customer number → gets generated
+        Test.startTest();
+        DRC_NBC_AccountNumberGenerator_Helper.generateAccountNumbersAsync(acc.Id);
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void test_generateAccountNumbersSync_ExportCustomer() {
+        Account acc = createAccount('', 'USA');
+        Test.startTest();
+        DRC_NBC_AccountNumberGenerator_Helper.generateAccountNumbersSync(acc.Id);
+        Test.stopTest();
+    }
+    
+    private static Account createAccount(String customerNumber, String billingCountry) {
+        Account acc = new Account(
+            Name            = 'Test Account ' + customerNumber,
+            BillingCountry  = billingCountry,
+            BillingStreet   = '123 Street',
+            BillingCity     = 'City',
+            BillingState    = 'Maharashtra',
+            BillingPostalCode = '462002'
+        );
+        insert acc;
+        
+        if (String.isNotBlank(customerNumber)) {
+            acc.DRC_NBC_Customer_Number__c = customerNumber;
+            update acc;
+        }
+        return acc;
+    }
+    
 }

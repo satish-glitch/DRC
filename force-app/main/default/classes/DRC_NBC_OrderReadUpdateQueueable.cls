@@ -205,8 +205,43 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
         String shipToCountry = safeStr(ord.ShippingCountryCode);    
         String shipToPost    = safeStr(ord.ShippingPostalCode);      
         String payTerms      = safeStr(ord.DRC_NBC_Payment_Terms__c);
-        String incoTerms     = safeStr(ord.DRC_NBC_Inco_Terms__c);  
+        String incoTerms;  
         String poNumber      = safeStr(ord.PoNumber);                
+        String LocationCode;
+        if (String.isNotBlank(ord.DRC_NBC_Warehouse__c)) {
+            String warehouseLabel = ord.DRC_NBC_Warehouse__c;
+            System.debug('Class DRC_NBC_UpdateOrderAndLineItems warehouseLabel>>>  '+ warehouseLabel);
+            List<Warehouse_Location_Code__mdt> metaList = [
+                SELECT DRC_NBC_Code__c FROM Warehouse_Location_Code__mdt
+                WHERE MasterLabel = :warehouseLabel AND DRC_NBC_Type__c = 'Warehouse Location'
+                LIMIT 1
+            ];
+            if (!metaList.isEmpty()) {
+                LocationCode = metaList[0].DRC_NBC_Code__c;
+                System.debug('Location_Code from metadata: ' + LocationCode);
+            }
+        }
+        if (String.isNotBlank(ord.DRC_NBC_Inco_Terms__c)) {
+            Warehouse_Location_Code__mdt incoTermsMeta;
+            String incoTermsLabel = ord.DRC_NBC_Inco_Terms__c;
+            String termType = 'Inco Terms';
+            
+            List<Warehouse_Location_Code__mdt> incoTermsList = [
+                SELECT MasterLabel, DRC_NBC_Code__c, DRC_NBC_Type__c 
+                FROM Warehouse_Location_Code__mdt
+                WHERE MasterLabel = :incoTermsLabel 
+                AND DRC_NBC_Type__c = :termType
+                LIMIT 1
+            ];
+            if (!incoTermsList.isEmpty()) {
+                incoTermsMeta = incoTermsList[0];
+                incoTerms = incoTermsList[0].DRC_NBC_Code__c;
+                System.debug('Fetched Inco Terms Metadata Code: ' + incoTermsMeta.DRC_NBC_Code__c);
+            } else {
+                System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
+            }
+        }
+
         
         Decimal orderAmount  = ord.DRC_NBC_Grand_Total__c != null ? ord.DRC_NBC_Grand_Total__c : 0;
         
@@ -234,7 +269,7 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
             '<External_Document_No>'         + escapeXml(poNumber)                                  + '</External_Document_No>' +
             '<Salesperson_Code>'             + escapeXml(safeStr(ord.ShipToContactId))                     + '</Salesperson_Code>' +
             '<Status>Released</Status>' +
-            '<Location_Code>'                + escapeXml(ord.DRC_NBC_Warehouse__c)   + '</Location_Code>' +
+            '<Location_Code>'                + escapeXml(LocationCode)   + '</Location_Code>' +
             '<Payment_Terms_Code>'           + escapeXml(payTerms)                                  + '</Payment_Terms_Code>' +
             '<Shipment_Method_Code>'         + escapeXml(incoTerms)                                 + '</Shipment_Method_Code>' +
             '<Sample_Sales>'                 + isSampleOrder                                        + '</Sample_Sales>' +

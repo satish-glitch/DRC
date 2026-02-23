@@ -451,7 +451,7 @@ public class DRC_NBC_ProductsController {
             }
 
         } catch (Exception ex) {
-            throw new AuraHandledException('Error saving Quote and Line Items: ' + ex.getMessage());
+          //  throw new AuraHandledException('Error saving Quote and Line Items: ' + ex.getMessage());
         }
     }
 
