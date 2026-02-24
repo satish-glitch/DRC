@@ -135,6 +135,7 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Document_No;
         public Integer Line_No;
         public String Type;
+        public String Customer_item_no;
         public String No;
         public String Description;
         public String Location_Code;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>SBER BANK INR A/C</label>
+    <protected>false</protected>
+    <values>
+        <field>DRC_NBC_Account_Number__c</field>
+        <value xsi:type="xsd:string">40000356300000060300</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Bank_Address2__c</field>
+        <value xsi:type="xsd:string">Bandra Kurla Complex, Bandra(E)</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Bank_Address__c</field>
+        <value xsi:type="xsd:string">81-B, 8th Floor, 5th North Avenue, Maker Maxity,</value>
+    </values>
+    <values>
+        <field>DRC_NBC_IFSC_Code__c</field>
+        <value xsi:type="xsd:string">SABR0000001</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Swift_Code__c</field>
+        <value xsi:type="xsd:string">SABRINDD</value>
+    </values>
+    <values>
+        <field>DRC_Name_Bank_Name__c</field>
+        <value xsi:type="xsd:string">SBER BANK INR A/C</value>
+    </values>
+</CustomMetadata>

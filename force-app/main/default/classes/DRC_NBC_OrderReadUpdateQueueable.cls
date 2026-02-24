@@ -87,6 +87,7 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
         try {
             // Build SOAP request
             String requestBody = buildReadSOAPRequest(bcOrderNumber);
+            debugLarge('READ SOAP Request', requestBody);
             
             // Build HTTP request
             HttpRequest req = new HttpRequest();
@@ -126,6 +127,7 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
         try {
             // Build SOAP request (payload built inline from Order fields)
             String requestBody = buildUpdateSOAPRequest(bcKey, ord);
+            debugLarge('UPDATE SOAP Request', requestBody);
             
             // Build HTTP request
             HttpRequest req = new HttpRequest();
@@ -170,6 +172,7 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
             '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
             '<soap:Body>' +
             '<Read xmlns="' + SOAP_ORDER_NAMESPACE + '">' +
+            '<Document_Type>Order</Document_Type>' +
             '<No>' + escapeXml(bcOrderNumber) + '</No>' +
             '</Read>' +
             '</soap:Body>' +
@@ -241,7 +244,7 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
                 System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
             }
         }
-
+        
         
         Decimal orderAmount  = ord.DRC_NBC_Grand_Total__c != null ? ord.DRC_NBC_Grand_Total__c : 0;
         
@@ -416,6 +419,22 @@ public class DRC_NBC_OrderReadUpdateQueueable implements Queueable, Database.All
         } catch (Exception ex) {
             System.debug('  [DML] Exception updating Order Status: ' + ex.getMessage());
             System.debug('  [DML] Stack Trace: ' + ex.getStackTraceString());
+        }
+    }
+    
+    
+    private static void debugLarge(String label, String text) {
+        if (String.isBlank(text)) {
+            System.debug(label + ' (empty)');
+            return;
+        }
+        
+        Integer chunkSize = 1000; // safe chunk size for logs
+        System.debug(label + ' | length=' + text.length());
+        
+        for (Integer i = 0; i < text.length(); i += chunkSize) {
+            Integer endPos = Math.min(i + chunkSize, text.length());
+            System.debug(label + ' [' + i + '-' + (endPos - 1) + ']: ' + text.substring(i, endPos));
         }
     }
 }

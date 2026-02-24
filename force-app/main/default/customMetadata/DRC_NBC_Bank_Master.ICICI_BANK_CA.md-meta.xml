@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>ICICI BANK CA</label>
+    <protected>false</protected>
+    <values>
+        <field>DRC_NBC_Account_Number__c</field>
+        <value xsi:type="xsd:string">015805013849</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Bank_Address2__c</field>
+        <value xsi:type="xsd:string">MALAD (W), MUMBAI - 400064</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Bank_Address__c</field>
+        <value xsi:type="xsd:string">SADGURU DARSHAN, ROAD NO.3, LIBERTY GARDEN,MALAD (W), MUMBAI - 400064</value>
+    </values>
+    <values>
+        <field>DRC_NBC_IFSC_Code__c</field>
+        <value xsi:type="xsd:string">ICIC0000158</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Swift_Code__c</field>
+        <value xsi:type="xsd:string">ICICINBBCTS</value>
+    </values>
+    <values>
+        <field>DRC_Name_Bank_Name__c</field>
+        <value xsi:type="xsd:string">ICICI BANK CA</value>
+    </values>
+</CustomMetadata>

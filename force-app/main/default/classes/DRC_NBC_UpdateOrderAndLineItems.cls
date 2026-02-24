@@ -784,6 +784,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
                                                                          '<Line_No>' + lineNo + '</Line_No>' +
                                                                          '<No>' + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c) + '</No>' +
+                                                                         '<Customer_item_no>' + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c) + '</Customer_item_no>' +
                                                                          '<Description>' + escapeXml(matchedItem.Description != null ? matchedItem.Description : '') + '</Description>' +
                                                                          '<Quantity>' + (matchedItem.Quantity != null ? matchedItem.Quantity : 0) + '</Quantity>' +
                                                                          '<Unit_of_Measure_Code>' + escapeXml(matchedItem.DRC_NBC_Unit_Of_Measurement__c) + '</Unit_of_Measure_Code>' +
@@ -816,10 +817,15 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                      soapBody += 
                                                                          '<SalesOrderLineSalesForce>' +
                                                                          '<Key>' + escapeXml(otherTaxKey) + '</Key>' +
+                                                                         '<Document_Type>Order</Document_Type>' +
                                                                          '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
                                                                          '<Line_No>' + otherTaxLineNo + '</Line_No>' +
+                                                                         '<Type>G/L Account</Type>' +
+                                                                         '<No>70563200</No>' +
+                                                                         '<Customer_item_no></Customer_item_no>' +
                                                                          '<Description>Other Tax Amount</Description>' +
                                                                          '<Quantity>1</Quantity>' +
+                                                                         '<Location_Code>' + ord.DRC_NBC_Location_Code__c + '</Location_Code>' +
                                                                          '<Unit_Price>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Unit_Price>' +
                                                                          '<Line_Amount>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Line_Amount>' +
                                                                          '<Line_Discount_Percent>0</Line_Discount_Percent>' +
@@ -844,10 +850,15 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                      soapBody += 
                                                                          '<SalesOrderLineSalesForce>' +
                                                                          '<Key>' + escapeXml(tcsKey) + '</Key>' +
+                                                                         '<Document_Type>Order</Document_Type>' +
                                                                          '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
                                                                          '<Line_No>' + tcsLineNo + '</Line_No>' +
-                                                                         '<Description>TCS Amount</Description>' +
+                                                                         '<Type>G/L Account</Type>' +
+                                                                         '<No>70563200</No>' +
+                                                                         '<Customer_item_no></Customer_item_no>' +
+                                                                         '<Description>Other Tax Amount</Description>' +
                                                                          '<Quantity>1</Quantity>' +
+                                                                         '<Location_Code>' + ord.DRC_NBC_Location_Code__c + '</Location_Code>' +
                                                                          '<Unit_Price>' + ord.DRC_NBC_TCS_Amount__c + '</Unit_Price>' +
                                                                          '<Line_Amount>' + ord.DRC_NBC_TCS_Amount__c + '</Line_Amount>' +
                                                                          '<Line_Discount_Percent>0</Line_Discount_Percent>' +

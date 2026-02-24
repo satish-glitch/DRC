@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>BANK OF BARODA 167</label>
+    <protected>false</protected>
+    <values>
+        <field>DRC_NBC_Account_Number__c</field>
+        <value xsi:type="xsd:string">04060500000167</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Bank_Address2__c</field>
+        <value xsi:type="xsd:string">MATUNGA CENTRAL RAILWAY MUMBAI</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Bank_Address__c</field>
+        <value xsi:type="xsd:string">CHANDAVARKAR ROAD,MATUNGA CENTRAL RAILWAY MUMBAI</value>
+    </values>
+    <values>
+        <field>DRC_NBC_IFSC_Code__c</field>
+        <value xsi:type="xsd:string">BARB0CHANDA</value>
+    </values>
+    <values>
+        <field>DRC_NBC_Swift_Code__c</field>
+        <value xsi:type="xsd:string">BARBINBBMAT</value>
+    </values>
+    <values>
+        <field>DRC_Name_Bank_Name__c</field>
+        <value xsi:type="xsd:string">BANK OF BARODA 167</value>
+    </values>
+</CustomMetadata>

@@ -343,6 +343,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_No = lineNo;
         payload.Type = 'Item';
         payload.No = item.Product2.DRC_NBC_FG_Code__c;
+        payload.Customer_item_no = item.Product2.DRC_NBC_FG_Code__c;
         payload.Description = item.Description != null ? item.Description : '';
         payload.Location_Code = locationCode;
         payload.Quantity = item.Quantity != null ? item.Quantity : 0;
@@ -385,7 +386,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Document_No = ord.DRC_NBC_Cust_Order_Number__c;
         payload.Line_No = lineNo;
         payload.Type = 'G/L Account';
-        payload.No = '';
+        payload.No = '70563200';
+        payload.Customer_item_no = '';
         
         payload.Description = 'Other Tax Amount';
         payload.Location_Code = locationCode;
@@ -431,7 +433,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Document_No = ord.DRC_NBC_Cust_Order_Number__c;
         payload.Line_No = lineNo;
         payload.Type = 'G/L Account';
-        payload.No = '';
+        payload.No = '70563200';
+        payload.Customer_item_no = '';
         
         payload.Description = 'TCS Amount';
         payload.Location_Code = locationCode;

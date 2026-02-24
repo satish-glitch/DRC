@@ -141,7 +141,9 @@ public class DRC_NBC_GenerateSamplePiController {
         ExpectedDeliveryDate = ord.DRC_NBC_Expected_Delivery_Date__c;
         couriernumber = ord.DRC_NBC_Courier_Number__c;
         deliveryStatus = ord.DRC_NBC_Delivery_status__c;
-        sampleShipping = ord.DRC_NBC_Sample_Shipping_Cost__c;
+        sampleShipping = ord.DRC_NBC_Sample_Shipping_Cost__c != null 
+            ? ord.DRC_NBC_Sample_Shipping_Cost__c 
+            : 0;
         
         // Shipping Address
         shippingAddress = (ord.ShippingStreet != null ? ord.ShippingStreet : '');
