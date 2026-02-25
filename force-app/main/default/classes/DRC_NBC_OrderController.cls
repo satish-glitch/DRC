@@ -446,7 +446,7 @@ public class DRC_NBC_OrderController {
         } catch (Exception ex) {
             System.debug('Error saving Order: ' + ex.getMessage());
             System.debug('Stack Trace: ' + ex.getStackTraceString());
-            //throw new AuraHandledException('Error saving Order and Line Items: ' + ex.getMessage());
+            throw new AuraHandledException('Error saving Order and Line Items: ' + ex.getMessage());
         }
     }
 

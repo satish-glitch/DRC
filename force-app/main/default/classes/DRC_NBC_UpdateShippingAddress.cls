@@ -52,6 +52,7 @@ public class DRC_NBC_UpdateShippingAddress {
             }
 
             String customerNo  = ord.Account.DRC_NBC_Customer_Number__c;
+            System.debug('customerNo>>>>>>>>>>>> ' +  customerNo);
             String warehouseLabel = ord.DRC_NBC_Warehouse__c;
 
             if (String.isBlank(customerNo)) {

@@ -630,6 +630,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
             '<soap:Body>' +
             '<Read xmlns="' + SOAP_ORDER_NAMESPACE + '">' +
+            '<Document_Type>Order</Document_Type>' +
             '<No>' + escapeXml(bcOrderNumber) + '</No>' +
             '</Read>' +
             '</soap:Body>' +

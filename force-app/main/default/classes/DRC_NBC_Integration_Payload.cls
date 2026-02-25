@@ -39,13 +39,19 @@ global with sharing class DRC_NBC_Integration_Payload {
         global String GST_Group_Code;
         global String HSNCode;
         global String packingSize;
-       // global List<String> packingSize; 
+        global List <PackingDetail> packingDetails;
         global String productFamily;
         global String uom;
         global Boolean isActive;
         global String ProductCategoryL1;
         global String ProductCategoryL2;
         global String ProductCategoryL3;
+    }
+    
+    global class PackingDetail {
+        global String packingSize;
+        global String PackingQty;
+        global String PackingDescription;
     }
     
     global class priceBook {
