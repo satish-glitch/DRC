@@ -312,7 +312,7 @@ public class DRC_NBC_OrderController {
 
     @AuraEnabled
     public static void saveOrderLineItems(List<OrderItem> oliList, List<String> oliIdsToDelete, Order orderData) {
-        try {
+        try {      
             // Update Order record
             if (orderData != null && orderData.Id != null) {
                 Order ordToUpdate = new Order(
@@ -413,7 +413,7 @@ public class DRC_NBC_OrderController {
                     ordToUpdate.DRC_NBC_Reject_Reason_Text__c = orderData.DRC_NBC_Reject_Reason_Text__c;
                     ordToUpdate.DRC_NBC_Remarks__c = orderData.DRC_NBC_Remarks__c;
                 }
-                update ordToUpdate;
+                    update ordToUpdate;
             }
 
             // Upsert Order Line Items with packing fields
@@ -446,6 +446,29 @@ public class DRC_NBC_OrderController {
         } catch (Exception ex) {
             System.debug('Error saving Order: ' + ex.getMessage());
             System.debug('Stack Trace: ' + ex.getStackTraceString());
+
+            Order existing = [
+                        SELECT Id,
+                            DRC_NBC_Warehouse__c,
+                            DRC_NBC_Order_PartiallyShipped__c,
+                            DRC_NBC_Shipping_Address__c
+                        FROM Order
+                        WHERE Id = :orderData.Id
+                        LIMIT 1
+                    ];
+
+                    Boolean partiallyShipped = existing.DRC_NBC_Order_PartiallyShipped__c;
+
+                    // If partially shipped, block any change that would change Warehouse
+                    if (partiallyShipped) {
+                        // 1) Direct warehouse change attempt
+                        if (orderData.DRC_NBC_Warehouse__c != null &&
+                            orderData.DRC_NBC_Warehouse__c != existing.DRC_NBC_Warehouse__c) {
+                            throw new AuraHandledException(
+                                'Warehouse cannot be modified because the order is partially shipped.'
+                            );
+                        }
+                    }
             throw new AuraHandledException('Error saving Order and Line Items: ' + ex.getMessage());
         }
     }
