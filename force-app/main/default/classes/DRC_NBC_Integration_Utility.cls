@@ -77,13 +77,25 @@ public with sharing class DRC_NBC_Integration_Utility {
             throw new DRC_NBC_CustomException('Order Status is mandatory in payload');
         }
         
-        if (orderPayload.expectedDeliveryDate != null) {
-            try {
-                Date.valueOf(orderPayload.expectedDeliveryDate);
-            } catch (Exception e) {
+        if (!String.isBlank(orderPayload.expectedDeliveryDate)) {
+            String d = orderPayload.expectedDeliveryDate.trim();
+            Boolean isValid = false;
+            
+            if (d.length() == 10 && d.indexOf('-') == 4) {
+                isValid = true;
+            } else if (d.length() == 10 && d.indexOf('-') == 2) {
+                isValid = true;
+            } else if (d.contains('/') && d.split('/').size() == 3) {
+                isValid = true;
+            } else if (d == '0001-01-01' || d == '01/01/0001' || d == '01-01-0001') {
+                isValid = true;
+            }
+            
+            if (!isValid) {
                 throw new DRC_NBC_CustomException('Invalid expectedDeliveryDate format. Use yyyy-MM-dd');
             }
         }
+        
         
         return orderPayload;
     }
@@ -116,13 +128,13 @@ public with sharing class DRC_NBC_Integration_Utility {
             }
         }
         
-      /*  if (invoicePayload.AcknowledgementDate != null) {
-            try {
-                DateTime.valueOf(invoicePayload.AcknowledgementDate.format());
-            } catch (Exception e) {
-                throw new DRC_NBC_CustomException('Invalid AcknowledgementDate format. Use ISO datetime format');
-            }
-        }*/
+        /*  if (invoicePayload.AcknowledgementDate != null) {
+try {
+DateTime.valueOf(invoicePayload.AcknowledgementDate.format());
+} catch (Exception e) {
+throw new DRC_NBC_CustomException('Invalid AcknowledgementDate format. Use ISO datetime format');
+}
+}*/
         
         return invoicePayload;
     }

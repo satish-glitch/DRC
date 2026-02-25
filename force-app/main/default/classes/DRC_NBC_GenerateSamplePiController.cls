@@ -33,8 +33,7 @@ public class DRC_NBC_GenerateSamplePiController {
     public String shippingState { get; set; }
     public String orderType { get; set; }
     public string billToCustomer {get; set;}
-    
-    
+    Public String PO  {get; set;}
     public String billingAddress { get; set; }
     public String billingCity { get; set; }
     public String billingPostalCode { get; set; }
@@ -124,7 +123,8 @@ public class DRC_NBC_GenerateSamplePiController {
             DRC_NBC_Payment_Terms__c, 
             DRC_NBC_Delivery_status__c, 
             DRC_NBC_Courier_Number__c,
-            DRC_NBC_Inco_Terms__c
+            DRC_NBC_Inco_Terms__c,
+            PoNumber
             FROM 
             Order
             WHERE 
@@ -159,6 +159,7 @@ public class DRC_NBC_GenerateSamplePiController {
         billingState = (ord.BillingState != null ? ord.BillingState : '');
         billingPostalCode = (ord.BillingPostalCode != null ? ord.BillingPostalCode : '');
         billingCountry = (ord.BillingCountry != null ? ord.BillingCountry : '');
+         PO = (ord.PoNumber != null ? ord.PoNumber : '');
         
         
         // Terms and Logistics

@@ -375,7 +375,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 System.debug('  STEP 1: Updating ' + linesToUpdate.size() + ' existing lines...');
                 updateResult = updateMultipleLineItems(bcOrderNo, linesToUpdate, orderItems, ord, orderId, bcLineDetails);
                 System.debug('  Enqueuing DRC_NBC_OrderReadUpdateQueueable...');
-                System.enqueueJob(new DRC_NBC_OrderReadUpdateQueueable(orderId));
+             //   System.enqueueJob(new DRC_NBC_OrderReadUpdateQueueable(orderId));
+               DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
                 System.debug('  Update Result: ' + updateResult);
             }
             

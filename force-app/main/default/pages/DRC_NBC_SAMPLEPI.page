@@ -393,7 +393,7 @@
                 <tr>
                     <td style="width:25%;">
                         <span class="meta-label">External Document No.</span>
-                        <span class="meta-value">SAMPLE</span>
+                        <span class="meta-value">{!PO}</span>
                     </td>
                     <td style="width:25%;">
                         <span class="meta-label">Salesperson</span>

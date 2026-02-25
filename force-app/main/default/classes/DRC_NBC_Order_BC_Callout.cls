@@ -167,7 +167,7 @@ payload.Ship_to_GST_Reg_No = '';*/
                                  String.isNotBlank(warehouseMeta.DRC_NBC_Code__c)) ? 
             warehouseMeta.DRC_NBC_Code__c : '';           
         payload.Salesperson_Code = ord.ShipToContactId;
-        payload.Salesforce_So_No = String.valueOf(ord.Id);
+        payload.Salesforce_So_No = ord.Id;
         payload.External_Document_No = String.isNotBlank(ord.PoNumber) ? 
             String.valueOf(ord.PoNumber) : '';
         payload.Salesforce_Order_Amount = ord.DRC_NBC_Grand_Total__c != null
