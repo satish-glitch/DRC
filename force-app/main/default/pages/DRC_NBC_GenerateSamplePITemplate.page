@@ -295,7 +295,7 @@ so everything renders ABOVE the divider line.
                     <p>{!customerName}</p>
                     <p>{!shippingAddress}</p>
                     <p>{!shippingCity} {!shippingState} {!shippingPostalCode}</p>
-                    <p>{!shippingCountry}</p>
+                    <p style="margin-bottom: 5px;">{!shippingCountry}</p>
                 </div>
             </div>
             
@@ -318,7 +318,7 @@ so everything renders ABOVE the divider line.
                 </p>
                 <p><strong>Order No.</strong><span>SO-SAMPLE/2627/{!importSequence}</span></p>
                 <p><strong>Payment Terms</strong><span>{!paymentTerms}</span></p>
-                <p><strong>Sampling Shipping Cost</strong><span>{!shipmentMethod}</span></p>
+                <p><strong>shipment Method</strong><span>{!shipmentMethod}</span></p>
                 <p><strong>Courier Number</strong><span>{!couriernumber}</span></p>
                 <p><strong>Delivery Status</strong><span>{!deliveryStatus}</span></p>
             </div>
