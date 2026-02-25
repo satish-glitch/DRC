@@ -123,7 +123,8 @@ public class DRC_NBC_GenerateSamplePiController {
             DRC_NBC_Sample_Name__c, 
             DRC_NBC_Payment_Terms__c, 
             DRC_NBC_Delivery_status__c, 
-            DRC_NBC_Courier_Number__c
+            DRC_NBC_Courier_Number__c,
+            DRC_NBC_Inco_Terms__c
             FROM 
             Order
             WHERE 
@@ -162,7 +163,7 @@ public class DRC_NBC_GenerateSamplePiController {
         
         // Terms and Logistics
         paymentTerms = ord.DRC_NBC_Payment_Terms__c;
-        shipmentMethod = String.valueOf(ord.DRC_NBC_Sample_Shipping_Cost__c);
+        shipmentMethod = ord.DRC_NBC_Inco_Terms__c;
         SampleName = ord.DRC_NBC_Sample_Name__c != null ? ord.DRC_NBC_Sample_Name__c.toUpperCase() : '';
         sampleType = ord.DRC_NBC_Sample_Type__c != null ? ord.DRC_NBC_Sample_Type__c.toUpperCase() : '';
         // Contact Information

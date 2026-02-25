@@ -109,7 +109,7 @@ public class DRC_NBC_OrderReadUpdateQueueable {
                     '<No>'            + x(bc.get('No'))            + '</No>' +
 
                     // Sell-to
-                    '<Sell_to_Customer_No>'   + x(bc.get('Sell_to_Customer_No'))   + '</Sell_to_Customer_No>' +
+                  /*  '<Sell_to_Customer_No>'   + x(bc.get('Sell_to_Customer_No'))   + '</Sell_to_Customer_No>' +
                     '<Sell_to_Customer_Name>' + x(bc.get('Sell_to_Customer_Name')) + '</Sell_to_Customer_Name>' +
                     '<Sell_to_Address>'       + x(bc.get('Sell_to_Address'))       + '</Sell_to_Address>' +
                     '<Sell_to_Address_2>'     + x(bc.get('Sell_to_Address_2'))     + '</Sell_to_Address_2>' +
@@ -119,12 +119,12 @@ public class DRC_NBC_OrderReadUpdateQueueable {
                     // Order
                     '<Order_Date>'            + x(orderDateStr) + '</Order_Date>' +
                     '<External_Document_No>'  + x(ord.PoNumber) + '</External_Document_No>' +
-                    '<Salesperson_Code>'      + x(salespersonCode) + '</Salesperson_Code>' +
+                    '<Salesperson_Code>'      + x(salespersonCode) + '</Salesperson_Code>' +*/
 
                     // Status (BC may ignore if not editable; at least you’ll see it in response/readback)
                     '<Status>Released</Status>' +
 
-                    // Codes
+                  /*  // Codes
                     '<Location_Code>'         + x(locationCode) + '</Location_Code>' +
                     '<Payment_Terms_Code>'    + x(bc.get('Payment_Terms_Code')) + '</Payment_Terms_Code>' +
                     '<Shipment_Method_Code>'  + x(incoTerms) + '</Shipment_Method_Code>' +
@@ -147,12 +147,20 @@ public class DRC_NBC_OrderReadUpdateQueueable {
                     // Amount/Currency
                     '<Salesforce_Order_Amount>'     + String.valueOf(orderAmount) + '</Salesforce_Order_Amount>' +
                     '<Salesforce_Order_Created>false</Salesforce_Order_Created>' +
-                    '<Currency_Code>'               + x(bc.get('Currency_Code')) + '</Currency_Code>' +
+                    '<Currency_Code>'               + x(bc.get('Currency_Code')) + '</Currency_Code>' +*/
 
                   '</SalesOrderSalesForce>' +
                 '</Update>' +
               '</soap:Body>' +
             '</soap:Envelope>';
+        
+        // DEBUG UPDATE PAYLOAD
+        System.debug(LoggingLevel.DEBUG, 'UPDATE PAYLOAD length=' + updateBody.length());
+        for (Integer i = 0; i < updateBody.length(); i += 1000) {
+            Integer endPos = Math.min(i + 1000, updateBody.length());
+            System.debug(LoggingLevel.DEBUG, 'UPDATE PAYLOAD chunk ' + (i/1000) + ': ' + updateBody.substring(i, endPos));
+        }
+
 
         HttpResponse updateRes = sendSoap('Update', updateBody, authHeader);
         System.debug('UPDATE HTTP: ' + updateRes.getStatusCode());

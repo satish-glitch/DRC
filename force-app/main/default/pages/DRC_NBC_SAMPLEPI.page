@@ -1,0 +1,464 @@
+<apex:page renderAs="pdf" controller="DRC_NBC_GenerateSamplePiController" showHeader="false" sidebar="false" applyBodyTag="false" applyHtmlTag="false" standardStylesheets="false">
+    <html>
+        <head>
+            <style>
+                @page {
+                    size: A4;
+                    margin-top: 55mm;
+                    margin-bottom: 30mm;
+                    margin-left: 15mm;
+                    margin-right: 15mm;
+                    @top-center {
+                        content: element(pageHeader);
+                        width: 100%;
+                    }
+                    @bottom-center {
+                        content: element(pageFooter);
+                        width: 100%;
+                    }
+                }
+
+                body {
+                    font-family: Arial, sans-serif;
+                    font-size: 9pt;
+                    color: #000;
+                    line-height: 1.3;
+                }
+
+                /* ══════════════════════════════════════
+                   REPEATING HEADER
+                   Left  : "Order Confirmation" title block
+                   Right : Company address (centred) + Logo
+                ══════════════════════════════════════ */
+                #pageHeader {
+                    position: running(pageHeader);
+                    width: 100%;
+                }
+
+                table.header-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    table-layout: fixed;
+                }
+
+                /* Col 1 — Title block (Order Confirmation + Order No + Date + Page) */
+                td.hcol-title {
+                    vertical-align: top;
+                    padding: 0;
+                    width: 55%;
+                }
+                .oc-title {
+                    font-size: 20pt;
+                    font-weight: bold;
+                    line-height: 1.15;
+                    margin: 0;
+                    padding: 0;
+                }
+                .oc-orderno {
+                    font-size: 16pt;
+                    font-weight: bold;
+                    margin: 2px 0 0 0;
+                    padding: 0;
+                }
+                .oc-date,
+                .oc-page {
+                    font-size: 9pt;
+                    font-weight: normal;
+                    margin: 2px 0 0 0;
+                    padding: 0;
+                }
+
+                /* Col 2 — Address centred + logo stacked */
+                td.hcol-addr-logo {
+                    vertical-align: top;
+                    text-align: center;
+                    padding: 0 0 0 8px;
+                    width: 45%;
+                }
+                td.hcol-addr-logo p,
+                td.hcol-addr-logo div {
+                    margin: 1px 0;
+                    padding: 0;
+                    font-size: 7.5pt;
+                }
+                td.hcol-addr-logo h1,
+                td.hcol-addr-logo .company-name {
+                    font-size: 12pt;
+                    font-weight: bold;
+                    margin: 0 0 2px 0;
+                    padding: 0;
+                }
+
+                /* Logo sits top-right inside the address cell */
+                .logo-wrapper {
+                    text-align: right;
+                    margin-bottom: 4px;
+                }
+                .company-logo {
+                    width: 72px;
+                    height: auto;
+                }
+
+                /* Divider below header */
+                .header-divider {
+                    border-top: 1.5px solid #000;
+                    margin-top: 6px;
+                }
+
+                /* ══════════════════════════════════════
+                   REPEATING FOOTER
+                ══════════════════════════════════════ */
+                #pageFooter {
+                    position: running(pageFooter);
+                    width: 100%;
+                    border-top: 1px solid #000;
+                    padding-top: 4px;
+                    font-size: 7.5pt;
+                    color: #000;
+                    line-height: 1.5;
+                }
+
+                table.footer-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 7.5pt;
+                }
+                table.footer-table td {
+                    padding: 1px 4px;
+                    vertical-align: top;
+                }
+                .footer-label {
+                    color: #555;
+                    font-size: 7pt;
+                }
+                .footer-value {
+                    font-size: 7.5pt;
+                    font-weight: bold;
+                }
+
+                /* ── CUSTOMER / ADDRESS BLOCK ── */
+                .address-section {
+                    width: 100%;
+                    margin-top: 6px;
+                    margin-bottom: 4px;
+                }
+                table.address-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 9pt;
+                }
+                table.address-table td {
+                    vertical-align: top;
+                    padding: 1px 0;
+                }
+                .addr-left {
+                    width: 65%;
+                }
+                .addr-right {
+                    width: 35%;
+                    text-align: right;
+                }
+                .addr-name {
+                    font-weight: bold;
+                    font-size: 9pt;
+                }
+
+                /* ── ORDER DETAIL COLUMNS ── */
+                .detail-section {
+                    width: 100%;
+                    margin-top: 10px;
+                    margin-bottom: 4px;
+                }
+                table.detail-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 8pt;
+                }
+                table.detail-table td {
+                    vertical-align: top;
+                    padding: 1px 0;
+                }
+                .detail-left  { width: 50%; }
+                .detail-right { width: 50%; }
+
+                table.kv-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 8pt;
+                    line-height: 1.3;
+                }
+                table.kv-table td {
+                    padding: 1px 2px;
+                    vertical-align: top;
+                }
+                td.kv-label {
+                    font-weight: bold;
+                    width: 50%;
+                    white-space: nowrap;
+                }
+                td.kv-value {
+                    width: 50%;
+                    text-align: left;
+                    word-break: break-word;
+                }
+                td.kv-value-right {
+                    width: 50%;
+                    text-align: right;
+                    word-break: break-word;
+                }
+
+                /* ── META ROW (Ext Doc / Salesperson / Quote / Shipment) ── */
+                .meta-divider {
+                    border-top: 1px solid #ccc;
+                    margin: 8px 0 4px 0;
+                }
+                table.meta-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 8pt;
+                    margin-bottom: 8px;
+                }
+                table.meta-table td {
+                    vertical-align: top;
+                    padding: 2px 4px 2px 0;
+                }
+                .meta-label {
+                    font-weight: bold;
+                    font-size: 7.5pt;
+                    display: block;
+                }
+                .meta-value {
+                    font-size: 9pt;
+                    display: block;
+                }
+
+                /* ── ITEMS TABLE ── */
+                .items-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 10px;
+                    margin-top: 5px;
+                    font-size: 8pt;
+                }
+                .items-table th {
+                    border-top: 1px solid #000;
+                    border-bottom: 1px solid #000;
+                    padding: 4px 6px;
+                    text-align: center;
+                    font-weight: bold;
+                    font-size: 8pt;
+                }
+                .items-table td {
+                    border: none;
+                    padding: 4px 6px;
+                }
+                .items-table td.right  { text-align: right; }
+                .items-table td.center { text-align: center; }
+                .items-table td.left   { text-align: left; }
+
+                /* ── TOTALS ── */
+                .totals-table {
+                    width: 45%;
+                    float: right;
+                    border-collapse: collapse;
+                    font-size: 8.5pt;
+                    margin-top: 8px;
+                }
+                .totals-table td {
+                    padding: 3px 6px;
+                }
+                .totals-table td.t-label {
+                    font-weight: bold;
+                    text-align: left;
+                }
+                .totals-table td.t-value {
+                    text-align: right;
+                    font-weight: bold;
+                }
+                .totals-table tr.total-line td {
+                    border-top: 1px solid #000;
+                    border-bottom: 1px solid #000;
+                }
+
+                /* ── TERMS ── */
+                .terms-section {
+                    clear: both;
+                    margin-top: 18px;
+                    font-size: 7pt;
+                    page-break-inside: avoid;
+                }
+                .terms-section h3 {
+                    font-size: 8.5pt;
+                    margin: 8px 0 4px 0;
+                    font-weight: bold;
+                }
+                .terms-section p {
+                    margin: 2px 0;
+                    text-align: justify;
+                }
+            </style>
+        </head>
+        <body>
+
+            <!-- ═══ REPEATING HEADER ═══
+                 LEFT  : "Order Confirmation" large, Order No, Date, Page
+                 RIGHT : Logo (top-right) + Company address (centred below)
+            -->
+            <div id="pageHeader">
+                <table class="header-table">
+                    <tr>
+                        <!-- Col 1: Title Block -->
+                        <td class="hcol-title">
+                            <p class="oc-title">Order Confirmation</p>
+                            <p class="oc-orderno">SO-SAMPLE/2627/{!importSequence}</p>
+                            <p class="oc-date">
+                                <apex:outputText value="{0,date,dd MMMM yyyy}">
+                                    <apex:param value="{!orderDate}" />
+                                </apex:outputText>
+                            </p>
+                            <p class="oc-page">Page 1 / 1</p>
+                        </td>
+
+                        <!-- Col 2: Logo (top-right) + Company Address (centred) -->
+                        <td class="hcol-addr-logo">
+                            <div class="logo-wrapper">
+                                <apex:image url="{!URLFOR($Resource.DRC_NBC_DR_Logo)}" styleClass="company-logo" />
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="header-divider"></div>
+            </div>
+
+            <!-- ═══ REPEATING FOOTER ═══ -->
+            <div id="pageFooter">
+                <table class="footer-table">
+                    <tr>
+                        <td style="width:25%; text-align:center;">
+                            <span class="footer-label">Home Page</span>
+                            <span class="footer-value">{!website}</span>
+                        </td>
+                        <td style="width:25%; text-align:center;">
+                            <span class="footer-label">Phone No.</span>
+                            <span class="footer-value">{!phoneNumber}</span>
+                        </td>
+                        <td style="width:50%; text-align:left;">
+                            <span class="footer-label">Email</span>
+                            <span class="footer-value">{!email}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="footer-label">{!Bank}</span><br/>
+                            <span class="footer-value">{!AccountNo}</span>
+                        </td>
+                        <td>
+                            <span class="footer-label">IBAN</span>
+                        </td>
+                        <td>
+                            <span class="footer-label">SWIFT Code</span><br/>
+                            <span class="footer-value">ICICINBBCTS</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- ═══ CUSTOMER ADDRESS BLOCK ═══ -->
+            <div class="address-section">
+                <table class="address-table">
+                    <tr>
+                        <!-- Left: Shipping address -->
+                        <td class="addr-left">
+                            <span class="addr-name">{!customerName}</span><br/>
+                            {!shippingAddress}<br/>
+                            {!shippingCity}<apex:outputText value=", {!shippingState}" rendered="{!NOT(ISBLANK(shippingState))}"/><br/>
+                            {!shippingPostalCode}<br/>
+                            {!shippingCountry}
+                        </td>
+                        <!-- Right: Salesperson + Country -->
+                        <td class="addr-right">
+                            {!SalesPerson}<br/>
+                            {!billingCountry}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- ═══ ORDER DETAIL COLUMNS ═══ -->
+       
+
+            <!-- ═══ META ROW ═══ -->
+            <div class="meta-divider"></div>
+            <table class="meta-table">
+                <tr>
+                    <td style="width:25%;">
+                        <span class="meta-label">External Document No.</span>
+                        <span class="meta-value">SAMPLE</span>
+                    </td>
+                    <td style="width:25%;">
+                        <span class="meta-label">Salesperson</span>
+                        <span class="meta-value">{!SalesPerson}</span>
+                    </td>
+                    <td style="width:25%;">
+                        <span class="meta-label">Quote No.</span>
+                        <span class="meta-value">&#160;</span>
+                    </td>
+                    <td style="width:25%;">
+                        <span class="meta-label">Shipment Method</span>
+                        <span class="meta-value">{!shipmentMethod}</span>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- ═══ ITEMS TABLE ═══ -->
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width:6%;  text-align:center;">No.</th>
+                        <th style="width:28%; text-align:left;">Description</th>
+                        <th style="width:12%; text-align:center;">Quantity</th>
+                        <th style="width:18%; text-align:center;">Unit Price Excl. VAT</th>
+                        <th style="width:10%; text-align:center;">VAT %</th>
+                        <th style="width:18%; text-align:right;">Line Amount Excl. VAT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <apex:variable var="rowNum" value="{!1}" />
+                    <apex:repeat value="{!items}" var="item">
+                        <tr>
+                            <td class="center">{!rowNum}</td>
+                            <td class="left">{!item.Description}</td>
+                            <td class="center">{!item.quantity}</td>
+                            <td class="right">{!item.unitPrice}</td>
+                            <td class="center">0</td>
+                            <td class="right">{!item.amount}</td>
+                        </tr>
+                        <apex:variable var="rowNum" value="{!rowNum + 1}" />
+                    </apex:repeat>
+                </tbody>
+            </table>
+
+            <!-- ═══ TOTALS ═══ -->
+            <table class="totals-table">
+                <tr class="total-line">
+                    <td class="t-label">Total INR Incl. VAT</td>
+                    <td class="t-value">{!totalWithTax}</td>
+                </tr>
+            </table>
+
+            <div style="clear:both;"></div>
+
+            <!-- ═══ TERMS AND CONDITIONS ═══ -->
+          <!--  <div class="terms-section">
+                <h3>General terms and condition:</h3>
+                <p>1. Unless stated otherwise, all prices indicated are ex-works (Incoterms) basis.</p>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_TermCondition_1}" escape="false"/>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_TermCondition_2}" escape="false"/>
+                <h3>General Provisions:</h3>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part1}" escape="false"/>
+                <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part2}" escape="false"/>
+            </div>-->
+
+        </body>
+    </html>
+</apex:page>
