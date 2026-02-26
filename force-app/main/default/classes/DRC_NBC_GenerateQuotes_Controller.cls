@@ -3,7 +3,7 @@
 * @Description : Controller for generating quotes from opportunities
 * @Author :
 * @Last Modified By :
-* @Last Modified On : February 10, 2026
+* @Last Modified On : February 26, 2026
 * @Modification Log :
 *==============================================================================
 * Ver | Date | Author | Modification
@@ -12,6 +12,7 @@
 * 1.1 | November 10, 2025 |   | Fixed PricebookEntry fallback handling
 * 1.2 | November 11, 2025 |   | Changed to fetch billing address from Account
 * 1.3 | February 10, 2026 |   | Added Packing Size support
+* 1.4 | February 26, 2026 |   | Packing Size/Qty now fetched from DRC_NBC_Packing_Details__c child object
 **/
 
 public with sharing class DRC_NBC_GenerateQuotes_Controller {
@@ -132,7 +133,6 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                 entries = [
                     SELECT Id, Product2Id, Product2.Name, Product2.DRC_NBC_FG_Code__c,
                     Product2.DRC_NBC_HSN_SAC_Code__c, Product2.QuantityUnitOfMeasure,
-                    Product2.DRC_NBC_Packing_Size__c,
                     UnitPrice, CurrencyIsoCode
                     FROM PricebookEntry
                     WHERE IsActive = true
@@ -149,7 +149,6 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                 entries = [
                     SELECT Id, Product2Id, Product2.Name, Product2.DRC_NBC_FG_Code__c,
                     Product2.DRC_NBC_HSN_SAC_Code__c, Product2.QuantityUnitOfMeasure,
-                    Product2.DRC_NBC_Packing_Size__c,
                     UnitPrice, CurrencyIsoCode
                     FROM PricebookEntry
                     WHERE IsActive = true
@@ -162,13 +161,40 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                 ];
             }
 
-            // Step 4: De-duplicate products by Product2Id
+            // Step 3: Collect all unique Product2 Ids from results
+            Set<Id> product2Ids = new Set<Id>();
+            for (PricebookEntry pbe : entries) {
+                product2Ids.add(pbe.Product2Id);
+            }
+
+            // Step 4: Fetch all Packing Details child records for these products
+            Map<Id, List<PackingDetailWrapper>> productPackingMap = new Map<Id, List<PackingDetailWrapper>>();
+            for (DRC_NBC_Packing_Details__c pd : [
+                SELECT Id, Product__c, DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Qauntity__c
+                FROM DRC_NBC_Packing_Details__c
+                WHERE Product__c IN :product2Ids
+                ORDER BY DRC_NBC_Packing_Size__c
+            ]) {
+                if (!productPackingMap.containsKey(pd.Product__c)) {
+                    productPackingMap.put(pd.Product__c, new List<PackingDetailWrapper>());
+                }
+                String qtyStr = pd.DRC_NBC_Packing_Qauntity__c != null ? String.valueOf(pd.DRC_NBC_Packing_Qauntity__c) : '';
+                productPackingMap.get(pd.Product__c).add(
+                    new PackingDetailWrapper(pd.DRC_NBC_Packing_Size__c, qtyStr)
+                );
+            }
+
+            // Step 5: De-duplicate products by Product2Id and build results
             Set<Id> seen = new Set<Id>();
             List<ProductWrapper> results = new List<ProductWrapper>();
 
             for (PricebookEntry pbe : entries) {
                 if (!seen.contains(pbe.Product2Id)) {
                     seen.add(pbe.Product2Id);
+                    List<PackingDetailWrapper> packingDetails = productPackingMap.containsKey(pbe.Product2Id)
+                        ? productPackingMap.get(pbe.Product2Id)
+                        : new List<PackingDetailWrapper>();
+
                     results.add(new ProductWrapper(
                         pbe.Id,
                         pbe.Product2Id,
@@ -177,7 +203,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                         pbe.Product2.DRC_NBC_FG_Code__c,
                         pbe.Product2.DRC_NBC_HSN_SAC_Code__c,
                         pbe.Product2.QuantityUnitOfMeasure,
-                        pbe.Product2.DRC_NBC_Packing_Size__c
+                        packingDetails
                     ));
                 }
             }
@@ -333,7 +359,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                 qli.UnitPrice = wrapper.UnitPrice != null ? wrapper.UnitPrice : 0;
                 qli.Description = wrapper.Description;
                 
-                // Add packing information (both text fields)
+                // Add packing information
                 if (String.isNotBlank(wrapper.PackingSize)) {
                     qli.DRC_NBC_Packing_Size__c = wrapper.PackingSize;
                 }
@@ -397,6 +423,17 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         }
     }
 
+    // NEW: Wrapper for a single packing detail record
+    public class PackingDetailWrapper {
+        @AuraEnabled public String packingSize;
+        @AuraEnabled public String packingQuantity;
+
+        public PackingDetailWrapper(String size, String qty) {
+            this.packingSize = size;
+            this.packingQuantity = qty;
+        }
+    }
+
     public class ProductWrapper {
         @AuraEnabled public Id PricebookEntryId;
         @AuraEnabled public Id Product2Id;
@@ -405,9 +442,9 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         @AuraEnabled public String FGCode;
         @AuraEnabled public String HSNCode;
         @AuraEnabled public String QuantityUnitOfMeasure;
-        @AuraEnabled public String PackingSizes; // Multiselect picklist values
+        @AuraEnabled public List<PackingDetailWrapper> PackingDetails; // From child object
 
-        public ProductWrapper(Id pbeId, Id p2Id, String nm, Decimal price, String fg, String hsn, String uom, String packingSizes) {
+        public ProductWrapper(Id pbeId, Id p2Id, String nm, Decimal price, String fg, String hsn, String uom, List<PackingDetailWrapper> packingDetails) {
             this.PricebookEntryId = pbeId;
             this.Product2Id = p2Id;
             this.Name = nm;
@@ -415,7 +452,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             this.FGCode = fg;
             this.HSNCode = hsn;
             this.QuantityUnitOfMeasure = uom;
-            this.PackingSizes = packingSizes;
+            this.PackingDetails = packingDetails;
         }
     }
 

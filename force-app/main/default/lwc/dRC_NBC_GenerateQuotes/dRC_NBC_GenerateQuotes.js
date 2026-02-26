@@ -300,7 +300,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         }
     }
 
-    // NEW METHOD: Clear selected product and return to search mode
+    // Clear selected product and return to search mode
     handleClearProduct(event) {
         const index = parseInt(event.currentTarget.dataset.index);
         
@@ -462,24 +462,13 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         }
     }
 
-    // NEW: Parse packing sizes from multiselect picklist
-    parsePackingSizes(packingSizesString) {
-        if (!packingSizesString) return [];
-        
-        // Split by semicolon (Salesforce multiselect picklist separator)
-        return packingSizesString.split(';').map(size => ({
-            label: size.trim(),
-            value: size.trim()
+    // Build packing size combobox options from child object records
+    buildPackingSizeOptions(packingDetails) {
+        if (!packingDetails || packingDetails.length === 0) return [];
+        return packingDetails.map(pd => ({
+            label: pd.packingSize || '',
+            value: pd.packingSize || ''
         }));
-    }
-
-    // NEW: Extract number from packing size (e.g., "PAPER BAGS 15 KGS" -> 15)
-    extractPackingNumber(packingSizeText) {
-        if (!packingSizeText) return null;
-        
-        // Match any number in the string
-        const match = packingSizeText.match(/(\d+(?:\.\d+)?)/);
-        return match ? parseFloat(match[1]) : null;
     }
 
     handleProductSelect(event) {
@@ -491,8 +480,9 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         if (selectedProduct) {
             const unitPrice = selectedProduct.UnitPrice || 0;
             
-            // Parse packing sizes into options
-            const packingSizeOptions = this.parsePackingSizes(selectedProduct.PackingSizes);
+            // Build packing size options from child object PackingDetails
+            const packingDetails = selectedProduct.PackingDetails || [];
+            const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
             
             // Update the row with selected product details
             this.filteredData[index].recordData = {
@@ -509,9 +499,11 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 PricebookEntryId: selectedProduct.PricebookEntryId,
                 DRC_NBC_Unit_Of_Measurement__c: selectedProduct.QuantityUnitOfMeasure || '-',
                 modifiedPrice: unitPrice,
+                packingDetails: packingDetails,     // full list for qty lookup
                 packingSizeOptions: packingSizeOptions,
                 selectedPackingSize: '',
-                packingQuantity: '',
+                packingQuantity: '',                // displayed: ceil(Quantity / rawPackingQuantity)
+                rawPackingQuantity: '',             // divisor fetched from child record
                 searchResults: [],
                 noResultsFound: false
             };
@@ -519,49 +511,66 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         }
     }
 
-    // NEW: Handle packing size selection
+    /**
+     * Calculates displayed packing quantity = ceil(Quantity / rawPackingQuantity)
+     * rawPackingQuantity = DRC_NBC_Packing_Qauntity__c value from the child record
+     */
+    _recalcPackingQuantity(rowData) {
+        const qty = parseFloat(rowData.Quantity) || 0;
+        const rawPkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
+        if (rawPkgQty > 0 && qty > 0) {
+            return String(Math.ceil(qty / rawPkgQty));
+        }
+        return '';
+    }
+
+    // Handle packing size selection:
+    // - stores the raw packing qty from child record as the divisor
+    // - displays ceil(Quantity / rawPackingQty) in the UI
     handlePackingSizeChange(event) {
-        const index = event.target.dataset.index;
+        const index = parseInt(event.target.dataset.index);
         const selectedSize = event.detail.value;
         
         this.filteredData[index].recordData.selectedPackingSize = selectedSize;
         
-        // Calculate packing quantity: Quantity / extracted number from packing size
-        const quantity = this.filteredData[index].recordData.Quantity || 0;
-        const packingNumber = this.extractPackingNumber(selectedSize);
+        // Find the matching child record to get the raw packing quantity (divisor)
+        const packingDetails = this.filteredData[index].recordData.packingDetails || [];
+        const matchedDetail = packingDetails.find(pd => pd.packingSize === selectedSize);
         
-        if (packingNumber && packingNumber > 0) {
-            const packingQty = Math.ceil(quantity / packingNumber);
-            this.filteredData[index].recordData.packingQuantity = String(packingQty);
+        if (matchedDetail && matchedDetail.packingQuantity != null && matchedDetail.packingQuantity !== '') {
+            this.filteredData[index].recordData.rawPackingQuantity = String(matchedDetail.packingQuantity);
         } else {
-            this.filteredData[index].recordData.packingQuantity = '';
+            this.filteredData[index].recordData.rawPackingQuantity = '';
         }
+
+        // Displayed value = ceil(entered Quantity / rawPackingQuantity)
+        this.filteredData[index].recordData.packingQuantity = this._recalcPackingQuantity(
+            this.filteredData[index].recordData
+        );
         
         this.filteredData = [...this.filteredData];
     }
 
-    // MODIFIED: Recalculate packing quantity when main quantity changes
+    // When the user changes quantity, recalculate displayed packing quantity
+    // if a packing size is already selected
     handleQuantityChange(event) {
-        const index = event.target.dataset.index;
+        const index = parseInt(event.target.dataset.index);
         const quantity = parseFloat(event.target.value) || 0;
         
         this.filteredData[index].recordData.Quantity = quantity;
-        
-        // Recalculate packing quantity if packing size is selected
-        const selectedSize = this.filteredData[index].recordData.selectedPackingSize;
-        if (selectedSize) {
-            const packingNumber = this.extractPackingNumber(selectedSize);
-            if (packingNumber && packingNumber > 0) {
-                const packingQty = Math.ceil(quantity / packingNumber);
-                this.filteredData[index].recordData.packingQuantity = String(packingQty);
-            }
+
+        // Recalculate displayed packing quantity: ceil(Quantity / rawPackingQuantity)
+        if (this.filteredData[index].recordData.selectedPackingSize) {
+            this.filteredData[index].recordData.packingQuantity = this._recalcPackingQuantity(
+                this.filteredData[index].recordData
+            );
         }
         
         this.filteredData = [...this.filteredData];
     }
     
     handleModifiedPriceChange(event) {
-        const index = event.target.dataset.index;
+        const index = parseInt(event.target.dataset.index);
         const value = parseFloat(event.target.value) || 0;
         this.filteredData[index].recordData.modifiedPrice = value;
         this.filteredData = [...this.filteredData];
@@ -581,12 +590,14 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             OriginalUnitPrice: 0,
             ProductName: '',
             DRC_NBC_HSN_SAC_Code__c: '-',
-            DRC_NBC_FG_Code__c:'-',
+            DRC_NBC_FG_Code__c: '-',
             DRC_NBC_Unit_Of_Measurement__c: '-',
             modifiedPrice: 0,
+            packingDetails: [],
             packingSizeOptions: [],
             selectedPackingSize: '',
-            packingQuantity: '',
+            packingQuantity: '',       // displayed: ceil(Quantity / rawPackingQuantity)
+            rawPackingQuantity: '',    // divisor from child record DRC_NBC_Packing_Qauntity__c
             showSearch: true,
             searchResults: [],
             noResultsFound: false
@@ -611,22 +622,13 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         const todayStr = `${yyyy}-${mm}-${dd}`;
         const todayDate = new Date(todayStr + 'T00:00:00');
 
-        // Compare expiration date with today
         if (expirationDate <= !this.quoteRec.DRC_NBC_Lead_Time__c) {
-            this.showToast(
-                'Error',
-                'Expiration Date must be greater than Lead Date.',
-                'error'
-            );
+            this.showToast('Error', 'Expiration Date must be greater than Lead Date.', 'error');
             return false;
         }
 
-         if (expirationDate <= todayDate) {
-            this.showToast(
-                'Error',
-                'Expiration Date must be greater than today.',
-                'error'
-            );
+        if (expirationDate <= todayDate) {
+            this.showToast('Error', 'Expiration Date must be greater than today.', 'error');
             return false;
         }
 
@@ -675,7 +677,6 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             return false;
         }
 
-        // Validate each product row
         for (let i = 0; i < this.filteredData.length; i++) {
             const row = this.filteredData[i].recordData;
             if (!row.Product2Id) {
@@ -711,6 +712,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                     CurrencyIsoCode: this.currencyCode || 'INR',
                     QuantityUnitOfMeasure: row.DRC_NBC_Unit_Of_Measurement__c || '',
                     PackingSize: row.selectedPackingSize || '',
+                    // Saves the calculated value: ceil(Quantity / rawPackingQuantity)
                     PackingQuantity: row.packingQuantity || ''
                 };
             });

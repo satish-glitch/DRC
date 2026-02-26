@@ -3,7 +3,7 @@
 * @Description : Updated to support Packing Size and Packing Quantity
 * @Author : Satish yadav
 * @Last Modified By : Satish Yadav
-* @Last Modified On : February 12, 2026
+* @Last Modified On : February 26, 2026
 * @Modification Log :
 *==============================================================================
 * Ver | Date | Author | Modification
@@ -12,6 +12,7 @@
 * 1.1 | October 13, 2025 |   | Added DRC_NBC_update_Sales_price__c support
 * 1.2 | November 11, 2025 |   | Updated to fetch billing from Account
 * 1.3 | February 12, 2026 |   | Added Packing Size and Packing Quantity support
+* 1.4 | February 26, 2026 |   | Packing Size/Qty now fetched from DRC_NBC_Packing_Details__c child object
 **/
 
 public class DRC_NBC_ProductsController {
@@ -223,6 +224,17 @@ public class DRC_NBC_ProductsController {
         }
     }
 
+    // NEW: Wrapper for a single packing detail record (mirrors DRC_NBC_GenerateQuotes_Controller)
+    public class PackingDetailWrapper {
+        @AuraEnabled public String packingSize;
+        @AuraEnabled public String packingQuantity;
+
+        public PackingDetailWrapper(String size, String qty) {
+            this.packingSize = size;
+            this.packingQuantity = qty;
+        }
+    }
+
     @AuraEnabled
     public static qliWrapper getExistingQLIs(String quoteId) {
         List<DRC_NBC_Restricted_Product__c> productAccessibilitiesList = getrestrictedProductsAccessList(quoteId);
@@ -247,7 +259,7 @@ public class DRC_NBC_ProductsController {
             update quoteRecord;
         }
         
-        // NEW: Query QLIs with packing information
+        // Query QLIs — no longer need Product2.DRC_NBC_Packing_Size__c here
         List<QuoteLineItem> qlis = [
             SELECT
                 Id,
@@ -256,7 +268,6 @@ public class DRC_NBC_ProductsController {
                 Product2.QuantityUnitOfMeasure,
                 Product2.DRC_NBC_FG_Code__c,
                 Product2.DRC_NBC_HSN_SAC_Code__c,
-                Product2.DRC_NBC_Packing_Size__c,
                 Quote.CurrencyIsoCode,
                 PricebookEntryId,
                 Description, 
@@ -275,8 +286,8 @@ public class DRC_NBC_ProductsController {
         qliRecs.qlis = qlis;
         qliRecs.productsList = new List<PricebookEntry>();
         
-        // NEW: Query products with packing size information
-        qliRecs.productsList = [
+        // Query products — no longer need DRC_NBC_Packing_Size__c on Product2
+        List<PricebookEntry> allEntries = [
             SELECT
                 Id,
                 Product2Id,
@@ -285,7 +296,6 @@ public class DRC_NBC_ProductsController {
                 Product2.DRC_NBC_FG_Code__c,
                 Product2.DRC_NBC_HSN_SAC_Code__c,
                 Product2.QuantityUnitOfMeasure,
-                Product2.DRC_NBC_Packing_Size__c,
                 CurrencyIsoCode,
                 Pricebook2Id,
                 Product2.Description,
@@ -299,6 +309,7 @@ public class DRC_NBC_ProductsController {
                 AND Pricebook2Id = :quoteRecord.Pricebook2Id
             ORDER BY Product2.Name
         ];
+        qliRecs.productsList = allEntries;
         
         if (!productAccessibilitiesList.isEmpty()) {
             for (DRC_NBC_Restricted_Product__c access : productAccessibilitiesList) {
@@ -317,7 +328,6 @@ public class DRC_NBC_ProductsController {
                         Product2.DRC_NBC_FG_Code__c,
                         Product2.DRC_NBC_HSN_SAC_Code__c,
                         Product2.QuantityUnitOfMeasure,
-                        Product2.DRC_NBC_Packing_Size__c,
                         CurrencyIsoCode,
                         Pricebook2Id,
                         Product2.Description,
@@ -333,6 +343,34 @@ public class DRC_NBC_ProductsController {
                 ]);
             }
         }
+
+        // Collect all Product2 Ids from both QLIs and product list
+        Set<Id> product2Ids = new Set<Id>();
+        for (QuoteLineItem qli : qlis) {
+            if (qli.Product2Id != null) product2Ids.add(qli.Product2Id);
+        }
+        for (PricebookEntry pbe : qliRecs.productsList) {
+            if (pbe.Product2Id != null) product2Ids.add(pbe.Product2Id);
+        }
+
+        // Fetch packing details from child object for all relevant products
+        Map<Id, List<PackingDetailWrapper>> productPackingMap = new Map<Id, List<PackingDetailWrapper>>();
+        for (DRC_NBC_Packing_Details__c pd : [
+            SELECT Id, Product__c, DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Qauntity__c
+            FROM DRC_NBC_Packing_Details__c
+            WHERE Product__c IN :product2Ids
+            ORDER BY DRC_NBC_Packing_Size__c
+        ]) {
+            if (!productPackingMap.containsKey(pd.Product__c)) {
+                productPackingMap.put(pd.Product__c, new List<PackingDetailWrapper>());
+            }
+            String qtyStr = pd.DRC_NBC_Packing_Qauntity__c != null ? String.valueOf(pd.DRC_NBC_Packing_Qauntity__c) : '';
+            productPackingMap.get(pd.Product__c).add(
+                new PackingDetailWrapper(pd.DRC_NBC_Packing_Size__c, qtyStr)
+            );
+        }
+
+        qliRecs.packingDetailsMap = productPackingMap;
         
         return qliRecs;
     }
@@ -389,6 +427,7 @@ public class DRC_NBC_ProductsController {
                     BillingCountryCode = quoteData.BillingCountryCode,
                     DRC_NBC_Shipping_Address_Id__c = quoteData.DRC_NBC_Shipping_Address_Id__c
                 );
+
                 // Fetch and assign shipping address values from selected DRC_NBC_Addresses__c
                 if (quoteData.DRC_NBC_Shipping_Address_Id__c != null) {
                     DRC_NBC_Addresses__c addr = [
@@ -404,9 +443,9 @@ public class DRC_NBC_ProductsController {
 
                     qToUpdate.ShippingStreet     = addr.DRC_NBC_Address__Street__s;
                     qToUpdate.ShippingCity       = addr.DRC_NBC_Address__City__s;
-                    qToUpdate.ShippingStateCode      = addr.DRC_NBC_Address__StateCode__s;
+                    qToUpdate.ShippingStateCode  = addr.DRC_NBC_Address__StateCode__s;
                     qToUpdate.ShippingPostalCode = addr.DRC_NBC_Address__PostalCode__s;
-                    qToUpdate.ShippingCountryCode    = addr.DRC_NBC_Address__CountryCode__s;
+                    qToUpdate.ShippingCountryCode = addr.DRC_NBC_Address__CountryCode__s;
                 }
 
                 update qToUpdate;
@@ -424,7 +463,6 @@ public class DRC_NBC_ProductsController {
                     throw new AuraHandledException('Missing UnitPrice.');
                 }
                 
-                // NEW: Ensure packing fields are populated correctly
                 QuoteLineItem qliToSave = new QuoteLineItem(
                     Id = qli.Id,
                     Product2Id = qli.Product2Id,
@@ -458,5 +496,7 @@ public class DRC_NBC_ProductsController {
     public class qliWrapper {
         @AuraEnabled public List<QuoteLineItem> qlis;
         @AuraEnabled public List<PricebookEntry> productsList;
+        // Packing details keyed by Product2Id — replaces Product2.DRC_NBC_Packing_Size__c
+        @AuraEnabled public Map<Id, List<PackingDetailWrapper>> packingDetailsMap;
     }
 }
