@@ -46,6 +46,7 @@ public class DRC_NBC_GenerateSamplePiController {
     
     // Totals
     public Decimal totalWithoutTax { get; set; }
+     public Decimal totalItemGST { get; set; }
     public Decimal totalWithTax { get; set; }
     
     // Terms and Logistics
@@ -79,6 +80,7 @@ public class DRC_NBC_GenerateSamplePiController {
         public Decimal unitPrice { get; set; }
         public Decimal amount { get; set; }
         public String Description { get; set; }
+        public Decimal ItemGST { get; set; }
         
     }
     
@@ -159,7 +161,7 @@ public class DRC_NBC_GenerateSamplePiController {
         billingState = (ord.BillingState != null ? ord.BillingState : '');
         billingPostalCode = (ord.BillingPostalCode != null ? ord.BillingPostalCode : '');
         billingCountry = (ord.BillingCountry != null ? ord.BillingCountry : '');
-         PO = (ord.PoNumber != null ? ord.PoNumber : '');
+        PO = (ord.PoNumber != null ? ord.PoNumber : '');
         
         
         // Terms and Logistics
@@ -190,7 +192,8 @@ public class DRC_NBC_GenerateSamplePiController {
             Product2.DRC_NBC_HSN_SAC_Code__c, 
             Product2.DRC_NBC_FG_Code__c,
             Description,
-            order.DRC_NBC_Sample_Shipping_Cost__c
+            order.DRC_NBC_Sample_Shipping_Cost__c,
+            DRC_NBC_Item_GST__c
             FROM 
             OrderItem
             WHERE 
@@ -200,6 +203,7 @@ public class DRC_NBC_GenerateSamplePiController {
         
         items = new List<OrderItemWrapper>();
         totalWithoutTax = 0;
+        totalItemGST = 0;
         
         for (OrderItem oi : orderItems) {
             OrderItemWrapper wrap = new OrderItemWrapper();
@@ -207,17 +211,19 @@ public class DRC_NBC_GenerateSamplePiController {
             wrap.itemName = oi.Product2.Name;
             wrap.referenceNo = oi.Product2.DRC_NBC_FG_Code__c;
             wrap.quantity = oi.Quantity;
+            wrap.ItemGST = oi.DRC_NBC_Item_GST__c;
             wrap.unit = oi.Product2.QuantityUnitOfMeasure; 
             wrap.unitPrice = oi.UnitPrice;
             wrap.amount = oi.TotalPrice;
             wrap.HSN_SAC = oi.Product2.DRC_NBC_HSN_SAC_Code__c;
             wrap.Description = oi.Product2.Name;
             totalWithoutTax += oi.TotalPrice;
+            totalItemGST += oi.DRC_NBC_Item_GST__c;
             items.add(wrap);
         }
         
         // Calculate total with tax
-        totalWithTax = totalWithoutTax + sampleShipping;
+        totalWithTax = totalWithoutTax + sampleShipping + totalItemGST;
     }
     
     private void assignOrderSequenceNumber(Order ord) {

@@ -430,7 +430,7 @@
                             <td class="left">{!item.Description}</td>
                             <td class="center">{!item.quantity}</td>
                             <td class="right">{!item.unitPrice}</td>
-                            <td class="center">0</td>
+                            <td class="center">{!item.ItemGST}</td>
                             <td class="right">{!item.amount}</td>
                         </tr>
                         <apex:variable var="rowNum" value="{!rowNum + 1}" />
