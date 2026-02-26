@@ -22,7 +22,8 @@ export default class DRC_NBC_GenerateSamplePITemplate extends LightningElement {
     connectedCallback() {
         if (this.recordId) {
             this.isLoading = true;
-            this.vfPageUrl = '/apex/DRC_NBC_GenerateSamplePITemplate?id=' + this.recordId;
+            //this.vfPageUrl = '/apex/DRC_NBC_GenerateSamplePITemplate?id=' + this.recordId;
+            this.vfPageUrl = '/apex/DRC_NBC_SAMPLEPI?id=' + this.recordId;
             this.isLoading = false;
         }
     }
