@@ -658,7 +658,8 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             { field: 'EndDate',          message: 'Enter Order End Date.'     },
             { field: 'BillToContactId',  message: 'Select Bill To Contact.'  },
             { field: 'ShipToContactId',  message: 'Select Ship To Contact.'  },
-            { field: 'ShippingStreet',   message: 'Select Shipping Address.' }
+            { field: 'ShippingStreet',   message: 'Select Shipping Address.' },
+             { field: 'DRC_NBC_Warehouse__c',   message: 'Select Warehouse.' }
         ];
 
         for (const v of validations) {

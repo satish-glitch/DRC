@@ -53,6 +53,13 @@
                                 onchange={handleFieldChange}
                                 required>
                             </lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field 
+                                field-name="DRC_NBC_Warehouse__c" 
+                                onchange={handleFieldChange}
+                                required>
+                            </lightning-input-field>
                         </div>                          
                         <template if:true={isPaidSample}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
@@ -592,7 +599,7 @@
     <footer class="slds-modal__footer">
         <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
         <lightning-button variant="brand" label="Create Order" onclick={handleSave} class="slds-m-left_small" disabled={isLoading}></lightning-button>
-    </footer>
+    </footer> 
     </div>
 </template>
 </template>
