@@ -715,6 +715,11 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             isValid = false;
         }
 
+        if (!this.orderRec?.DRC_NBC_Warehouse__c) {
+            this.showToastEvent("Error", "Warehouse is required", "error");
+            isValid = false;
+        }
+
         if (this.orderRec?.EndDate) {
             const endDate = new Date(this.orderRec.EndDate);
             endDate.setHours(0, 0, 0, 0);

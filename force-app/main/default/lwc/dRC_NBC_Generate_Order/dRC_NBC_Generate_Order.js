@@ -680,6 +680,7 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
             { field: 'ShipToContactId', message: 'Enter Ship To Contact.' },
             { field: 'DRC_NBC_Payment_Terms__c', message: 'Enter Payment Term.' },
             { field: 'DRC_NBC_Inco_Terms__c', message: 'Enter Inco Term.' },
+            { field: 'DRC_NBC_Warehouse__c', message: 'Enter Warehouse.' },
         ];
 
         for (const validation of validations) {
