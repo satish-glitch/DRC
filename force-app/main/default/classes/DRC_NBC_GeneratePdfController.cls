@@ -129,7 +129,8 @@ public class DRC_NBC_GeneratePdfController {
             ];
 
             String accountName = ord.Account != null && ord.Account.Name != null ? ord.Account.Name : 'NoAccount';
-            String formattedDate = DateTime.now().format().replace('/', '-').replace(':', '-');
+         //   String formattedDate = DateTime.now().format().replace('/', '-').replace(':', '-');
+            String formattedDate = DateTime.now().format('yyyy-MM-dd_HH:mm');
             String fileName = 'Order_' + accountName + '_' + formattedDate;
 
             // Step 2: Generate PDF
