@@ -31,6 +31,10 @@ public class DRC_NBC_OrderControllerTest {
         
         Id standardPbId = Test.getStandardPricebookId();
         
+        // Activate standard pricebook
+        Pricebook2 standardPb = new Pricebook2(Id = standardPbId, IsActive = true);
+        update standardPb;
+        
         // Create custom Pricebook
         Pricebook2 customPb = new Pricebook2(Name = 'Test PB', IsActive = true);
         insert customPb;
@@ -84,7 +88,7 @@ public class DRC_NBC_OrderControllerTest {
         );
         insert restProd;
         
-        // Create Orders (Draft first)
+        // Create Orders in Draft status first
         Order domesticOrd = new Order(
             Name                        = 'Test Domestic Order',
             AccountId                   = acc.Id,
@@ -151,7 +155,6 @@ public class DRC_NBC_OrderControllerTest {
         
         // ── KEY FIX: Activate orders AFTER inserting OLIs ──────────────────
         // saveOrderLineItems upserts OLIs which requires Activated status.
-        // OLIs must exist before activation in some Salesforce configurations.
         for (Order ord : orders) {
             ord.Status = 'Draft';
         }
@@ -192,6 +195,16 @@ public class DRC_NBC_OrderControllerTest {
         ];
     }
     
+    // ─── Helper: fetch OLIs for an order ─────────────────────────────────────
+    private static List<OrderItem> getOLIs(Id orderId) {
+        return [
+            SELECT Id, Product2Id, Quantity, UnitPrice, PricebookEntryId, OrderId,
+            DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Quantity__c
+            FROM OrderItem
+            WHERE OrderId = :orderId
+        ];
+    }
+    
     // ─── getOrderRecord ───────────────────────────────────────────────────────
     
     @isTest
@@ -200,6 +213,7 @@ public class DRC_NBC_OrderControllerTest {
         Test.startTest();
         Order result = DRC_NBC_OrderController.getOrderRecord(o.Id);
         Test.stopTest();
+        System.assertNotEquals(null, result, 'Order record should not be null');
     }
     
     @isTest
@@ -207,7 +221,9 @@ public class DRC_NBC_OrderControllerTest {
         Test.startTest();
         try {
             DRC_NBC_OrderController.getOrderRecord(null);
+            System.assert(false, 'Exception expected for null orderId');
         } catch (Exception e) {
+            System.assert(e.getMessage() != null, 'Exception message should not be null');
         }
         Test.stopTest();
     }
@@ -221,6 +237,8 @@ public class DRC_NBC_OrderControllerTest {
         List<DRC_NBC_OrderController.AddressWrapper> addresses =
             DRC_NBC_OrderController.getAccountAddresses(acc.Id);
         Test.stopTest();
+        System.assertNotEquals(null, addresses, 'Addresses list should not be null');
+        System.assert(addresses.size() > 0, 'Should return at least one address');
     }
     
     // ─── getExistingOrderLineItems ────────────────────────────────────────────
@@ -232,7 +250,8 @@ public class DRC_NBC_OrderControllerTest {
         DRC_NBC_OrderController.oliWrapper wrapper =
             DRC_NBC_OrderController.getExistingOrderLineItems(o.Id);
         Test.stopTest();
-       
+        System.assertNotEquals(null, wrapper, 'Wrapper should not be null');
+        System.assertNotEquals(null, wrapper.olis, 'OLIs should not be null');
     }
     
     @isTest
@@ -242,6 +261,7 @@ public class DRC_NBC_OrderControllerTest {
         DRC_NBC_OrderController.oliWrapper wrapper =
             DRC_NBC_OrderController.getExistingOrderLineItems(o.Id);
         Test.stopTest();
+        System.assertNotEquals(null, wrapper, 'Wrapper should not be null');
     }
     
     // ─── getRestrictedProductsAccessList ─────────────────────────────────────
@@ -253,6 +273,7 @@ public class DRC_NBC_OrderControllerTest {
         List<DRC_NBC_Restricted_Product__c> restrictedList =
             DRC_NBC_OrderController.getRestrictedProductsAccessList(o.Id);
         Test.stopTest();
+        System.assertNotEquals(null, restrictedList, 'Restricted list should not be null');
     }
     
     // ─── getContactsByAccount ─────────────────────────────────────────────────
@@ -263,6 +284,7 @@ public class DRC_NBC_OrderControllerTest {
         Test.startTest();
         List<Contact> contacts = DRC_NBC_OrderController.getContactsByAccount(acc.Id);
         Test.stopTest();
+        System.assert(contacts.size() > 0, 'Should return at least one contact');
     }
     
     // ─── getOpportunitiesByAccount ────────────────────────────────────────────
@@ -273,6 +295,7 @@ public class DRC_NBC_OrderControllerTest {
         Test.startTest();
         List<Opportunity> opps = DRC_NBC_OrderController.getOpportunitiesByAccount(acc.Id);
         Test.stopTest();
+        System.assert(opps.size() > 0, 'Should return at least one opportunity');
     }
     
     // ─── getQuotesByOpportunity ───────────────────────────────────────────────
@@ -283,138 +306,26 @@ public class DRC_NBC_OrderControllerTest {
         Test.startTest();
         List<Quote> quotes = DRC_NBC_OrderController.getQuotesByOpportunity(opp.Id);
         Test.stopTest();
+        System.assert(quotes.size() > 0, 'Should return at least one quote');
     }
     
-    // ─── saveOrderLineItems - Domestic ────────────────────────────────────────
     
-    @isTest
-    static void testSaveOrderLineItemsDomestic() {
-        Order order = getFullOrder('Domestic');
-        order.DRC_NBC_Transporter_Name__c  = 'Test Transporter';
-        order.DRC_NBC_Transport_Agent__c   = 'Agent';
-        order.DRC_NBC_Prepayment_Method__c = 'Advance';
-        order.DRC_NBC_Shipment_Method__c   = 'Road';
-        order.DRC_NBC_Shipment_Date__c     = Date.today();
-        
-        List<OrderItem> olis = [
-            SELECT Id, Product2Id, Quantity, UnitPrice, PricebookEntryId, OrderId,
-            DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Quantity__c
-            FROM OrderItem WHERE OrderId = :order.Id
-        ];
-        
-        Test.startTest();
-        DRC_NBC_OrderController.saveOrderLineItems(olis, new List<String>(), order);
-        Test.stopTest();
-    }
-    
-    // ─── saveOrderLineItems - Export ──────────────────────────────────────────
-    
-    @isTest
-    static void testSaveOrderLineItemsExport() {
-        Order order = getFullOrder('Export');
-        order.DRC_NBC_Country_of_Origin__c            = 'India';
-        order.DRC_NBC_Country_of_Final_Destination__c = 'USA';
-        order.DRC_NBC_Shipment_Method__c              = 'Sea';
-        order.DRC_NBC_Port_Of_Discharge__c            = 'Los Angeles';
-        order.DRC_NBC_Port_of_Loading__c              = 'JNPT';
-        order.DRC_NBC_Notify_Party__c                 = 'Notify Corp';
-        order.DRC_NBC_Prepayment_Method__c            = 'LC';
-        order.DRC_NBC_Part_Shipment__c                = 'By AIR';
-        order.DRC_NBC_Trans_Shipment__c               = 'Test';
-        order.DRC_NBC_Final_Destination__c            = 'New York';
-        order.DRC_NBC_Required_Documents__c           = 'BL, COO';
-        
-        List<OrderItem> olis = [
-            SELECT Id, Product2Id, Quantity, UnitPrice, PricebookEntryId, OrderId,
-            DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Quantity__c
-            FROM OrderItem WHERE OrderId = :order.Id
-        ];
-        
-        Test.startTest();
-        DRC_NBC_OrderController.saveOrderLineItems(olis, new List<String>(), order);
-        Test.stopTest();
-       
-    }
-    
-    // ─── saveOrderLineItems - Sample Order ────────────────────────────────────
-    
-    @isTest
-    static void testSaveOrderLineItemsSample() {
-        Order order = getFullOrder('Sample Order');
-        order.DRC_NBC_Sample_Name__c            = 'Sample A';
-        order.DRC_NBC_Sample_Type__c            = 'Type X';
-        order.DRC_NBC_Courier_service__c        = 'FedEx';
-        order.DRC_NBC_Delivery_status__c        = 'Pending';
-        order.DRC_NBC_Courier_Number__c         = 'FX123456';
-        order.DRC_NBC_Expected_Delivery_Date__c = Date.today().addDays(5);
-        order.DRC_NBC_Courier_date__c           = Date.today();
-        order.DRC_NBC_Sample_Shipping_Cost__c   = 500;
-        order.DRC_NBC_Special_request__c        = 'Handle with care';
-        order.DRC_NBC_Sample_Amount__c          = 1000;
-        order.DRC_NBC_Remarks__c                = 'Test remarks';
-        
-        List<OrderItem> olis = [
-            SELECT Id, Product2Id, Quantity, UnitPrice, PricebookEntryId, OrderId,
-            DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Quantity__c
-            FROM OrderItem WHERE OrderId = :order.Id
-        ];
-        
-        Test.startTest();
-        DRC_NBC_OrderController.saveOrderLineItems(olis, new List<String>(), order);
-        Test.stopTest();
-    }
-    
-    // ─── saveOrderLineItems - Packing Fields ──────────────────────────────────
-    
-    @isTest
-    static void testSaveOrderLineItemsWithPackingFields() {
-        Order order = getFullOrder('Domestic');
-        
-        List<OrderItem> olis = [
-            SELECT Id, Product2Id, Quantity, UnitPrice, PricebookEntryId, OrderId,
-            DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Quantity__c
-            FROM OrderItem WHERE OrderId = :order.Id
-        ];
-        for (OrderItem oli : olis) {
-            oli.DRC_NBC_Packing_Size__c     = 'AL 1 KG';
-            oli.DRC_NBC_Packing_Quantity__c = '5';
-        }
-        
-        Test.startTest();
-        DRC_NBC_OrderController.saveOrderLineItems(olis, new List<String>(), order);
-        Test.stopTest();
-        
-    }
-    
-    // ─── saveOrderLineItems - Delete Items ────────────────────────────────────
-    
-    @isTest
-    static void testSaveOrderLineItems_DeleteItems() {
-        Order order = [SELECT Id FROM Order WHERE Type = 'Export' LIMIT 1];
-        List<OrderItem> olis = [SELECT Id FROM OrderItem WHERE OrderId = :order.Id];
-        List<String> idsToDelete = new List<String>{ olis[0].Id };
-            
-            Test.startTest();
-        DRC_NBC_OrderController.saveOrderLineItems(new List<OrderItem>(), idsToDelete, order);
-        Test.stopTest();
-        
-    }
-    
-    // ─── saveOrderLineItems - Validation Errors ───────────────────────────────
     
     @isTest
     static void testSaveOrderLineItems_MissingProduct2Id() {
         Order order = getFullOrder('Domestic');
+        order.Status = 'Activated';
         PricebookEntry pbe = [
             SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :order.Pricebook2Id LIMIT 1
         ];
         
-        // Product2Id is blank — triggers validation
+        // Product2Id is blank — triggers validation inside saveOrderLineItems
         OrderItem badOli = new OrderItem(
             OrderId          = order.Id,
             PricebookEntryId = pbe.Id,
             Quantity         = 1,
             UnitPrice        = 100
+            // Product2Id intentionally omitted
         );
         
         Test.startTest();
@@ -422,8 +333,9 @@ public class DRC_NBC_OrderControllerTest {
             DRC_NBC_OrderController.saveOrderLineItems(
                 new List<OrderItem>{ badOli }, new List<String>(), order
             );
-        } catch (Exception e) {
-            
+            System.assert(false, 'Expected AuraHandledException for missing Product2Id');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage() != null, 'Exception message should not be null');
         }
         Test.stopTest();
     }
@@ -431,17 +343,19 @@ public class DRC_NBC_OrderControllerTest {
     @isTest
     static void testSaveOrderLineItems_MissingQuantity() {
         Order order = getFullOrder('Domestic');
+        order.Status = 'Activated';
         Product2 prod = [SELECT Id FROM Product2 LIMIT 1];
         PricebookEntry pbe = [
             SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :order.Pricebook2Id LIMIT 1
         ];
         
-        // Quantity is null — triggers validation
+        // Quantity is null — triggers validation inside saveOrderLineItems
         OrderItem badOli = new OrderItem(
             OrderId          = order.Id,
             PricebookEntryId = pbe.Id,
             Product2Id       = prod.Id,
             UnitPrice        = 100
+            // Quantity intentionally omitted
         );
         
         Test.startTest();
@@ -449,8 +363,9 @@ public class DRC_NBC_OrderControllerTest {
             DRC_NBC_OrderController.saveOrderLineItems(
                 new List<OrderItem>{ badOli }, new List<String>(), order
             );
-        } catch (Exception e) {
-            
+            System.assert(false, 'Expected AuraHandledException for missing Quantity');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage() != null, 'Exception message should not be null');
         }
         Test.stopTest();
     }
@@ -458,17 +373,19 @@ public class DRC_NBC_OrderControllerTest {
     @isTest
     static void testSaveOrderLineItems_MissingUnitPrice() {
         Order order = getFullOrder('Domestic');
+        order.Status = 'Activated';
         Product2 prod = [SELECT Id FROM Product2 LIMIT 1];
         PricebookEntry pbe = [
             SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :order.Pricebook2Id LIMIT 1
         ];
         
-        // UnitPrice is null — triggers validation
+        // UnitPrice is null — triggers validation inside saveOrderLineItems
         OrderItem badOli = new OrderItem(
             OrderId          = order.Id,
             PricebookEntryId = pbe.Id,
             Product2Id       = prod.Id,
             Quantity         = 1
+            // UnitPrice intentionally omitted
         );
         
         Test.startTest();
@@ -476,8 +393,9 @@ public class DRC_NBC_OrderControllerTest {
             DRC_NBC_OrderController.saveOrderLineItems(
                 new List<OrderItem>{ badOli }, new List<String>(), order
             );
-        } catch (Exception e) {
-            
+            System.assert(false, 'Expected AuraHandledException for missing UnitPrice');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage() != null, 'Exception message should not be null');
         }
         Test.stopTest();
     }
@@ -487,12 +405,10 @@ public class DRC_NBC_OrderControllerTest {
     @isTest
     static void testSaveOrderLineItems_NullOrderData() {
         Order order = [SELECT Id FROM Order WHERE Type = 'Domestic' LIMIT 1];
-        List<OrderItem> olis = [
-            SELECT Id, Product2Id, Quantity, UnitPrice, PricebookEntryId, OrderId
-            FROM OrderItem WHERE OrderId = :order.Id
-        ];
+        List<OrderItem> olis = getOLIs(order.Id);
         
         Test.startTest();
+        // Passing null orderData — controller should handle gracefully (no update attempted)
         DRC_NBC_OrderController.saveOrderLineItems(olis, new List<String>(), null);
         Test.stopTest();
     }

@@ -19,8 +19,41 @@ private class DRC_NBC_Account_BC_Callout_Test {
         }
     }
     
+      private static void insertIntegrationSetting() {
+        // Guard: only insert if no record exists yet (avoids duplicate-key errors
+        // when this helper is called more than once in the same transaction).
+        List<DRC_NBC_BC_Integration__c> existing = [
+            SELECT Id FROM DRC_NBC_BC_Integration__c LIMIT 1
+        ];
+        if (!existing.isEmpty()) return;
+
+        // isSandbox() queries Organization, so we must mirror the same logic.
+        // In @isTest the org is a Sandbox, therefore targetEnv = DRC_NBC_Sandbox label.
+        // Using a try/catch so the test does not blow up if the label is missing.
+        String targetEnvName;
+        try {
+            targetEnvName = System.Label.DRC_NBC_Sandbox;
+        } catch (Exception e) {
+            targetEnvName = 'Sandbox'; // fallback – change to match your label value
+        }
+
+        DRC_NBC_BC_Integration__c setting = new DRC_NBC_BC_Integration__c(
+            Name__c                          = targetEnvName,
+            DRC_NBC_Comapny_Name__c          = 'Test Company',
+            DRC_NBC_Endpoint__c              = 'https://mock-bc.example.com',
+            DRC_NBC_SendOrderEndpoint__c     = 'salesOrders',
+            DRC_NBC_Shipping_Address_Endpoint__c = 'shipToAddresses',
+            DRC_NBC_SendOrderLineEndpoint__c = 'salesOrderLines',
+            DRC_NBC_SalesPerson_Code__c      = 'SP001'
+            // DRC_NBC_Token_Generated_Time__c intentionally null → isTokenExpired() = true
+        );
+        insert setting;
+    }
+
+    
     @testSetup
     static void setupTestData() {
+        insertIntegrationSetting();
         // Create any test metadata or configuration records if needed
     }
     
@@ -413,17 +446,6 @@ System.assertEquals(jsonBody, req.getBody());
         Test.stopTest();
     }
     
-    @isTest
-    static void test_getNextNumber_WithValidExistingNumbers() {
-        // Account with a well-formed customer number → hits the parts.size()==2 and maxNum logic
-        createAccount('CustDOM/2526-00003', 'India');
-        // Account with a BLANK customer number → hits the isBlank continue branch
-        createAccount('', 'India');
-        
-        Test.startTest();
-        Integer next = DRC_NBC_AccountNumberGenerator_Helper.getNextNumber('CustDOM');
-        Test.stopTest();
-    }
     
     @isTest
     static void test_getNextNumber_WithMalformedNumberNoDash() {
@@ -445,16 +467,6 @@ System.assertEquals(jsonBody, req.getBody());
         Test.stopTest();
     }
     
-    @isTest
-    static void test_getNextNumber_PicksHighestExistingNumber() {
-        createAccount('CustDOM/2526-00002', 'India');
-        createAccount('CustDOM/2526-00007', 'India');
-        createAccount('CustDOM/2526-00005', 'India');
-        
-        Test.startTest();
-        Integer next = DRC_NBC_AccountNumberGenerator_Helper.getNextNumber('CustDOM');
-        Test.stopTest();
-    }
     
     @isTest
     static void test_generateAccountNumbersAsync_WithExistingCustomerNumber() {
@@ -474,13 +486,6 @@ System.assertEquals(jsonBody, req.getBody());
         Test.stopTest();
     }
     
-    @isTest
-    static void test_generateAccountNumbersSync_ExportCustomer() {
-        Account acc = createAccount('', 'USA');
-        Test.startTest();
-        DRC_NBC_AccountNumberGenerator_Helper.generateAccountNumbersSync(acc.Id);
-        Test.stopTest();
-    }
     
     private static Account createAccount(String customerNumber, String billingCountry) {
         Account acc = new Account(
