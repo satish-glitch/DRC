@@ -12,6 +12,23 @@ private class DRC_NBC_BaseIntegrationTest {
         }
     }
     
+    // Mock failure response
+    class MockFailureResponse implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setHeader('Content-Type', 'application/json');
+            res.setBody('{"status":false,"message":"Token Failed"}');
+            res.setStatusCode(500);
+            return res;
+        }
+    }
+    
+    class ExceptionThrowingMock implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            throw new CalloutException('Simulated exception');
+        }
+    }
+    
     // Static Dummy Integration class for testing
     private class DummyIntegration extends DRC_NBC_Base_API_Integration {
         public override HttpRequest prepareRequest() {
@@ -75,6 +92,20 @@ private class DRC_NBC_BaseIntegrationTest {
     }
     
     @isTest
+    static void testTokenGenerationFailure() {
+        Test.setMock(HttpCalloutMock.class, new MockFailureResponse());
+        
+        Test.startTest();
+        DRC_NBC_BC_Generate_Token token =
+            new DRC_NBC_BC_Generate_Token('TestPath', 'GET');
+        
+        HttpResponse response = token.executeAndReturnResponse();
+        Test.stopTest();
+        
+        System.assertNotEquals(null, response);
+        System.assertEquals(500, response.getStatusCode());
+    }
+    @isTest
     static void testCreateHttpRequestAndHeaders() {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator());
         
@@ -99,40 +130,40 @@ private class DRC_NBC_BaseIntegrationTest {
     }
     
     /* ================= BASE CLASS: catch block ================= */
-/*    @isTest
-    static void testExecuteMethodExceptionHandling() {
-        class ExceptionThrowingMock implements HttpCalloutMock {
-            public HttpResponse respond(HttpRequest req) {
-                throw new CalloutException('Simulated exception');
-            }
-        }
-        
-        Test.setMock(HttpCalloutMock.class, new ExceptionThrowingMock());
-        
-        class DummyIntegrationException extends DRC_NBC_Base_API_Integration {
-            public override HttpRequest prepareRequest() {
-                HttpRequest req = new HttpRequest();
-                req.setEndpoint('https://fake.endpoint');
-                req.setMethod('GET');
-                return req;
-            }
-            
-            public override void processResponse(HttpResponse res) {
-                // Mock implementation
-            }
-        }
-        
-        DummyIntegrationException dummy = new DummyIntegrationException();
-        
-        Test.startTest();
-        try {
-            dummy.executeAndReturnResponse();
-            System.assert(false, 'Exception expected');
-        } catch (Exception ex) {
-            System.assert(ex.getMessage().contains('Simulated exception'));
-        }
-        Test.stopTest();
-    }*/
+    /*    @isTest
+static void testExecuteMethodExceptionHandling() {
+class ExceptionThrowingMock implements HttpCalloutMock {
+public HttpResponse respond(HttpRequest req) {
+throw new CalloutException('Simulated exception');
+}
+}
+
+Test.setMock(HttpCalloutMock.class, new ExceptionThrowingMock());
+
+class DummyIntegrationException extends DRC_NBC_Base_API_Integration {
+public override HttpRequest prepareRequest() {
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://fake.endpoint');
+req.setMethod('GET');
+return req;
+}
+
+public override void processResponse(HttpResponse res) {
+// Mock implementation
+}
+}
+
+DummyIntegrationException dummy = new DummyIntegrationException();
+
+Test.startTest();
+try {
+dummy.executeAndReturnResponse();
+System.assert(false, 'Exception expected');
+} catch (Exception ex) {
+System.assert(ex.getMessage().contains('Simulated exception'));
+}
+Test.stopTest();
+}*/
     
     /* ================= PAYLOAD ================= */
     @isTest
@@ -140,7 +171,7 @@ private class DRC_NBC_BaseIntegrationTest {
         DRC_NBC_Integration_Payload.WebToLeadPayLoad lead = new DRC_NBC_Integration_Payload.WebToLeadPayLoad();
         lead.company = 'Test Company';
         lead.interestedChemistry = new Set<String>{ 'ProductA' };
-        System.assertEquals('Test Company', lead.company);
+            System.assertEquals('Test Company', lead.company);
         
         DRC_NBC_Integration_Payload.invoiceSyncPayload invoice = new DRC_NBC_Integration_Payload.invoiceSyncPayload();
         invoice.InvoiceNumber = 'INV1001';
@@ -151,6 +182,33 @@ private class DRC_NBC_BaseIntegrationTest {
         item.Amount = 500;
         
         invoice.lineItems = new List<DRC_NBC_Integration_Payload.invoiceLineItem>{ item };
-        System.assertEquals('PROD1', invoice.lineItems[0].ProductCode);
+            System.assertEquals('PROD1', invoice.lineItems[0].ProductCode);
+    }
+    
+    @isTest
+    static void testExecuteMethodExceptionHandling() {
+        Test.setMock(HttpCalloutMock.class, new ExceptionThrowingMock());
+        DummyIntegration dummy = new DummyIntegration();
+        Test.startTest();
+        try {
+            dummy.executeAndReturnResponse();
+            System.assert(false, 'Exception should have been thrown');
+        } catch (Exception ex) {
+            System.assert(ex.getMessage().contains('Simulated exception'));
+        }
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testCreateHttpRequestMethod() {
+        
+        DummyIntegration dummy = new DummyIntegration();
+        
+        Test.startTest();
+        HttpRequest req = dummy.createHttpRequest();
+        Test.stopTest();
+        
+        System.assertNotEquals(null, req, 'Request should be created');
+        System.assertEquals('application/json', req.getHeader('Content-Type'));
     }
 }

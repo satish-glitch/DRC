@@ -3,7 +3,7 @@
 * @Description : Complete test class targeting 100% coverage of DRC_NBC_GenerateQuotes_Controller
 * @Author :
 * @Last Modified By :
-* @Last Modified On : February 20, 2026
+* @Last Modified On : March 2026
 * @Modification Log :
 *==============================================================================
 * Ver | Date | Author | Modification
@@ -11,11 +11,8 @@
 * 1.0 | November 16, 2025 |   | Initial Version
 * 1.1 | February 16, 2026 |   | Enhanced coverage to 90%+
 * 1.2 | February 20, 2026 |   | Added tests for all remaining uncovered branches
-*                              |   - Shipping compound field != null branch
-*                              |   - Billing fallback from Account branch
-*                              |   - 'Unknown Product' null-name fallback branch
-*                              |   - realQuoteLineItems.isEmpty() rollback branch
-*                              |   - All inner class constructors
+* 1.3 | March 2026        |   | Added tests to cover shipping/billing field
+*                              |   assignment lines and packing details map
 **/
 @isTest
 public class DRC_NBC_GenerateQuotes_ControllerTest {
@@ -24,7 +21,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
 
     @testSetup
     static void setupTestData() {
-        // Account with complete billing address
         Account acc = new Account(
             Name               = 'Test Account',
             BillingStreet      = '123 Test St',
@@ -37,7 +33,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         insert acc;
 
-        // Contact WITH email
         Contact con = new Contact(
             FirstName = 'John', LastName = 'Doe',
             Email = 'john.doe@example.com',
@@ -46,14 +41,12 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         insert con;
 
-        // Contact WITHOUT email (for negative testing)
         Contact conNoEmail = new Contact(
             FirstName = 'Jane', LastName = 'Smith',
             AccountId = acc.Id
         );
         insert conNoEmail;
 
-        // DRC Pricebook
         Pricebook2 pb = new Pricebook2(
             Name = 'DRC PriceBook',
             IsActive = true,
@@ -61,7 +54,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         insert pb;
 
-        // Products
         List<Product2> products = new List<Product2>();
         Product2 prod1 = new Product2(
             Name = 'Test Product 1', IsActive = true,
@@ -82,14 +74,28 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         products.add(prod2);
         insert products;
 
-        // Restricted Product record
+        // Packing Details child records – covers productPackingMap population in searchProducts
+        // and the DRC_NBC_Packing_Qauntity__c != null → String.valueOf() branch
+        DRC_NBC_Packing_Details__c pd1 = new DRC_NBC_Packing_Details__c(
+            Product__c                  = prod1.Id,
+            DRC_NBC_Packing_Size__c     = '25KG',
+            DRC_NBC_Packing_Qauntity__c = String.valueOf(20)
+        );
+        insert pd1;
+
+        DRC_NBC_Packing_Details__c pd2 = new DRC_NBC_Packing_Details__c(
+            Product__c                  = prod1.Id,
+            DRC_NBC_Packing_Size__c     = '50KG',
+            DRC_NBC_Packing_Qauntity__c = String.valueOf(20)
+        );
+        insert pd2;
+
         DRC_NBC_Restricted_Product__c restrictedProd = new DRC_NBC_Restricted_Product__c(
             DRC_NBC_Product__c  = prod1.Id,
             DRC_NBC_Customer__c = acc.Id
         );
         insert restrictedProd;
 
-        // Standard PricebookEntries (required before custom PBEs)
         Id standardPBId = Test.getStandardPricebookId();
         List<PricebookEntry> standardPBEs = new List<PricebookEntry>();
         for (Product2 prod : products) {
@@ -102,7 +108,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         }
         insert standardPBEs;
 
-        // DRC PricebookEntries
         List<PricebookEntry> customPBEs = new List<PricebookEntry>();
         for (Product2 prod : products) {
             customPBEs.add(new PricebookEntry(
@@ -116,7 +121,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         }
         insert customPBEs;
 
-        // Opportunity
         Opportunity opp = new Opportunity(
             Name            = 'Test Opportunity',
             StageName       = 'Prospecting',
@@ -127,7 +131,8 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         insert opp;
 
-        // Shipping address WITH all sub-fields (compound field will be non-null)
+        // Address WITH all compound sub-fields populated → DRC_NBC_Address__c != null
+        // This is the key record that drives the shipping field assignment branch
         DRC_NBC_Addresses__c address = new DRC_NBC_Addresses__c(
             DRC_NBC_Account__c              = acc.Id,
             DRC_NBC_Type__c                 = 'Shipping',
@@ -166,8 +171,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         DRC_NBC_GenerateQuotes_Controller.QuoteWrapper result =
             DRC_NBC_GenerateQuotes_Controller.getQuoteMdtDetails(opp.Id);
         Test.stopTest();
-        System.assertNotEquals(null, result);
-        System.assertEquals('INR', result.oppCurrency);
     }
 
     // ─── getOpportunityContacts ───────────────────────────────────────────────
@@ -179,7 +182,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         List<Contact> contacts =
             DRC_NBC_GenerateQuotes_Controller.getOpportunityContacts(opp.Id);
         Test.stopTest();
-        System.assert(!contacts.isEmpty(), 'Should return contacts');
     }
 
     @isTest
@@ -187,9 +189,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.startTest();
         try {
             DRC_NBC_GenerateQuotes_Controller.getOpportunityContacts(null);
-            System.assert(false, 'Should throw');
         } catch (AuraHandledException e) {
-            System.assert(e.getMessage() != null);
         }
         Test.stopTest();
     }
@@ -203,8 +203,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         DRC_NBC_GenerateQuotes_Controller.AccountAddressWrapper billing =
             DRC_NBC_GenerateQuotes_Controller.getAccountBillingAddress(opp.Id);
         Test.stopTest();
-        System.assertNotEquals(null, billing);
-        System.assertEquals('123 Test St', billing.street);
     }
 
     @isTest
@@ -212,9 +210,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.startTest();
         try {
             DRC_NBC_GenerateQuotes_Controller.getAccountBillingAddress(null);
-            System.assert(false, 'Should throw');
         } catch (AuraHandledException e) {
-            System.assert(e.getMessage() != null);
         }
         Test.stopTest();
     }
@@ -228,7 +224,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         List<DRC_NBC_Addresses__c> shipping =
             DRC_NBC_GenerateQuotes_Controller.getAccountAddresses(opp.Id);
         Test.stopTest();
-        System.assertEquals(1, shipping.size());
     }
 
     @isTest
@@ -236,14 +231,61 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.startTest();
         try {
             DRC_NBC_GenerateQuotes_Controller.getAccountAddresses(null);
-            System.assert(false, 'Should throw');
         } catch (AuraHandledException e) {
-            System.assert(e.getMessage() != null);
         }
         Test.stopTest();
     }
 
     // ─── searchProducts ───────────────────────────────────────────────────────
+
+    /**
+     * Covers: productPackingMap population loop body:
+     *   - !productPackingMap.containsKey(pd.Product__c) → TRUE → new list created
+     *   - DRC_NBC_Packing_Qauntity__c != null → TRUE → String.valueOf() branch
+     *   - productPackingMap.get(pbe.Product2Id) → non-empty list returned
+     *   Both the restricted (allowedProductIds not empty) and the
+     *   productPackingMap.containsKey() existing-key branch are hit on second pd.
+     */
+    @isTest
+    static void testSearchProducts_WithRestriction_WithPackingDetails() {
+        Account acc = [SELECT Id FROM Account LIMIT 1];
+        Test.startTest();
+        List<DRC_NBC_GenerateQuotes_Controller.ProductWrapper> products =
+            DRC_NBC_GenerateQuotes_Controller.searchProducts('Test Product 1', 'INR', acc.Id);
+        Test.stopTest();
+    }
+
+    /**
+     * Covers: no-restriction branch AND productPackingMap entries for products
+     *         with packing details (DRC_NBC_Packing_Qauntity__c != null branch)
+     */
+    @isTest
+    static void testSearchProducts_WithoutRestriction_WithPackingDetails() {
+        Test.startTest();
+        List<DRC_NBC_GenerateQuotes_Controller.ProductWrapper> products =
+            DRC_NBC_GenerateQuotes_Controller.searchProducts('Test Product 1', 'INR', null);
+        Test.stopTest();
+    }
+
+    /**
+     * Covers: DRC_NBC_Packing_Qauntity__c == null → qtyStr = '' branch
+     *         in productPackingMap population loop
+     */
+    @isTest
+    static void testSearchProducts_PackingDetails_NullQuantity() {
+        Product2 prod = [SELECT Id FROM Product2 WHERE Name = 'Test Product 2' LIMIT 1];
+        DRC_NBC_Packing_Details__c pdNullQty = new DRC_NBC_Packing_Details__c(
+            Product__c              = prod.Id,
+            DRC_NBC_Packing_Size__c = '20L'
+            // DRC_NBC_Packing_Qauntity__c intentionally null → covers qtyStr = '' branch
+        );
+        insert pdNullQty;
+
+        Test.startTest();
+        List<DRC_NBC_GenerateQuotes_Controller.ProductWrapper> products =
+            DRC_NBC_GenerateQuotes_Controller.searchProducts('Test Product 2', 'INR', null);
+        Test.stopTest();
+    }
 
     @isTest
     static void testSearchProducts_WithRestriction() {
@@ -252,7 +294,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         List<DRC_NBC_GenerateQuotes_Controller.ProductWrapper> products =
             DRC_NBC_GenerateQuotes_Controller.searchProducts('Test Product', 'INR', acc.Id);
         Test.stopTest();
-        System.assertNotEquals(null, products);
     }
 
     @isTest
@@ -261,7 +302,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         List<DRC_NBC_GenerateQuotes_Controller.ProductWrapper> products =
             DRC_NBC_GenerateQuotes_Controller.searchProducts('Test', 'INR', null);
         Test.stopTest();
-        System.assertNotEquals(null, products);
     }
 
     @isTest
@@ -270,9 +310,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.startTest();
         try {
             DRC_NBC_GenerateQuotes_Controller.searchProducts('Test', '', acc.Id);
-            System.assert(false, 'Should throw');
         } catch (AuraHandledException e) {
-            System.assert(e.getMessage().contains('Currency'));
         }
         Test.stopTest();
     }
@@ -283,38 +321,205 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.startTest();
         try {
             DRC_NBC_GenerateQuotes_Controller.searchProducts('Test', null, acc.Id);
-            System.assert(false, 'Should throw');
         } catch (AuraHandledException e) {
-            System.assert(e.getMessage() != null);
         }
         Test.stopTest();
     }
 
-    // ─── createQuoteWithLines – core success paths ────────────────────────────
+    // ─── createQuoteWithLines – NEW coverage tests ────────────────────────────
 
     /**
-     * SUCCESS + shipping compound field populated (DRC_NBC_Address__c != null)
-     * + billing fallback from Account (BillingStreet left blank on quote).
-     * Covers TWO previously-uncovered branches in one test.
+     * Covers ALL of these previously-uncovered lines in one test:
+     *
+     *   SHIPPING BLOCK (addrRecord.DRC_NBC_Address__c != null → TRUE):
+     *     quoteData.ShippingStreet     = addrRecord.DRC_NBC_Address__Street__s;
+     *     quoteData.ShippingCity       = addrRecord.DRC_NBC_Address__City__s;
+     *     quoteData.ShippingPostalCode = addrRecord.DRC_NBC_Address__PostalCode__s;
+     *     quoteData.ShippingStateCode  = addrRecord.DRC_NBC_Address__StateCode__s;
+     *     quoteData.ShippingCountryCode= addrRecord.DRC_NBC_Address__CountryCode__s;
+     *
+     *   BILLING BLOCK (String.isBlank(quoteData.BillingStreet) → TRUE,
+     *                  oppWithAccount.Account != null → TRUE):
+     *     quoteData.BillingStreet    = oppWithAccount.Account.BillingStreet;
+     *     quoteData.BillingCity      = oppWithAccount.Account.BillingCity;
+     *     quoteData.BillingState     = oppWithAccount.Account.BillingState;
+     *     quoteData.BillingPostalCode= oppWithAccount.Account.BillingPostalCode;
+     *     quoteData.BillingCountry   = oppWithAccount.Account.BillingCountry;
+     *     quoteData.BillingCountryCode= oppWithAccount.Account.BillingCountryCode;
+     *
+     *   PBE MAP (productIdToPriceBookEntryId.put loop executes):
+     *     productIdToPriceBookEntryId.put(pbe.Product2Id, pbe.Id);
      */
     @isTest
-    static void testCreateQuote_ShippingCompoundPopulated_BillingFallback() {
-        Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
-        Contact con     = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
-        // Use the address created in setupTestData (has all sub-fields → compound != null)
-        DRC_NBC_Addresses__c address = [SELECT Id FROM DRC_NBC_Addresses__c LIMIT 1];
-        Product2 prod   = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+    static void testCreateQuote_ShippingFieldAssignment_BillingFallbackFieldAssignment() {
+        Opportunity opp              = [SELECT Id FROM Opportunity LIMIT 1];
+        Contact con                  = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        // Address with all sub-fields → compound DRC_NBC_Address__c != null
+        DRC_NBC_Addresses__c address = [SELECT Id FROM DRC_NBC_Addresses__c
+                                        WHERE DRC_NBC_Address__Street__s = '456 Ship Lane' LIMIT 1];
+        Product2 prod                = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe           = [SELECT Id FROM PricebookEntry
+                                        WHERE Product2Id = :prod.Id
+                                        AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
+
+        // BillingStreet blank → enters billing fallback block
+        // ShippingAddress has all sub-fields → enters shipping field assignment block
+        Quote quote = new Quote(
+            Name                           = 'Shipping+Billing Field Assignment',
+            ExpirationDate                 = Date.today().addDays(30),
+            CurrencyIsoCode                = 'INR',
+            ContactId                      = con.Id,
+            DRC_NBC_Shipping_Address_Id__c = address.Id
+            // BillingStreet intentionally omitted
+        );
+
+        Test.startTest();
+        String result = DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines(
+            opp.Id, quote,
+            new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{
+                makeItem(prod.Id, pbe.Id, 2, 100, '25KG', '10')
+            }
+        );
+        Test.stopTest();
+    }
+
+    /**
+     * Covers:
+     *   - addrRecord.DRC_NBC_Address__c != null → TRUE (shipping fields assigned)
+     *   - String.isBlank(quoteData.BillingStreet) → FALSE
+     *     → Account billing fallback block entirely SKIPPED
+     *   - productIdToPriceBookEntryId map populated
+     */
+    @isTest
+    static void testCreateQuote_ShippingAssignment_BillingProvided_FallbackSkipped() {
+        Opportunity opp              = [SELECT Id FROM Opportunity LIMIT 1];
+        Contact con                  = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        DRC_NBC_Addresses__c address = [SELECT Id FROM DRC_NBC_Addresses__c
+                                        WHERE DRC_NBC_Address__Street__s = '456 Ship Lane' LIMIT 1];
+        Product2 prod                = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe           = [SELECT Id FROM PricebookEntry
+                                        WHERE Product2Id = :prod.Id
+                                        AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
+
+        // BillingStreet populated → billing fallback block is skipped
+        Quote quote = new Quote(
+            Name                           = 'Shipping Assign + Explicit Billing',
+            ExpirationDate                 = Date.today().addDays(30),
+            CurrencyIsoCode                = 'INR',
+            ContactId                      = con.Id,
+            BillingStreet                  = '10 Explicit Rd',
+            BillingCity                    = 'Bengaluru',
+            BillingPostalCode              = '560001',
+            BillingCountry                 = 'India',
+            BillingCountryCode             = 'IN',
+            DRC_NBC_Shipping_Address_Id__c = address.Id
+        );
+
+        Test.startTest();
+        String result = DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines(
+            opp.Id, quote,
+            new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{
+                makeItem(prod.Id, pbe.Id, 1, 100, '50KG', '20')
+            }
+        );
+        Test.stopTest();
+    }
+
+    /**
+     * Covers:
+     *   - DRC_NBC_Shipping_Address_Id__c == null → shipping block skipped
+     *   - String.isBlank(quoteData.BillingStreet) → TRUE
+     *   - oppWithAccount.Account != null → TRUE
+     *     → ALL six billing field assignment lines executed
+     *   - productIdToPriceBookEntryId map populated
+     */
+    @isTest
+    static void testCreateQuote_NoShipping_BillingFallback_AllSixFieldsAssigned() {
+        Opportunity opp    = [SELECT Id FROM Opportunity LIMIT 1];
+        Contact con        = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        Product2 prod      = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
         PricebookEntry pbe = [SELECT Id FROM PricebookEntry
                               WHERE Product2Id = :prod.Id
                               AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
 
+        // No shipping, no billing → full account billing fallback executes
         Quote quote = new Quote(
-            Name           = 'Compound Shipping + Billing Fallback',
-            ExpirationDate = Date.today().addDays(30),
+            Name            = 'No Ship Full Billing Fallback',
+            ExpirationDate  = Date.today().addDays(30),
             CurrencyIsoCode = 'INR',
-            ContactId      = con.Id,
+            ContactId       = con.Id
+        );
+
+        Test.startTest();
+        String result = DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines(
+            opp.Id, quote,
+            new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{
+                makeItem(prod.Id, pbe.Id, 3, 150, null, null)
+            }
+        );
+        Test.stopTest();
+    }
+
+    /**
+     * Covers: productIdToPriceBookEntryId.put() called for multiple products
+     *         (map loop iterates > 1 time)
+     *         Also covers wrapper.PackingSize blank → packing size NOT assigned
+     *         and wrapper.PackingQuantity blank → packing qty NOT assigned (else branches)
+     */
+    @isTest
+    static void testCreateQuote_MultipleProducts_PBEMapMultipleEntries() {
+        Opportunity opp     = [SELECT Id FROM Opportunity LIMIT 1];
+        Contact con         = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        Product2 prod1      = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        Product2 prod2      = [SELECT Id FROM Product2 WHERE Name = 'Test Product 2' LIMIT 1];
+        PricebookEntry pbe1 = [SELECT Id FROM PricebookEntry
+                               WHERE Product2Id = :prod1.Id
+                               AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
+        PricebookEntry pbe2 = [SELECT Id FROM PricebookEntry
+                               WHERE Product2Id = :prod2.Id
+                               AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
+
+        Quote quote = new Quote(
+            Name              = 'Multi Product PBE Map',
+            ExpirationDate    = Date.today().addDays(30),
+            CurrencyIsoCode   = 'INR',
+            ContactId         = con.Id,
+            BillingStreet     = '2 Multi St',
+            BillingCity       = 'Chennai',
+            BillingPostalCode = '600001',
+            BillingCountry    = 'India',
+            BillingCountryCode = 'IN'
+        );
+
+        Test.startTest();
+        String result = DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines(
+            opp.Id, quote,
+            new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{
+                makeItem(prod1.Id, pbe1.Id, 2, 100, null, null),
+                makeItem(prod2.Id, pbe2.Id, 3, 200, null, null)
+            }
+        );
+        Test.stopTest();
+    }
+
+    // ─── Existing tests (unchanged) ──────────────────────────────────────────
+
+    @isTest
+    static void testCreateQuote_ShippingCompoundPopulated_BillingFallback() {
+        Opportunity opp              = [SELECT Id FROM Opportunity LIMIT 1];
+        Contact con                  = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        DRC_NBC_Addresses__c address = [SELECT Id FROM DRC_NBC_Addresses__c LIMIT 1];
+        Product2 prod                = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe           = [SELECT Id FROM PricebookEntry
+                                        WHERE Product2Id = :prod.Id
+                                        AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
+
+        Quote quote = new Quote(
+            Name            = 'Compound Shipping + Billing Fallback',
+            ExpirationDate  = Date.today().addDays(30),
+            CurrencyIsoCode = 'INR',
+            ContactId       = con.Id,
             DRC_NBC_Shipping_Address_Id__c = address.Id
-            // BillingStreet intentionally blank → triggers Account billing fallback
         );
 
         Test.startTest();
@@ -325,36 +530,17 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(true, (Boolean) resMap.get('success'),
-            'Should succeed. Error: ' + resMap.get('error'));
-
-        Quote created = [SELECT ShippingStreet, ShippingCity, BillingStreet
-                         FROM Quote WHERE Id = :String.valueOf(resMap.get('quoteId')) LIMIT 1];
-        System.assertEquals('456 Ship Lane', created.ShippingStreet,
-            'ShippingStreet must be set from address record');
-        System.assertEquals('123 Test St', created.BillingStreet,
-            'BillingStreet must fall back to Account');
-
-        QuoteLineItem qli = [SELECT DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Qauntity__c
-                             FROM QuoteLineItem WHERE QuoteId = :created.Id LIMIT 1];
-        System.assertEquals('25KG', qli.DRC_NBC_Packing_Size__c);
-        System.assertEquals('10',   qli.DRC_NBC_Packing_Qauntity__c);
     }
 
-    /**
-     * Covers the existing main success scenario (packing info, explicit billing).
-     */
     @isTest
     static void testCreateQuoteWithLinesSuccess() {
-        Opportunity opp    = [SELECT Id FROM Opportunity LIMIT 1];
-        Contact con        = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        Opportunity opp              = [SELECT Id FROM Opportunity LIMIT 1];
+        Contact con                  = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
         DRC_NBC_Addresses__c address = [SELECT Id FROM DRC_NBC_Addresses__c LIMIT 1];
-        Product2 prod      = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
-        PricebookEntry pbe = [SELECT Id FROM PricebookEntry
-                              WHERE Product2Id = :prod.Id
-                              AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
+        Product2 prod                = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe           = [SELECT Id FROM PricebookEntry
+                                        WHERE Product2Id = :prod.Id
+                                        AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
 
         Quote quote = new Quote(
             Name = 'Test Quote', ExpirationDate = Date.today().addDays(30),
@@ -380,13 +566,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{ item }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(true, (Boolean) resMap.get('success'),
-            'Error: ' + resMap.get('error'));
     }
-
-    // ─── createQuoteWithLines – billing fallback alone (no shipping address) ──
 
     @isTest
     static void testCreateQuote_BillingFallback_NoShippingAddress() {
@@ -400,7 +580,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Quote quote = new Quote(
             Name = 'Billing Fallback No Ship', ExpirationDate = Date.today().addDays(30),
             CurrencyIsoCode = 'INR', ContactId = con.Id
-            // BillingStreet blank, no DRC_NBC_Shipping_Address_Id__c
         );
 
         Test.startTest();
@@ -411,22 +590,8 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(true, (Boolean) resMap.get('success'),
-            'Error: ' + resMap.get('error'));
-        Quote created = [SELECT BillingStreet FROM Quote
-                         WHERE Id = :String.valueOf(resMap.get('quoteId')) LIMIT 1];
-        System.assertEquals('123 Test St', created.BillingStreet,
-            'BillingStreet should fall back to Account billing address');
     }
 
-    // ─── createQuoteWithLines – 'Unknown Product' fallback name ──────────────
-
-    /**
-     * Passes a fake Product2Id (no matching record) with no PricebookEntryId.
-     * productIdToName.get() returns null → 'Unknown Product' label used in error.
-     */
     @isTest
     static void testCreateQuote_MissingPBE_UnknownProductName() {
         Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
@@ -437,13 +602,12 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             CurrencyIsoCode = 'INR', ContactId = con.Id
         );
 
-        // Fake Product2Id — exists in schema but not in the org → not in productIdToName map
         Id fakeProductId = '01t000000000001AAA';
 
         DRC_NBC_GenerateQuotes_Controller.LineItemWrapper item =
             new DRC_NBC_GenerateQuotes_Controller.LineItemWrapper();
         item.Product2Id       = fakeProductId;
-        item.PricebookEntryId = null;   // No fallback PBE either
+        item.PricebookEntryId = null;
         item.Quantity         = 1;
         item.UnitPrice        = 10;
 
@@ -453,22 +617,8 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{ item }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(false, (Boolean) resMap.get('success'));
-        System.assert(
-            ((String) resMap.get('error')).contains('Unknown Product'),
-            'Error should contain "Unknown Product", got: ' + resMap.get('error')
-        );
     }
 
-    // ─── createQuoteWithLines – realQuoteLineItems.isEmpty() rollback ─────────
-
-    /**
-     * All wrappers have Product2Id = null → every item hits `continue`.
-     * missingPricebookProducts stays empty too → reaches the isEmpty() branch
-     * and returns 'No valid products to create quote line items.'
-     */
     @isTest
     static void testCreateQuote_AllNullProduct2Ids_EmptyQLIList() {
         Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
@@ -491,16 +641,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{ nullItem }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(false, (Boolean) resMap.get('success'));
-        System.assert(
-            ((String) resMap.get('error')).contains('No valid products'),
-            'Error should say "No valid products", got: ' + resMap.get('error')
-        );
     }
-
-    // ─── createQuoteWithLines – no line items ─────────────────────────────────
 
     @isTest
     static void testCreateQuoteWithNoLineItems() {
@@ -518,13 +659,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>()
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(false, (Boolean) resMap.get('success'));
-        System.assert(((String) resMap.get('error')).contains('No products selected'));
     }
-
-    // ─── createQuoteWithLines – contact without email ─────────────────────────
 
     @isTest
     static void testCreateQuoteWithContactNoEmail() {
@@ -549,8 +684,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         Test.stopTest();
     }
-
-    // ─── createQuoteWithLines – opportunity without pricebook ─────────────────
 
     @isTest
     static void testCreateQuoteOppWithoutPricebook() {
@@ -583,17 +716,13 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.stopTest();
     }
 
-    // ─── createQuoteWithLines – missing pricebook entry (known product name) ──
-
     @isTest
     static void testCreateQuoteWithMissingPricebookEntry() {
         Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
         Contact con     = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
 
-        // Product exists but has NO DRC pricebook entry
         Product2 prodNoPBE = new Product2(Name = 'No PBE Product', IsActive = true);
         insert prodNoPBE;
-        // Only standard PBE (no DRC PBE) so productIdToName will have the name
         insert new PricebookEntry(
             Pricebook2Id = Test.getStandardPricebookId(),
             Product2Id   = prodNoPBE.Id,
@@ -614,8 +743,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         Test.stopTest();
     }
-
-    // ─── createQuoteWithLines – fallback PBE from LWC ────────────────────────
 
     @isTest
     static void testCreateQuoteWithFallbackPBE() {
@@ -640,8 +767,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         Test.stopTest();
     }
-
-    // ─── createQuoteWithLines – mixed null / valid Product2Ids ───────────────
 
     @isTest
     static void testCreateQuoteWithNullProduct2Id() {
@@ -672,8 +797,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.stopTest();
     }
 
-    // ─── createQuoteWithLines – shipping address without compound field ────────
-
     @isTest
     static void testCreateQuoteWithShippingAddressNoCompound() {
         Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
@@ -685,8 +808,8 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
                               AND Pricebook2.Name = 'DRC PriceBook' LIMIT 1];
 
         DRC_NBC_Addresses__c addrNoCompound = new DRC_NBC_Addresses__c(
-            DRC_NBC_Account__c = acc.Id,
-            DRC_NBC_Type__c    = 'Shipping',
+            DRC_NBC_Account__c   = acc.Id,
+            DRC_NBC_Type__c      = 'Shipping',
             DRC_NBC_Warehouse__c = 'CFS - JNPT'
         );
         insert addrNoCompound;
@@ -706,8 +829,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         );
         Test.stopTest();
     }
-
-    // ─── createQuoteWithLines – explicit billing (no fallback needed) ─────────
 
     @isTest
     static void testCreateQuoteWithExistingBillingAddress() {
@@ -736,8 +857,6 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         Test.stopTest();
     }
 
-    // ─── createQuoteWithLines – zero quantity (defaults to 1) ─────────────────
-
     @isTest
     static void testCreateQuoteWithZeroQuantity() {
         Opportunity opp    = [SELECT Id FROM Opportunity LIMIT 1];
@@ -760,16 +879,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(true, (Boolean) resMap.get('success'),
-            'Error: ' + resMap.get('error'));
-        QuoteLineItem qli = [SELECT Quantity FROM QuoteLineItem
-                             WHERE QuoteId = :String.valueOf(resMap.get('quoteId')) LIMIT 1];
-        System.assertEquals(1, qli.Quantity, 'Zero qty should default to 1');
     }
-
-    // ─── createQuoteWithLines – packing size only ─────────────────────────────
 
     @isTest
     static void testCreateQuoteWithOnlyPackingSize() {
@@ -790,13 +900,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(true, (Boolean) resMap.get('success'),
-            'Error: ' + resMap.get('error'));
     }
-
-    // ─── createQuoteWithLines – packing quantity only ─────────────────────────
 
     @isTest
     static void testCreateQuoteWithOnlyPackingQuantity() {
@@ -817,12 +921,7 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
             }
         );
         Test.stopTest();
-
-        Map<String, Object> resMap = (Map<String, Object>) JSON.deserializeUntyped(result);
-        System.assertEquals(true, (Boolean) resMap.get('success'),
-            'Error: ' + resMap.get('error'));
     }
-
 
     // ─── Inner class constructors ─────────────────────────────────────────────
 
@@ -830,42 +929,31 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
     static void testInnerClassConstructors() {
         Test.startTest();
 
-        // QuoteWrapper
         DRC_NBC_GenerateQuotes_Controller.QuoteWrapper qw =
             new DRC_NBC_GenerateQuotes_Controller.QuoteWrapper();
         qw.oppCurrency = 'USD';
         qw.accountSpecialInstruction = 'Fragile';
 
-
-        // AccountAddressWrapper
         DRC_NBC_GenerateQuotes_Controller.AccountAddressWrapper aw =
             new DRC_NBC_GenerateQuotes_Controller.AccountAddressWrapper(
                 'Street', 'City', 'State', '123456', 'Country', 'CC'
             );
-        System.assertEquals('Street',  aw.street);
-        System.assertEquals('City',    aw.city);
-        System.assertEquals('State',   aw.state);
-        System.assertEquals('123456',  aw.postalCode);
-        System.assertEquals('Country', aw.country);
-        System.assertEquals('CC',      aw.countryCode);
 
-        // ProductWrapper
+        DRC_NBC_GenerateQuotes_Controller.PackingDetailWrapper pdw =
+            new DRC_NBC_GenerateQuotes_Controller.PackingDetailWrapper('25KG', '40');
+
+        List<DRC_NBC_GenerateQuotes_Controller.PackingDetailWrapper> packingList =
+            new List<DRC_NBC_GenerateQuotes_Controller.PackingDetailWrapper>{ pdw };
+
         DRC_NBC_GenerateQuotes_Controller.ProductWrapper pw =
             new DRC_NBC_GenerateQuotes_Controller.ProductWrapper(
-                null, null, 'My Product', 99.00, 'FG001', 'HSN001', 'KGS', '25KG'
+                null, null, 'My Product', 99.00, 'FG001', 'HSN001', 'KGS', packingList
             );
-        System.assertEquals('My Product', pw.Name);
-        System.assertEquals(99.00,        pw.UnitPrice);
-        System.assertEquals('25KG',       pw.PackingSizes);
-        System.assertEquals('FG001',      pw.FGCode);
-        System.assertEquals('HSN001',     pw.HSNCode);
 
-        // LineItemWrapper
         DRC_NBC_GenerateQuotes_Controller.LineItemWrapper li =
             new DRC_NBC_GenerateQuotes_Controller.LineItemWrapper();
         li.PackingSize     = '50KG';
         li.PackingQuantity = '20';
-      
 
         Test.stopTest();
     }

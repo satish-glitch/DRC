@@ -22,11 +22,19 @@ return DRC_NBC_BC_Integration__c.getInstance(System.label.DRC_NBC_Production);
         String targetEnv = isSandbox() ? System.label.DRC_NBC_Sandbox : System.label.DRC_NBC_Production;
         
         DRC_NBC_BC_Integration__c setting = [
-            SELECT Name__c, DRC_NBC_Comapny_Name__c,DRC_NBC_Endpoint__c,
-            	DRC_NBC_SendOrderEndpoint__c, DRC_NBC_Shipping_Address_Endpoint__c,
-            	DRC_NBC_Token_Generated_Time__c, DRC_NBC_SendOrderLineEndpoint__c, DRC_NBC_SalesPerson_Code__c
-            FROM DRC_NBC_BC_Integration__c
-            WHERE Name__c = :targetEnv
+            SELECT 
+            	Name__c, 
+            	DRC_NBC_Comapny_Name__c,
+                DRC_NBC_Endpoint__c,
+            	DRC_NBC_SendOrderEndpoint__c,
+                DRC_NBC_Shipping_Address_Endpoint__c,
+            	DRC_NBC_Token_Generated_Time__c,
+                DRC_NBC_SendOrderLineEndpoint__c,
+                DRC_NBC_SalesPerson_Code__c
+            FROM 
+            	DRC_NBC_BC_Integration__c
+            WHERE 
+            	Name__c = :targetEnv
             LIMIT 1
         ];
         

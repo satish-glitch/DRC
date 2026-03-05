@@ -92,7 +92,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                 Map<String, Object> requestBlock = new Map<String, Object>();
                 requestBlock.put('method', 'POST');
                 requestBlock.put('id', 'r' + requestCounter);
-                requestBlock.put('url', 'Company(\'DRC UAT 05032024\')/SalesOrderLineSalesForce');
+                requestBlock.put('url', System.Label.DRC_UAT);
                 
                 Map<String, String> headers = new Map<String, String>{
                     'Content-Type' => 'application/json'
@@ -135,7 +135,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     Map<String, Object> requestBlock = new Map<String, Object>();
                     requestBlock.put('method', 'POST');
                     requestBlock.put('id', 'r' + requestCounter);
-                    requestBlock.put('url', 'Company(\'DRC UAT 05032024\')/SalesOrderLineSalesForce');
+                    requestBlock.put('url', System.Label.DRC_UAT);
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'
@@ -184,7 +184,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     Map<String, Object> requestBlock = new Map<String, Object>();
                     requestBlock.put('method', 'POST');
                     requestBlock.put('id', 'r' + requestCounter);
-                    requestBlock.put('url', 'Company(\'DRC UAT 05032024\')/SalesOrderLineSalesForce');
+                    requestBlock.put('url', System.Label.DRC_UAT);
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'

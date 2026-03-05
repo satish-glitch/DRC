@@ -1,7 +1,9 @@
 @isTest
 private class DRC_NBC_OrderProduct_BC_Batch_Test {
-
-    // ─── Mock HTTP ────────────────────────────────────────────────────────────
+    
+    private static String getSalesOrderLineUrl() {
+        return System.Label.DRC_UAT;
+    }
 
     private class MockSuccess implements HttpCalloutMock {
         public HTTPResponse respond(HTTPRequest req) {
@@ -23,10 +25,55 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         }
     }
 
+    // ─── Helper: Insert DRC_NBC_BC_Integration__c custom setting ─────────────
+    // This is required so that DRC_NBC_BC_Callout_Utility.getConfig() SOQL
+    // finds a record and does not throw System.QueryException.
+    //
+    // DRC_NBC_BC_Integration__c is a Hierarchy Custom Setting.
+    // We insert ONE record whose Name__c matches whatever isSandbox() returns.
+    // In a test context the org is always treated as a Sandbox, so we use
+    // System.Label.DRC_NBC_Sandbox. If that label is not available in the org,
+    // replace the string literal with the exact Name value expected by getConfig().
+    private static void insertIntegrationSetting() {
+        // Guard: only insert if no record exists yet (avoids duplicate-key errors
+        // when this helper is called more than once in the same transaction).
+        List<DRC_NBC_BC_Integration__c> existing = [
+            SELECT Id FROM DRC_NBC_BC_Integration__c LIMIT 1
+        ];
+        if (!existing.isEmpty()) return;
+
+        // isSandbox() queries Organization, so we must mirror the same logic.
+        // In @isTest the org is a Sandbox, therefore targetEnv = DRC_NBC_Sandbox label.
+        // Using a try/catch so the test does not blow up if the label is missing.
+        String targetEnvName;
+        try {
+            targetEnvName = System.Label.DRC_NBC_Sandbox;
+        } catch (Exception e) {
+            targetEnvName = 'Sandbox'; // fallback – change to match your label value
+        }
+
+        DRC_NBC_BC_Integration__c setting = new DRC_NBC_BC_Integration__c(
+            Name__c                          = targetEnvName,
+            DRC_NBC_Comapny_Name__c          = 'Test Company',
+            DRC_NBC_Endpoint__c              = 'https://mock-bc.example.com',
+            DRC_NBC_SendOrderEndpoint__c     = 'salesOrders',
+            DRC_NBC_Shipping_Address_Endpoint__c = 'shipToAddresses',
+            DRC_NBC_SendOrderLineEndpoint__c = 'salesOrderLines',
+            DRC_NBC_SalesPerson_Code__c      = 'SP001'
+            // DRC_NBC_Token_Generated_Time__c intentionally null → isTokenExpired() = true
+        );
+        insert setting;
+    }
+
     // ─── Test Setup ───────────────────────────────────────────────────────────
 
     @testSetup
     static void setupTestData() {
+
+        // ── 1. Integration custom setting (must exist before any execute() call) ──
+        insertIntegrationSetting();
+
+        // ── 2. Account ──────────────────────────────────────────────────────────
         Account acc = new Account(
             Name                         = 'Test Account',
             DRC_NBC_Customer_Number__c   = 'CUST001',
@@ -38,10 +85,9 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         );
         insert acc;
 
-
         Id stdPbId = Test.getStandardPricebookId();
 
-        // Product
+        // ── 3. Product ──────────────────────────────────────────────────────────
         Product2 prod = new Product2(
             Name                       = 'Test Product',
             IsActive                   = true,
@@ -59,74 +105,75 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         );
         insert stdPbe;
 
+        // ── 4. Orders – all include Pricebook2Id ────────────────────────────────
         Order ord = new Order(
-        AccountId                    = acc.Id,
-        Status                       = 'Draft',
-        EffectiveDate                = Date.today(),
-        Pricebook2Id                 = stdPbId,          // ← KEY FIX
-        DRC_NBC_Cust_Order_Number__c = 'ORD-001',
-        DRC_NBC_TCS_Amount__c        = 500,
-        DRC_NBC_Other_Tax_Amount__c  = 300,
-        DRC_NBC_Warehouse__c         = 'CFS - JNPT'
-    );
-    insert ord;
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-001',
+            DRC_NBC_TCS_Amount__c        = 500,
+            DRC_NBC_Other_Tax_Amount__c  = 300,
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT'
+        );
+        insert ord;
 
-    Order ordNoTax = new Order(
-        AccountId                    = acc.Id,
-        Status                       = 'Draft',
-        EffectiveDate                = Date.today(),
-        Pricebook2Id                 = stdPbId,          // ← KEY FIX
-        DRC_NBC_Cust_Order_Number__c = 'ORD-002',
-        DRC_NBC_TCS_Amount__c        = 0,
-        DRC_NBC_Other_Tax_Amount__c  = 0,
-        DRC_NBC_Warehouse__c         = 'CFS - JNPT'
-    );
-    insert ordNoTax;
+        Order ordNoTax = new Order(
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-002',
+            DRC_NBC_TCS_Amount__c        = 0,
+            DRC_NBC_Other_Tax_Amount__c  = 0,
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT'
+        );
+        insert ordNoTax;
 
-    Order ordNullTax = new Order(
-        AccountId                    = acc.Id,
-        Status                       = 'Draft',
-        EffectiveDate                = Date.today(),
-        Pricebook2Id                 = stdPbId,          // ← KEY FIX
-        DRC_NBC_Cust_Order_Number__c = 'ORD-003',
-        DRC_NBC_Warehouse__c         = 'CFS - JNPT'
-    );
-    insert ordNullTax;
+        Order ordNullTax = new Order(
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-003',
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT'
+        );
+        insert ordNullTax;
 
-    // Order Items
-    OrderItem oi = new OrderItem(
-        OrderId                        = ord.Id,
-        PricebookEntryId               = stdPbe.Id,
-        Product2Id                     = prod.Id,
-        Quantity                       = 5,
-        UnitPrice                      = 100,
-        DRC_NBC_Discount__c            = 10,
-        Description                    = 'Test Item',
-        DRC_NBC_Unit_Of_Measurement__c = 'KGS',
-        DRC_NBC_Packing_Size__c        = 'AL 1 KG',
-        DRC_NBC_Packing_Quantity__c    = '5'
-    );
-    insert oi;
+        // ── 5. Order Items ───────────────────────────────────────────────────────
+        OrderItem oi = new OrderItem(
+            OrderId                        = ord.Id,
+            PricebookEntryId               = stdPbe.Id,
+            Product2Id                     = prod.Id,
+            Quantity                       = 5,
+            UnitPrice                      = 100,
+            DRC_NBC_Discount__c            = 10,
+            Description                    = 'Test Item',
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS',
+            DRC_NBC_Packing_Size__c        = 'AL 1 KG',
+            DRC_NBC_Packing_Quantity__c    = '5'
+        );
+        insert oi;
 
-    OrderItem oiNoTax = new OrderItem(
-        OrderId                        = ordNoTax.Id,
-        PricebookEntryId               = stdPbe.Id,
-        Product2Id                     = prod.Id,
-        Quantity                       = 2,
-        UnitPrice                      = 50,
-        DRC_NBC_Unit_Of_Measurement__c = 'KGS'
-    );
-    insert oiNoTax;
+        OrderItem oiNoTax = new OrderItem(
+            OrderId                        = ordNoTax.Id,
+            PricebookEntryId               = stdPbe.Id,
+            Product2Id                     = prod.Id,
+            Quantity                       = 2,
+            UnitPrice                      = 50,
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS'
+        );
+        insert oiNoTax;
 
-    OrderItem oiNullTax = new OrderItem(
-        OrderId                        = ordNullTax.Id,
-        PricebookEntryId               = stdPbe.Id,
-        Product2Id                     = prod.Id,
-        Quantity                       = 1,
-        UnitPrice                      = 200,
-        DRC_NBC_Unit_Of_Measurement__c = 'KGS'
-    );
-    insert oiNullTax;
+        OrderItem oiNullTax = new OrderItem(
+            OrderId                        = ordNullTax.Id,
+            PricebookEntryId               = stdPbe.Id,
+            Product2Id                     = prod.Id,
+            Quantity                       = 1,
+            UnitPrice                      = 200,
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS'
+        );
+        insert oiNullTax;
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -156,7 +203,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
         Test.stopTest();
 
-        // Verify order still exists (no rollback)
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Order should still exist after batch');
@@ -225,16 +271,21 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
     /**
      * Covers: Order with no OrderItems → scope.isEmpty() = true → early return
      *         requestList is empty → callout skipped
+     *
+     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
      */
     @isTest
     static void test_Batch_NoOrderItems() {
-        Account acc = [SELECT Id FROM Account LIMIT 1];
+        Account acc    = [SELECT Id FROM Account LIMIT 1];
+        Id stdPbId     = Test.getStandardPricebookId();
+
         Order emptyOrd = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
             EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,          // ← FIX
             DRC_NBC_Cust_Order_Number__c = 'ORD-EMPTY',
-            DRC_NBC_Warehouse__c         = 'Mumbai Warehouse'
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert emptyOrd;
 
@@ -258,6 +309,8 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
      *         OrderItem with null Total Price → totalPrice = 0
      *         OrderItem with null Quantity → Quantity = 0
      *         OrderItem with null UnitPrice → Unit_Price = 0
+     *
+     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
      */
     @isTest
     static void test_Batch_NullOrderItemFields() {
@@ -270,8 +323,9 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             AccountId                    = acc.Id,
             Status                       = 'Draft',
             EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,          // ← FIX
             DRC_NBC_Cust_Order_Number__c = 'ORD-NULL-FIELDS',
-            DRC_NBC_Warehouse__c         = 'Mumbai Warehouse'
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert ord;
 
@@ -300,6 +354,8 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
     /**
      * Covers: Sample Order record type → isSampleOrder = true
      *         → totalPrice = 0, lineDiscountAmount = 0, Unit_Price = 0
+     *
+     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
      */
     @isTest
     static void test_Batch_SampleOrder() {
@@ -308,7 +364,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         Id stdPbId    = Test.getStandardPricebookId();
         PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
 
-        // Find or use a Record Type named Sample_Order if available
         List<RecordType> sampleRTs = [
             SELECT Id FROM RecordType
             WHERE SObjectType = 'Order' AND Name = 'Sample_Order'
@@ -319,8 +374,9 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             AccountId                    = acc.Id,
             Status                       = 'Draft',
             EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,          // ← FIX
             DRC_NBC_Cust_Order_Number__c = 'ORD-SAMPLE',
-            DRC_NBC_Warehouse__c         = 'Mumbai Warehouse'
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         if (!sampleRTs.isEmpty()) {
             sampleOrd.RecordTypeId = sampleRTs[0].Id;
@@ -328,12 +384,12 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         insert sampleOrd;
 
         OrderItem oi = new OrderItem(
-            OrderId                      = sampleOrd.Id,
-            PricebookEntryId             = pbe.Id,
-            Product2Id                   = prod.Id,
-            Quantity                     = 3,
-            UnitPrice                    = 100,
-            DRC_NBC_Discount__c          = 10,
+            OrderId                        = sampleOrd.Id,
+            PricebookEntryId               = pbe.Id,
+            Product2Id                     = prod.Id,
+            Quantity                       = 3,
+            UnitPrice                      = 100,
+            DRC_NBC_Discount__c            = 10,
             DRC_NBC_Unit_Of_Measurement__c = 'KGS'
         );
         insert oi;
@@ -354,6 +410,8 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
      * Covers: Multiple OrderItems in same batch → lineCounter increments
      *         requestCounter increments per item
      *         Both OtherTax and TCS lines added after items
+     *
+     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
      */
     @isTest
     static void test_Batch_MultipleOrderItems() {
@@ -366,22 +424,23 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             AccountId                    = acc.Id,
             Status                       = 'Draft',
             EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,          // ← FIX
             DRC_NBC_Cust_Order_Number__c = 'ORD-MULTI',
             DRC_NBC_TCS_Amount__c        = 250,
             DRC_NBC_Other_Tax_Amount__c  = 150,
-            DRC_NBC_Warehouse__c         = 'Mumbai Warehouse'
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert ord;
 
         List<OrderItem> items = new List<OrderItem>();
         for (Integer i = 0; i < 5; i++) {
             items.add(new OrderItem(
-                OrderId                      = ord.Id,
-                PricebookEntryId             = pbe.Id,
-                Product2Id                   = prod.Id,
-                Quantity                     = i + 1,
-                UnitPrice                    = 100,
-                DRC_NBC_Unit_Of_Measurement__c = 'KG'
+                OrderId                        = ord.Id,
+                PricebookEntryId               = pbe.Id,
+                Product2Id                     = prod.Id,
+                Quantity                       = i + 1,
+                UnitPrice                      = 100,
+                DRC_NBC_Unit_Of_Measurement__c = 'KGS'
             ));
         }
         insert items;
@@ -411,7 +470,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         Database.executeBatch(batch, 200);
         Test.stopTest();
 
-        // finish() executed — no exception means pass
         Boolean finished = true;
         if (!finished) {
             throw new IllegalArgumentException('Batch finish should complete without error');
@@ -510,7 +568,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         integration.processResponse(res);
         Test.stopTest();
 
-        // No exception = pass (processResponse is void)
         Boolean processed = true;
         if (!processed) {
             throw new IllegalArgumentException('processResponse should handle 201 without error');
