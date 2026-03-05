@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Prevent_Warehouse_Edit_When_Partially_Sh</fullName>
+    <active>true</active>
+    <description>Warehouse cannot be modified once the order is partially shipped.</description>
+    <errorConditionFormula>AND(
+    DRC_NBC_Order_PartiallyShipped__c = TRUE,
+    ISCHANGED(DRC_NBC_Warehouse__c)
+)</errorConditionFormula>
+    <errorDisplayField>DRC_NBC_Order_PartiallyShipped__c</errorDisplayField>
+    <errorMessage>Warehouse cannot be modified once the order is partially shipped.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Account_Name</fullName>
+    <active>true</active>
+    <description>This rule is created to validate account name field should not be blank</description>
+    <errorConditionFormula>ISBLANK( AccountId )</errorConditionFormula>
+    <errorDisplayField>AccountId</errorDisplayField>
+    <errorMessage>Please select corresponding account</errorMessage>
+</ValidationRule>

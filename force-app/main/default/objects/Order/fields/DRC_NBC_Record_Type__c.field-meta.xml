@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Record_Type__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(
+  RecordType.DeveloperName = &quot;Sample_Order&quot;,
+  &quot;&lt;span style=&apos;color:red;font-weight:bold;&apos;&gt;Sample Order&lt;/span&gt;&quot;,
+  IMAGE(&quot;/resource/BlueSquare?ver=2&quot;, &quot;Regular Order&quot;, 60, 140)
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Record Type</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

@@ -11,7 +11,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
     @testSetup
     static void setupTestData() {
         // ===== CREATE CUSTOM SETTING FIRST =====
-        DRC_NBC_BC_Integration__c customSetting = new DRC_NBC_BC_Integration__c(
+      /*  DRC_NBC_BC_Integration__c customSetting = new DRC_NBC_BC_Integration__c(
             Name = 'Test_Config_Sandbox',
             Name__c = 'Sandbox',
             DRC_NBC_Comapny_Name__c = 'D.R. COATS INK AND RESINS PVT. LTD',
@@ -21,6 +21,25 @@ private class DRC_NBC_Order_BC_Integration_Test {
             DRC_NBC_SendOrderLineEndpoint__c = 'SalesOrderLines',
             DRC_NBC_SalesPerson_Code__c = 'SP001',
             DRC_NBC_Token_Generated_Time__c = System.now()
+        );
+        insert customSetting;*/
+        
+         String targetEnvName;
+        try {
+            targetEnvName = System.Label.DRC_NBC_Sandbox;
+        } catch (Exception e) {
+            targetEnvName = 'Sandbox'; // fallback – change to match your label value
+        }
+
+        DRC_NBC_BC_Integration__c customSetting = new DRC_NBC_BC_Integration__c(
+            Name__c                          = targetEnvName,
+            DRC_NBC_Comapny_Name__c          = 'Test Company',
+            DRC_NBC_Endpoint__c              = 'https://mock-bc.example.com',
+            DRC_NBC_SendOrderEndpoint__c     = 'salesOrders',
+            DRC_NBC_Shipping_Address_Endpoint__c = 'shipToAddresses',
+            DRC_NBC_SendOrderLineEndpoint__c = 'salesOrderLines',
+            DRC_NBC_SalesPerson_Code__c      = 'SP001'
+            // DRC_NBC_Token_Generated_Time__c intentionally null → isTokenExpired() = true
         );
         insert customSetting;
         

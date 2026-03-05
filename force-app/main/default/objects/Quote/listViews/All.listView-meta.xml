@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All</fullName>
+    <columns>QUOTE.NAME</columns>
+    <columns>OPPORTUNITY.NAME</columns>
+    <columns>DRC_NBC_Type__c</columns>
+    <columns>QUOTE.TOTALPRICE</columns>
+    <columns>DRC_NBC_Grand_Total__c</columns>
+    <columns>QUOTE.EXPIRATIONDATE</columns>
+    <filterScope>Everything</filterScope>
+    <label>All Quotes</label>
+</ListView>

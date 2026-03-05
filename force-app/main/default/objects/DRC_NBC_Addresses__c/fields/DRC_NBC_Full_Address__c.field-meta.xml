@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Full_Address__c</fullName>
+    <externalId>false</externalId>
+    <formula>DRC_NBC_Address__Street__s &amp; 
+IF(NOT(ISBLANK(DRC_NBC_Address__City__s)), &apos;, &apos; &amp; DRC_NBC_Address__City__s, &apos;&apos;) &amp;
+IF(NOT(ISBLANK(DRC_NBC_Address__PostalCode__s)), &apos;, &apos; &amp; DRC_NBC_Address__PostalCode__s, &apos;&apos;)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Address Name</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

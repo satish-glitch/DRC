@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Capture_Rejected_Reason</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+     Text(Status) == &apos;Rejected&apos;,
+				 ISBLANK((DRC_NBC_Reject_Reason_Text__c))
+)</errorConditionFormula>
+    <errorMessage>Please provide Rejection Reason.</errorMessage>
+</ValidationRule>

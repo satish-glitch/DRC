@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Warehouse__c</fullName>
+    <label>Warehouse</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>OTHER COUNTRY</fullName>
+                <default>false</default>
+                <label>OTHER COUNTRY</label>
+            </value>
+            <value>
+                <fullName>Andheri Air Port</fullName>
+                <default>false</default>
+                <label>Andheri Air Port</label>
+            </value>
+            <value>
+                <fullName>ARSHIYA LOGISTICS SERVICES LIMITED</fullName>
+                <default>false</default>
+                <label>ARSHIYA LOGISTICS SERVICES LIMITED</label>
+            </value>
+            <value>
+                <fullName>C4/2/2 D.R COATS INK &amp; RESINS PVT LTD</fullName>
+                <default>false</default>
+                <label>C4/2/2 D.R COATS INK &amp; RESINS PVT LTD</label>
+            </value>
+            <value>
+                <fullName>CFS - JNPT</fullName>
+                <default>false</default>
+                <label>CFS - JNPT</label>
+            </value>
+            <value>
+                <fullName>Commercial Sample</fullName>
+                <default>false</default>
+                <label>Commercial Sample</label>
+            </value>
+            <value>
+                <fullName>DARSHAN CHEMICALS</fullName>
+                <default>false</default>
+                <label>DARSHAN CHEMICALS</label>
+            </value>
+            <value>
+                <fullName>D.R COATS INK &amp; RESINS PVT LTD (GUJ)</fullName>
+                <default>false</default>
+                <label>D.R COATS INK &amp; RESINS PVT LTD (GUJ)</label>
+            </value>
+            <value>
+                <fullName>E-123</fullName>
+                <default>false</default>
+                <label>E-123</label>
+            </value>
+            <value>
+                <fullName>EXBHIWANDI TRANSPORTERS WAREHOUSE</fullName>
+                <default>false</default>
+                <label>EXBHIWANDI TRANSPORTERS WAREHOUSE</label>
+            </value>
+            <value>
+                <fullName>GATIK SYNTHESIS LLP</fullName>
+                <default>false</default>
+                <label>GATIK SYNTHESIS LLP</label>
+            </value>
+            <value>
+                <fullName>D R Coats Ink and Resins Pvt Ltd (GUJ)</fullName>
+                <default>false</default>
+                <label>D R Coats Ink and Resins Pvt Ltd (GUJ)</label>
+            </value>
+            <value>
+                <fullName>Plot No.H-4/2-B</fullName>
+                <default>false</default>
+                <label>Plot No.H-4/2-B</label>
+            </value>
+            <value>
+                <fullName>Head Office</fullName>
+                <default>false</default>
+                <label>Head Office</label>
+            </value>
+            <value>
+                <fullName>IN TANSIT</fullName>
+                <default>false</default>
+                <label>IN TANSIT</label>
+            </value>
+            <value>
+                <fullName>D.R COATS INK &amp; RESINS PVT LTD (UNIT-II)</fullName>
+                <default>false</default>
+                <label>D.R COATS INK &amp; RESINS PVT LTD (UNIT-II)</label>
+            </value>
+            <value>
+                <fullName>K-34</fullName>
+                <default>false</default>
+                <label>K-34</label>
+            </value>
+            <value>
+                <fullName>PAONA CHEMPRO P LTD</fullName>
+                <default>false</default>
+                <label>PAONA CHEMPRO P LTD</label>
+            </value>
+            <value>
+                <fullName>NHAVA SEVA PORT</fullName>
+                <default>false</default>
+                <label>NHAVA SEVA PORT</label>
+            </value>
+            <value>
+                <fullName>Production Sample</fullName>
+                <default>false</default>
+                <label>Production Sample</label>
+            </value>
+            <value>
+                <fullName>Quality Control</fullName>
+                <default>false</default>
+                <label>Quality Control</label>
+            </value>
+            <value>
+                <fullName>Rejection - RM &amp; FG</fullName>
+                <default>false</default>
+                <label>Rejection - RM &amp; FG</label>
+            </value>
+            <value>
+                <fullName>Research &amp; development</fullName>
+                <default>false</default>
+                <label>Research &amp; development</label>
+            </value>
+            <value>
+                <fullName>SAI SON RESINS AND CHEMICALS</fullName>
+                <default>false</default>
+                <label>SAI SON RESINS AND CHEMICALS</label>
+            </value>
+            <value>
+                <fullName>TARAPUR</fullName>
+                <default>false</default>
+                <label>TARAPUR</label>
+            </value>
+            <value>
+                <fullName>Vapi - Job Work</fullName>
+                <default>false</default>
+                <label>Vapi - Job Work</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

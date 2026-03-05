@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_CAPA_File_Upload</fullName>
+    <active>true</active>
+    <description>This rule is created to validate whether CAPA file is uploaded or not if case status = closed</description>
+    <errorConditionFormula>AND(
+ISPICKVAL( Status , &quot;Closed&quot;),
+ NOT( DRC_NBC_CAPA_File_Uploaded__c ) 
+)</errorConditionFormula>
+    <errorDisplayField>DRC_NBC_CAPA_File_Uploaded__c</errorDisplayField>
+    <errorMessage>Please upload CAPA file as case status = &quot;closed&quot;</errorMessage>
+</ValidationRule>

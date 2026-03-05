@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Priority</fullName>
+    <active>true</active>
+    <description>This rule is created to validate priority field should not be blank</description>
+    <errorConditionFormula>ISBLANK(TEXT( Priority ))</errorConditionFormula>
+    <errorDisplayField>Priority</errorDisplayField>
+    <errorMessage>Please select priority</errorMessage>
+</ValidationRule>

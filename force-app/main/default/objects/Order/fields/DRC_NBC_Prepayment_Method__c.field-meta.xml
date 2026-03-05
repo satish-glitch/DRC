@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Prepayment_Method__c</fullName>
+    <label>Prepayment Method</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>100 % Advance</fullName>
+                <default>false</default>
+                <label>100 % Advance</label>
+            </value>
+            <value>
+                <fullName>50% Advance</fullName>
+                <default>false</default>
+                <label>50% Advance</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

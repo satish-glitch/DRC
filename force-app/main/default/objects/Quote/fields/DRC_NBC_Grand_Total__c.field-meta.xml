@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Grand_Total__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(
+  ISPICKVAL(DRC_NBC_Type__c, &quot;Domestic&quot;),
+  
+  TotalPrice +
+  /* GST logic based on state */
+  IF(
+     TEXT(Contact.Account.BillingStateCode) = &quot;MH&quot;,
+    /* CGST + SGST */
+    IF(ISBLANK(DRC_NBC_C_GST__c), 0, DRC_NBC_C_GST__c) +
+    IF(ISBLANK(DRC_NBC_S_GST__c), 0, DRC_NBC_S_GST__c),
+    /* IGST */
+    IF(ISBLANK(DRC_NBC_I_GST__c), 0, DRC_NBC_I_GST__c)
+  ) +
+  /* Other taxes */
+  IF(ISBLANK(DRC_NBC_Other_Tax_Amount__c), 0, DRC_NBC_Other_Tax_Amount__c) +
+  IF(ISBLANK(DRC_NBC_TCS_Amount__c), 0, DRC_NBC_TCS_Amount__c),
+
+  /* EXPORT case */
+  IF(
+    ISPICKVAL(DRC_NBC_Type__c, &quot;Export&quot;),
+    TotalPrice +
+    IF(ISBLANK(DRC_NBC_Other_Tax_Amount__c), 0, DRC_NBC_Other_Tax_Amount__c),
+
+    /* DEFAULT fallback (if type is neither Domestic nor Export) */
+    TotalPrice
+  )
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Grand Total</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

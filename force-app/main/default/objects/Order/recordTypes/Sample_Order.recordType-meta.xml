@@ -1,0 +1,898 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Sample_Order</fullName>
+    <active>true</active>
+    <label>Sample Order</label>
+    <picklistValues>
+        <picklist>DRC_NBC_Currency_Code__c</picklist>
+        <values>
+            <fullName>AED</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>EURO</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>INR</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>USD</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Delivery_Terms__c</picklist>
+        <values>
+            <fullName>CFR</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CIF</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CPT</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Delivery_status__c</picklist>
+        <values>
+            <fullName>Delivered</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Dispatched</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Intransit</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Inco_Terms__c</picklist>
+        <values>
+            <fullName>Carriage Paid To %28CPT%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Charges Collect %28CC%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Cost %26 Freight %28CFR%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Cost Insurance %26 Freight %28CIF%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Courier %28COURIER%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Delivered At Place %28DAP%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Delivered Duty Paid %28DDP%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Door Delivery %28DD%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Ex Bhiwandi %28EXBH%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Ex Works %28EXW%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Free On Board %28FOB%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Freight Paid Delivered %28FOR%29</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Part_Shipment__c</picklist>
+        <values>
+            <fullName>Allowed</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Not Allowed</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Payment_Terms__c</picklist>
+        <values>
+            <fullName>10 DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>10 DAYS ID</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>10%25 - 90%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>10%25 ADV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>100</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>100%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>100%25 ADV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>100%25 BL</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>100%25 PAY</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>100%25ADV PI</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>120 D</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>120D BL</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>15D</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>20 - 80%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>20%25 %2B BA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>20%25 %2B MT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>20%25 - 80%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>20%25 ADV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>25 - 75%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>25%25%2B75%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>25%25-75%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>25%25-75%25 LC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>25-75 60D</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30 - 70%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30 DAY PDC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30 DN</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30%25 - 70%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30%25 ADV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30%25-70%25 BL</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30%25ADV-70%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30-70 CAD</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30D ARRIVA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30D BL</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30D DA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30D INV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>30PDC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>40%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>40%25 ADV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>40%25-60%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>40D NET</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>45 D</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>45 DAYPDC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>45 DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>45-60</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>45DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50 %2B BL 60</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50 %2B50 NS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50 - 50%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50 DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50%25</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50%25 TT ADV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50%25%2B 50%25CR</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50%25%2C %2BINV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50%25-50%25ETA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50%2B50</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60 D CAD</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60 D LR</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60 DAYPADC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60 DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60 NET</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60D</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60D BL</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60D INV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>60D NET</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>64DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>7 DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>70 %25 ADVAN</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>70%25 ADVANC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>75 D INV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>75 DAYS BL</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>90 DAYS AC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>90 DAYS DA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>90 PDC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>90D</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>90D BL</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>94DAYS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>AGN DELRY</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>BOND TRANS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CACD</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CAD</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CADB</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CASH ADV</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>DA 60</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>DP SIGHT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>FREE</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>HIGH SEA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IMME</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IRRELC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IRRLC30</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IRRLC40</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IRRLC45</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IRRLC60</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IRRLC90</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>PAY</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>PDC 45</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>PDC 60</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>REMARK</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>T%2FT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>T%2FT AND LC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>TT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>TT 45</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>TT 60D</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>TT 90</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>WITHIN 45D</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Prepayment_Method__c</picklist>
+        <values>
+            <fullName>100 %25 Advance</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>50%25 Advance</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Product_Information__c</picklist>
+        <values>
+            <fullName>Catalysts %26 Enzymes</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Industrial Acids</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Organic Solvents</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Polymer Additives</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Specialty Coatings</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Rejection_Reason1__c</picklist>
+        <values>
+            <fullName>Feature not suitable</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Long delivery time</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Other</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Quality issue</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Spec mismatch</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Wrong size%2Fvariant</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Required_Documents__c</picklist>
+        <values>
+            <fullName>Bill of Lading</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Certificate of Analysis</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Certificate of Origin</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Commercial Invoice</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Insurance Certificate</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Packing List</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Sample_Status__c</picklist>
+        <values>
+            <fullName>Approved</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Commercially Approved</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Rejected</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Requested</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Submitted</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Under Evaluation</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Sample_Type__c</picklist>
+        <values>
+            <fullName>Free Sample</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Initial Sample</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Paid Sample</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Test Sample</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Select_Bank__c</picklist>
+        <values>
+            <fullName>BANK OF BARODA 167</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>BANK OF BARODA EEFC a%2Fc</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>BANK OF BARODA INR A%2FC</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>ICICI BANK CA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>ICICI BANK LTD EEFC a%2Fc</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>YES BANK A%2FC 131</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Shipment_Method__c</picklist>
+        <values>
+            <fullName>By AIR</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>By SEA</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Trans_Shipment__c</picklist>
+        <values>
+            <fullName>Allowed</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Not Allowed</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Type__c</picklist>
+        <values>
+            <fullName>Domestic</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Export</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Unit_Of_Measurement__c</picklist>
+        <values>
+            <fullName>Kilograms</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Pound</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>DRC_NBC_Warehouse__c</picklist>
+        <values>
+            <fullName>ARSHIYA LOGISTICS SERVICES LIMITED</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Andheri Air Port</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>C4%2F2%2F2 D%2ER COATS INK %26 RESINS PVT LTD %28UNIT-III%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CFS - JNPT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Commercial Sample</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>D R Coats Ink and Resins Pvt Ltd %28GUJ%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>D%2ER COATS INK %26 RESINS PVT LTD %28GUJ%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>D%2ER COATS INK %26 RESINS PVT LTD %28UNIT-II%29</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>DARSHAN CHEMICALS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>E-123</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>EXBHIWANDI TRANSPORTERS WAREHOUSE</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>GATIK SYNTHESIS LLP</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Head Office</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>IN TANSIT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>K-34</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>NHAVA SEVA PORT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>OTHER COUNTRY</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>PAONA CHEMPRO P LTD</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Plot No%2EH-4%2F2-B</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Production Sample</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Quality Control</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Rejection - RM %26 FG</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Research %26 development</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>SAI SON RESINS AND CHEMICALS</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>TARAPUR</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Vapi - Job Work</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>Status</picklist>
+        <values>
+            <fullName>Accepted</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Approved</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Commercially Approved</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Delivered</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Dispatch</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Rejected</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Released</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Requested</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Sumbit</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Under Evaluation</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>Type</picklist>
+        <values>
+            <fullName>Sample Order</fullName>
+            <default>true</default>
+        </values>
+    </picklistValues>
+</RecordType>

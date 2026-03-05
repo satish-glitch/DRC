@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Other_Issue_Type</fullName>
+    <active>false</active>
+    <description>This rule is created to validate if issue type is other then description field should not be empty</description>
+    <errorConditionFormula>AND(
+ISPICKVAL( DRC_NBC_Issue_type__c , &quot;Others&quot;),
+ISBLANK( Description )
+)</errorConditionFormula>
+    <errorDisplayField>Description</errorDisplayField>
+    <errorMessage>As Issue type is &quot;other&quot; please enter the description about the issue</errorMessage>
+</ValidationRule>

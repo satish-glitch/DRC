@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Domestic</fullName>
+    <columns>QUOTE.NAME</columns>
+    <columns>OPPORTUNITY.NAME</columns>
+    <columns>ACCOUNT.NAME</columns>
+    <columns>QUOTE.SUBTOTAL</columns>
+    <columns>DRC_NBC_Grand_Total__c</columns>
+    <columns>QUOTE.ISSYNCING</columns>
+    <columns>QUOTE.EXPIRATIONDATE</columns>
+    <filterScope>Mine</filterScope>
+    <filters>
+        <field>DRC_NBC_Type__c</field>
+        <operation>equals</operation>
+        <value>Domestic</value>
+    </filters>
+    <label>Domestic</label>
+</ListView>

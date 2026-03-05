@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_C_GST__c</fullName>
+    <formula>IF(
+    OR(
+        AND(
+            ISPICKVAL(DRC_NBC_Type__c, &quot;Domestic&quot;),
+            TEXT(Account.BillingStateCode) = &quot;MH&quot;
+        ),
+        AND(
+            ISPICKVAL(DRC_NBC_Sample_Type__c, &quot;Paid Sample&quot;),
+            TEXT(Account.BillingStateCode) = &quot;MH&quot;
+        )
+    ),
+    DRC_NBC_Total_Amount__c * VALUE($Label.DRC_NBC_CGST_Tax_Rate),
+    0
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>CGST</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <type>Currency</type>
+</CustomField>

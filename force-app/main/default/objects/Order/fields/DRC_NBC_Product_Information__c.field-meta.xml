@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Product_Information__c</fullName>
+    <label>Product Information</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Organic Solvents</fullName>
+                <default>false</default>
+                <label>Organic Solvents</label>
+            </value>
+            <value>
+                <fullName>Industrial Acids</fullName>
+                <default>false</default>
+                <label>Industrial Acids</label>
+            </value>
+            <value>
+                <fullName>Polymer Additives</fullName>
+                <default>false</default>
+                <label>Polymer Additives</label>
+            </value>
+            <value>
+                <fullName>Catalysts &amp; Enzymes</fullName>
+                <default>false</default>
+                <label>Catalysts &amp; Enzymes</label>
+            </value>
+            <value>
+                <fullName>Specialty Coatings</fullName>
+                <default>false</default>
+                <label>Specialty Coatings</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

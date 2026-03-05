@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Order_Compact_Layout</fullName>
+    <fields>OrderNumber</fields>
+    <fields>EffectiveDate</fields>
+    <fields>AccountId</fields>
+    <fields>OpportunityId</fields>
+    <fields>BillingAddress</fields>
+    <fields>ShippingAddress</fields>
+    <fields>DRC_NBC_Grand_Total__c</fields>
+    <fields>DRC_NBC_Order_PartiallyShipped__c</fields>
+    <label>Order_Compact_Layout</label>
+</CompactLayout>

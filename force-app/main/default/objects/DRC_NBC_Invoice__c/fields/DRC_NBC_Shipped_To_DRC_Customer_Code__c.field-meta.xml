@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Shipped_To_DRC_Customer_Code__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Shipped To (DRC Customer Code)</label>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Invoice (Shipped To (DRC Customer Code))</relationshipLabel>
+    <relationshipName>Invoice</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Validate_GST_When_Shipping_Address</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+  /* Run only if GST is entered */
+  NOT(ISBLANK(DRC_NBC_GST_Number__c)),
+
+  /* Country must be India */
+  TEXT(DRC_NBC_Address__CountryCode__s) = &quot;IN&quot;,
+
+  /* Run validation if either State Code OR PAN mismatch */
+  OR(
+    /* State Code Mismatch */
+    LEFT(DRC_NBC_GST_Number__c, 2) &lt;&gt;
+      CASE(
+        TEXT(DRC_NBC_Address__StateCode__s),
+        &quot;KA&quot;, &quot;29&quot;,
+        &quot;MH&quot;, &quot;27&quot;,
+        &quot;DL&quot;, &quot;07&quot;,
+        &quot;GJ&quot;, &quot;24&quot;,
+        &quot;TN&quot;, &quot;33&quot;,
+        &quot;WB&quot;, &quot;19&quot;,
+        &quot;UP&quot;, &quot;09&quot;,
+        &quot;RJ&quot;, &quot;08&quot;,
+        &quot;PB&quot;, &quot;03&quot;,
+        &quot;KL&quot;, &quot;32&quot;,
+        &quot;MP&quot;, &quot;23&quot;,
+        &quot;HR&quot;, &quot;06&quot;,
+        &quot;HP&quot;, &quot;02&quot;,
+        &quot;JH&quot;, &quot;20&quot;,
+        &quot;OD&quot;, &quot;21&quot;,
+        &quot;CG&quot;, &quot;22&quot;,
+        &quot;AS&quot;, &quot;18&quot;,
+        &quot;AP&quot;, &quot;37&quot;,
+        &quot;TS&quot;, &quot;36&quot;,
+        &quot;BR&quot;, &quot;10&quot;,
+        &quot;GA&quot;, &quot;30&quot;,
+        &quot;AR&quot;, &quot;12&quot;,
+        &quot;&quot; /* default if state not found */
+      ),
+
+    /* PAN Number Mismatch (case-insensitive, trimmed) */
+    UPPER(TRIM(MID(DRC_NBC_GST_Number__c, 3, 10))) &lt;&gt;
+    UPPER(TRIM(DRC_NBC_Account__r.DRC_NBC_PAN_No__c))
+  )
+)</errorConditionFormula>
+    <errorDisplayField>DRC_NBC_GST_Number__c</errorDisplayField>
+    <errorMessage>&quot;GST Number must start with the correct state code and contain the PAN number as characters 3–12.</errorMessage>
+</ValidationRule>

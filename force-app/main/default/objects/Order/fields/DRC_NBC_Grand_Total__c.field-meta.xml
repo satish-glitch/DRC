@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Grand_Total__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(
+  TEXT(DRC_NBC_Type__c) = &quot;Domestic&quot;,
+  /* --- Domestic Calculation --- */
+  (
+    IF(ISBLANK(TotalAmount), 0, TotalAmount) +
+    IF(ISBLANK(DRC_NBC_C_GST__c), 0, DRC_NBC_C_GST__c) +
+    IF(ISBLANK(DRC_NBC_S_GST__c), 0, DRC_NBC_S_GST__c) +
+    IF(ISBLANK(DRC_NBC_I_GST__c), 0, DRC_NBC_I_GST__c) +
+    IF(ISBLANK(DRC_NBC_Other_Tax_Amount__c), 0, DRC_NBC_Other_Tax_Amount__c) +
+    IF(ISBLANK(DRC_NBC_TCS_Amount__c), 0, DRC_NBC_TCS_Amount__c)
+  ),
+
+  IF(
+    TEXT(DRC_NBC_Type__c) = &quot;Export&quot;,
+    /* --- Export Calculation: TotalAmount + Other Tax --- */
+    (
+      IF(ISBLANK(TotalAmount), 0, TotalAmount) +
+      IF(ISBLANK(DRC_NBC_Other_Tax_Amount__c), 0, DRC_NBC_Other_Tax_Amount__c)
+    ),
+
+    IF(
+      TEXT(Type) = &quot;Sample Order&quot;,
+      /* --- Paid Sample Order Calculation --- */
+      (
+        IF(ISBLANK(TotalAmount), 0, TotalAmount) +
+        IF(ISBLANK(DRC_NBC_Sample_Shipping_Cost__c), 0, DRC_NBC_Sample_Shipping_Cost__c) +
+        IF(ISBLANK(DRC_NBC_Sample_Amount__c), 0, DRC_NBC_Sample_Amount__c)
+      ),
+      /* --- Default Fallback --- */
+      IF(ISBLANK(TotalAmount), 0, TotalAmount)
+    )
+  )
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Grand Total</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>
