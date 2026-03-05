@@ -1,9 +1,9 @@
 /**
- * @File Name : DRC_NBC_Order_BC_Integration_Test.cls
- * @Description : Comprehensive test class for Order BC Integration classes
- * @Author : Test Class Generator
- * @Last Modified On : January 05, 2026
- **/
+* @File Name : DRC_NBC_Order_BC_Integration_Test.cls
+* @Description : Comprehensive test class for Order BC Integration classes
+* @Author : Test Class Generator
+* @Last Modified On : January 05, 2026
+**/
 @isTest
 private class DRC_NBC_Order_BC_Integration_Test {
     
@@ -108,7 +108,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
             DRC_NBC_Order__c = testOrder.Id,
             DRC_NBC_Type__c = 'Shipping',
             DRC_NBC_Ship_To_Code__c = 'SHIP001',
-            DRC_NBC_Warehouse__c = 'C4/2/2 D.R COATS INK & RESINS PVT LTD (UNIT-III)',
+            DRC_NBC_Warehouse__c = 'CFS - JNPT',
             DRC_NBC_Address__Street__s = '123 Test St',
             DRC_NBC_Address__City__s = 'Test City',
             DRC_NBC_Address__StateCode__s = 'MH',
@@ -157,7 +157,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
         update testOrder;
         
         Test.startTest();
-        System.enqueueJob(new DRC_NBC_Order_BC_Callout(testOrder.Id));
+        DRC_NBC_Order_BC_Callout.executeCallout(testOrder.Id);        
         Test.stopTest();
         
         // Verify order remains synced
@@ -176,7 +176,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
         update address;
         
         Test.startTest();
-        System.enqueueJob(new DRC_NBC_Order_BC_Callout(testOrder.Id));
+        DRC_NBC_Order_BC_Callout.executeCallout(testOrder.Id); 
         Test.stopTest();
         
         // Verify chain was initiated
@@ -193,7 +193,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
         update testOrder;
         
         Test.startTest();
-        System.enqueueJob(new DRC_NBC_Order_BC_Callout(testOrder.Id));
+        DRC_NBC_Order_BC_Callout.executeCallout(testOrder.Id); 
         Test.stopTest();
         
         // Verify chain was initiated
@@ -209,7 +209,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(201, 'Success'));
         
         Test.startTest();
-        System.enqueueJob(new DRC_NBC_Order_BC_Callout(testOrder.Id));
+        DRC_NBC_Order_BC_Callout.executeCallout(testOrder.Id); 
         Test.stopTest();
         
         // Verify callout chain was initiated
@@ -230,7 +230,8 @@ private class DRC_NBC_Order_BC_Integration_Test {
         
         Test.startTest();
         try {
-            System.enqueueJob(new DRC_NBC_Order_BC_Callout(invalidOrder.Id));
+            DRC_NBC_Order_BC_Callout.executeCallout(invalidOrder.Id);
+            
         } catch (Exception e) {
             System.debug('Exception handled: ' + e.getMessage());
         }
@@ -498,11 +499,11 @@ private class DRC_NBC_Order_BC_Integration_Test {
     static void testMapOrderToBCPayload() {
         Order testOrder = [
             SELECT Id, Name, AccountId, Account.Name, Account.DRC_NBC_Customer_Number__c,
-                   EffectiveDate, PoNumber, PoDate, DRC_NBC_Warehouse__c, ShipToContactId,
-                   DRC_NBC_Cust_Order_Number__c, Status, DRC_NBC_Payment_Terms__c,
-                   DRC_NBC_Inco_Terms__c, ShippingStreet, ShippingCity, ShippingState,
-                   ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c,
-                   DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name
+            EffectiveDate, PoNumber, PoDate, DRC_NBC_Warehouse__c, ShipToContactId,
+            DRC_NBC_Cust_Order_Number__c, Status, DRC_NBC_Payment_Terms__c,
+            DRC_NBC_Inco_Terms__c, ShippingStreet, ShippingCity, ShippingState,
+            ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c,
+            DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name
             FROM Order LIMIT 1
         ];
         
@@ -570,7 +571,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(201, 'Success'));
         
         Test.startTest();
-        System.enqueueJob(new DRC_NBC_Order_BC_Callout(testOrder.Id));
+        DRC_NBC_Order_BC_Callout.executeCallout(testOrder.Id); 
         Test.stopTest();
         
         // Verify chain execution
@@ -604,7 +605,7 @@ private class DRC_NBC_Order_BC_Integration_Test {
         Test.startTest();
         for (Order ord : orders) {
             try {
-                System.enqueueJob(new DRC_NBC_Order_BC_Callout(ord.Id));
+                DRC_NBC_Order_BC_Callout.executeCallout(ord.Id); 
             } catch (Exception e) {
                 System.debug('Bulk test exception: ' + e.getMessage());
             }
