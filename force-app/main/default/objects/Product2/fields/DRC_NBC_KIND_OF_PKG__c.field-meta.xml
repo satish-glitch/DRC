@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_KIND_OF_PKG__c</fullName>
+    <label>KIND OF PKG</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>IBC (900 KGS)</fullName>
+                <default>false</default>
+                <label>IBC (900 KGS)</label>
+            </value>
+            <value>
+                <fullName>163.3 MS</fullName>
+                <default>false</default>
+                <label>163.3 MS</label>
+            </value>
+            <value>
+                <fullName>165 KGS MS</fullName>
+                <default>false</default>
+                <label>165 KGS MS</label>
+            </value>
+            <value>
+                <fullName>180 KGS HDPE</fullName>
+                <default>false</default>
+                <label>180 KGS HDPE</label>
+            </value>
+            <value>
+                <fullName>180 KGS MS</fullName>
+                <default>false</default>
+                <label>180 KGS MS</label>
+            </value>
+            <value>
+                <fullName>186 KGS MS</fullName>
+                <default>false</default>
+                <label>186 KGS MS</label>
+            </value>
+            <value>
+                <fullName>190 KGS HDPE</fullName>
+                <default>false</default>
+                <label>190 KGS HDPE</label>
+            </value>
+            <value>
+                <fullName>190 KGS MS</fullName>
+                <default>false</default>
+                <label>190 KGS MS</label>
+            </value>
+            <value>
+                <fullName>190 KGS PVC</fullName>
+                <default>false</default>
+                <label>190 KGS PVC</label>
+            </value>
+            <value>
+                <fullName>195 KGS PVC</fullName>
+                <default>false</default>
+                <label>195 KGS PVC</label>
+            </value>
+            <value>
+                <fullName>195 KGS SS</fullName>
+                <default>false</default>
+                <label>195 KGS SS</label>
+            </value>
+            <value>
+                <fullName>197 KGS PVC</fullName>
+                <default>false</default>
+                <label>197 KGS PVC</label>
+            </value>
+            <value>
+                <fullName>200 KGS HDPE</fullName>
+                <default>false</default>
+                <label>200 KGS HDPE</label>
+            </value>
+            <value>
+                <fullName>200 KGS MS</fullName>
+                <default>false</default>
+                <label>200 KGS MS</label>
+            </value>
+            <value>
+                <fullName>200 KGS PUBC</fullName>
+                <default>false</default>
+                <label>200 KGS PUBC</label>
+            </value>
+            <value>
+                <fullName>200 KGS PVC</fullName>
+                <default>false</default>
+                <label>200 KGS PVC</label>
+            </value>
+            <value>
+                <fullName>200 KGS SS</fullName>
+                <default>false</default>
+                <label>200 KGS SS</label>
+            </value>
+            <value>
+                <fullName>210 KGS DRUM</fullName>
+                <default>false</default>
+                <label>210 KGS DRUM</label>
+            </value>
+            <value>
+                <fullName>210 KGS MS</fullName>
+                <default>false</default>
+                <label>210 KGS MS</label>
+            </value>
+            <value>
+                <fullName>210 KGS PVC</fullName>
+                <default>false</default>
+                <label>210 KGS PVC</label>
+            </value>
+            <value>
+                <fullName>215 KGS MS</fullName>
+                <default>false</default>
+                <label>215 KGS MS</label>
+            </value>
+            <value>
+                <fullName>225 KGS MS</fullName>
+                <default>false</default>
+                <label>225 KGS MS</label>
+            </value>
+            <value>
+                <fullName>230 KG HDPE</fullName>
+                <default>false</default>
+                <label>230 KG HDPE</label>
+            </value>
+            <value>
+                <fullName>230 KGS MS</fullName>
+                <default>false</default>
+                <label>230 KGS MS</label>
+            </value>
+            <value>
+                <fullName>25 KGS BAG</fullName>
+                <default>false</default>
+                <label>25 KGS BAG</label>
+            </value>
+            <value>
+                <fullName>25 KGS CARBOY</fullName>
+                <default>false</default>
+                <label>25 KGS CARBOY</label>
+            </value>
+            <value>
+                <fullName>250 GRAMS AL</fullName>
+                <default>false</default>
+                <label>250 GRAMS AL</label>
+            </value>
+            <value>
+                <fullName>250 GRAMS PAPER</fullName>
+                <default>false</default>
+                <label>250 GRAMS PAPER</label>
+            </value>
+            <value>
+                <fullName>250 KGS SS</fullName>
+                <default>false</default>
+                <label>250 KGS SS</label>
+            </value>
+            <value>
+                <fullName>30 KGS PAIL</fullName>
+                <default>false</default>
+                <label>30 KGS PAIL</label>
+            </value>
+            <value>
+                <fullName>500 GRAMS AL</fullName>
+                <default>false</default>
+                <label>500 GRAMS AL</label>
+            </value>
+            <value>
+                <fullName>500 IBC TANKS</fullName>
+                <default>false</default>
+                <label>500 IBC TANKS</label>
+            </value>
+            <value>
+                <fullName>AL 1KG</fullName>
+                <default>false</default>
+                <label>AL 1KG</label>
+            </value>
+            <value>
+                <fullName>AL 5 KG</fullName>
+                <default>false</default>
+                <label>AL 5 KG</label>
+            </value>
+            <value>
+                <fullName>AL 5KG</fullName>
+                <default>false</default>
+                <label>AL 5KG</label>
+            </value>
+            <value>
+                <fullName>BAG (13.5 KG)</fullName>
+                <default>false</default>
+                <label>BAG (13.5 KG)</label>
+            </value>
+            <value>
+                <fullName>BAG (50 KG)</fullName>
+                <default>false</default>
+                <label>BAG (50 KG)</label>
+            </value>
+            <value>
+                <fullName>BAG (500 GMS)</fullName>
+                <default>false</default>
+                <label>BAG (500 GMS)</label>
+            </value>
+            <value>
+                <fullName>BAG (800 GMS)</fullName>
+                <default>false</default>
+                <label>BAG (800 GMS)</label>
+            </value>
+            <value>
+                <fullName>BAG JUTE (25 KG)</fullName>
+                <default>false</default>
+                <label>BAG JUTE (25 KG)</label>
+            </value>
+            <value>
+                <fullName>BAG(10 KG)</fullName>
+                <default>false</default>
+                <label>BAG(10 KG)</label>
+            </value>
+            <value>
+                <fullName>BAG(20 KG)</fullName>
+                <default>false</default>
+                <label>BAG(20 KG)</label>
+            </value>
+            <value>
+                <fullName>BAG(45 KG)</fullName>
+                <default>false</default>
+                <label>BAG(45 KG)</label>
+            </value>
+            <value>
+                <fullName>BAGS</fullName>
+                <default>false</default>
+                <label>BAGS</label>
+            </value>
+            <value>
+                <fullName>BOX (20 KG)</fullName>
+                <default>false</default>
+                <label>BOX (20 KG)</label>
+            </value>
+            <value>
+                <fullName>BOX (50 GM)</fullName>
+                <default>false</default>
+                <label>BOX (50 GM)</label>
+            </value>
+            <value>
+                <fullName>BULK</fullName>
+                <default>false</default>
+                <label>BULK</label>
+            </value>
+            <value>
+                <fullName>CARBO</fullName>
+                <default>false</default>
+                <label>CARBO</label>
+            </value>
+            <value>
+                <fullName>CARBOY 16 KGS</fullName>
+                <default>false</default>
+                <label>CARBOY 16 KGS</label>
+            </value>
+            <value>
+                <fullName>CARBOY 20 KGS</fullName>
+                <default>false</default>
+                <label>CARBOY 20 KGS</label>
+            </value>
+            <value>
+                <fullName>DRUM 205</fullName>
+                <default>false</default>
+                <label>DRUM 205</label>
+            </value>
+            <value>
+                <fullName>DRUM(50KG)</fullName>
+                <default>false</default>
+                <label>DRUM(50KG)</label>
+            </value>
+            <value>
+                <fullName>GL (1 LTR)</fullName>
+                <default>false</default>
+                <label>GL (1 LTR)</label>
+            </value>
+            <value>
+                <fullName>GL (100 GM)</fullName>
+                <default>false</default>
+                <label>GL (100 GM)</label>
+            </value>
+            <value>
+                <fullName>GL (2.5 LTR)</fullName>
+                <default>false</default>
+                <label>GL (2.5 LTR)</label>
+            </value>
+            <value>
+                <fullName>GL(125 ML)</fullName>
+                <default>false</default>
+                <label>GL(125 ML)</label>
+            </value>
+            <value>
+                <fullName>GL(500 ML)</fullName>
+                <default>false</default>
+                <label>GL(500 ML)</label>
+            </value>
+            <value>
+                <fullName>HDPE 210 KG DRUM</fullName>
+                <default>false</default>
+                <label>HDPE 210 KG DRUM</label>
+            </value>
+            <value>
+                <fullName>HDPE 215 KG DRUM</fullName>
+                <default>false</default>
+                <label>HDPE 215 KG DRUM</label>
+            </value>
+            <value>
+                <fullName>HDPE 220 KG DRUM</fullName>
+                <default>false</default>
+                <label>HDPE 220 KG DRUM</label>
+            </value>
+            <value>
+                <fullName>HDPE 240 KG DRUM</fullName>
+                <default>false</default>
+                <label>HDPE 240 KG DRUM</label>
+            </value>
+            <value>
+                <fullName>HDPE DRM (195 KG)</fullName>
+                <default>false</default>
+                <label>HDPE DRM (195 KG)</label>
+            </value>
+            <value>
+                <fullName>HDPE DRUM 25 KG</fullName>
+                <default>false</default>
+                <label>HDPE DRUM 25 KG</label>
+            </value>
+            <value>
+                <fullName>IBC (1000 KGS)</fullName>
+                <default>false</default>
+                <label>IBC (1000 KGS)</label>
+            </value>
+            <value>
+                <fullName>IBC (1100 KGS)</fullName>
+                <default>false</default>
+                <label>IBC (1100 KGS)</label>
+            </value>
+            <value>
+                <fullName>IBC 800 KGS</fullName>
+                <default>false</default>
+                <label>IBC 800 KGS</label>
+            </value>
+            <value>
+                <fullName>IBC STEEL</fullName>
+                <default>false</default>
+                <label>IBC STEEL</label>
+            </value>
+            <value>
+                <fullName>IBC TANK (1022 KG)</fullName>
+                <default>false</default>
+                <label>IBC TANK (1022 KG)</label>
+            </value>
+            <value>
+                <fullName>IBC TANKS 500</fullName>
+                <default>false</default>
+                <label>IBC TANKS 500</label>
+            </value>
+            <value>
+                <fullName>IBC1010.6 KGS</fullName>
+                <default>false</default>
+                <label>IBC1010.6 KGS</label>
+            </value>
+            <value>
+                <fullName>IBC1023.8 KGS</fullName>
+                <default>false</default>
+                <label>IBC1023.8 KGS</label>
+            </value>
+            <value>
+                <fullName>IBC1024.2 KGS</fullName>
+                <default>false</default>
+                <label>IBC1024.2 KGS</label>
+            </value>
+            <value>
+                <fullName>ISO TANK</fullName>
+                <default>false</default>
+                <label>ISO TANK</label>
+            </value>
+            <value>
+                <fullName>JBAG(1000KG)</fullName>
+                <default>false</default>
+                <label>JBAG(1000KG)</label>
+            </value>
+            <value>
+                <fullName>JBAG(500KG)</fullName>
+                <default>false</default>
+                <label>JBAG(500KG)</label>
+            </value>
+            <value>
+                <fullName>JBAG(750KG)</fullName>
+                <default>false</default>
+                <label>JBAG(750KG)</label>
+            </value>
+            <value>
+                <fullName>MS 195 KGS</fullName>
+                <default>false</default>
+                <label>MS 195 KGS</label>
+            </value>
+            <value>
+                <fullName>MS 215 LTRS</fullName>
+                <default>false</default>
+                <label>MS 215 LTRS</label>
+            </value>
+            <value>
+                <fullName>MS DRUM (150KG)</fullName>
+                <default>false</default>
+                <label>MS DRUM (150KG)</label>
+            </value>
+            <value>
+                <fullName>MS DRUM (235KG)</fullName>
+                <default>false</default>
+                <label>MS DRUM (235KG)</label>
+            </value>
+            <value>
+                <fullName>MS DRUM (25 KG)</fullName>
+                <default>false</default>
+                <label>MS DRUM (25 KG)</label>
+            </value>
+            <value>
+                <fullName>MS DRUM 172KGS</fullName>
+                <default>false</default>
+                <label>MS DRUM 172KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUM 176 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUM 176 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUM 190 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUM 190 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUM 192.7 KG</fullName>
+                <default>false</default>
+                <label>MS DRUM 192.7 KG</label>
+            </value>
+            <value>
+                <fullName>MS DRUM 220 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUM 220 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUM 248 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUM 248 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUM 250 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUM 250 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUM(140KG)</fullName>
+                <default>false</default>
+                <label>MS DRUM(140KG)</label>
+            </value>
+            <value>
+                <fullName>MS DRUM(160KG)</fullName>
+                <default>false</default>
+                <label>MS DRUM(160KG)</label>
+            </value>
+            <value>
+                <fullName>MS DRUM(163.3KG)</fullName>
+                <default>false</default>
+                <label>MS DRUM(163.3KG)</label>
+            </value>
+            <value>
+                <fullName>MS DRUMS 180 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUMS 180 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUMS 185 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUMS 185 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUMS 198 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUMS 198 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUMS 200 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUMS 200 KGS</label>
+            </value>
+            <value>
+                <fullName>MS DRUMS 240 KGS</fullName>
+                <default>false</default>
+                <label>MS DRUMS 240 KGS</label>
+            </value>
+            <value>
+                <fullName>PAIL 18 KG</fullName>
+                <default>false</default>
+                <label>PAIL 18 KG</label>
+            </value>
+            <value>
+                <fullName>PAIL 20KG</fullName>
+                <default>false</default>
+                <label>PAIL 20KG</label>
+            </value>
+            <value>
+                <fullName>PAIL 25KG</fullName>
+                <default>false</default>
+                <label>PAIL 25KG</label>
+            </value>
+            <value>
+                <fullName>PAIL 30 KG</fullName>
+                <default>false</default>
+                <label>PAIL 30 KG</label>
+            </value>
+            <value>
+                <fullName>PAIR</fullName>
+                <default>false</default>
+                <label>PAIR</label>
+            </value>
+            <value>
+                <fullName>PAPER BAGS 25 KGS</fullName>
+                <default>false</default>
+                <label>PAPER BAGS 25 KGS</label>
+            </value>
+            <value>
+                <fullName>PKTS</fullName>
+                <default>false</default>
+                <label>PKTS</label>
+            </value>
+            <value>
+                <fullName>RIM</fullName>
+                <default>false</default>
+                <label>RIM</label>
+            </value>
+            <value>
+                <fullName>SAMPLE BAG</fullName>
+                <default>false</default>
+                <label>SAMPLE BAG</label>
+            </value>
+            <value>
+                <fullName>TANKER LOAD</fullName>
+                <default>false</default>
+                <label>TANKER LOAD</label>
+            </value>
+            <value>
+                <fullName>TANKER LOAD 21KL</fullName>
+                <default>false</default>
+                <label>TANKER LOAD 21KL</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

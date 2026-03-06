@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Category_Level_2__c</fullName>
+    <label>Category Level 2</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Epoxy curing agent</fullName>
+                <default>false</default>
+                <label>Epoxy curing agent</label>
+            </value>
+            <value>
+                <fullName>Epoxy resin</fullName>
+                <default>false</default>
+                <label>Epoxy resin</label>
+            </value>
+            <value>
+                <fullName>Isocyanates</fullName>
+                <default>false</default>
+                <label>Isocyanates</label>
+            </value>
+            <value>
+                <fullName>Non-reactive polyamide</fullName>
+                <default>false</default>
+                <label>Non-reactive polyamide</label>
+            </value>
+            <value>
+                <fullName>Others</fullName>
+                <default>false</default>
+                <label>Others</label>
+            </value>
+            <value>
+                <fullName>Polyols</fullName>
+                <default>false</default>
+                <label>Polyols</label>
+            </value>
+            <value>
+                <fullName>Polyurethane resin - printing ink</fullName>
+                <default>false</default>
+                <label>Polyurethane resin - printing ink</label>
+            </value>
+            <value>
+                <fullName>Rosin modified phenolic</fullName>
+                <default>false</default>
+                <label>Rosin modified phenolic</label>
+            </value>
+            <value>
+                <fullName>Waxes</fullName>
+                <default>false</default>
+                <label>Waxes</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

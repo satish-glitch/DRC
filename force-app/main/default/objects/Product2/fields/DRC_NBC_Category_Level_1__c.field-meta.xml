@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Category_Level_1__c</fullName>
+    <label>Category Level 1</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Epoxy curing agent</fullName>
+                <default>false</default>
+                <label>Epoxy curing agent</label>
+            </value>
+            <value>
+                <fullName>Adhesion promoter</fullName>
+                <default>false</default>
+                <label>Adhesion promoter</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

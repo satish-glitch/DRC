@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Account_Category__c</fullName>
+    <label>Account Category</label>
+    <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Alpha</fullName>
+                <default>false</default>
+                <label>Alpha</label>
+            </value>
+            <value>
+                <fullName>Bravo</fullName>
+                <default>false</default>
+                <label>Bravo</label>
+            </value>
+            <value>
+                <fullName>Charlie</fullName>
+                <default>false</default>
+                <label>Charlie</label>
+            </value>
+            <value>
+                <fullName>Delta</fullName>
+                <default>false</default>
+                <label>Delta</label>
+            </value>
+            <value>
+                <fullName>Echo</fullName>
+                <default>false</default>
+                <label>Echo</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

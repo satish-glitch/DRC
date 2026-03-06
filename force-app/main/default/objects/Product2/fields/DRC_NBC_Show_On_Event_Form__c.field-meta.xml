@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Show_On_Event_Form__c</fullName>
+    <defaultValue>false</defaultValue>
+    <label>Show On Event Form</label>
+    <trackHistory>false</trackHistory>
+    <type>Checkbox</type>
+</CustomField>

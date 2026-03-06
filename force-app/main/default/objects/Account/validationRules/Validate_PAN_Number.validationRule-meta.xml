@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Validate_PAN_Number</fullName>
+    <active>true</active>
+    <errorConditionFormula>NOT(
+    OR(
+        ISBLANK(DRC_NBC_PAN_No__c),
+        REGEX(
+            DRC_NBC_PAN_No__c,
+            &quot;^[A-Z]{5}[0-9]{4}[A-Z]{1}$&quot;
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>DRC_NBC_PAN_No__c</errorDisplayField>
+    <errorMessage>&quot;nvalid PAN format. Please enter a valid PAN number (e.g., ABCDE1234F).</errorMessage>
+</ValidationRule>

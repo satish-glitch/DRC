@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Phone_Validator</fullName>
+    <active>false</active>
+    <description>This rule is created to validate phone</description>
+    <errorConditionFormula>NOT(
+OR(
+REGEX(Phone, &quot;^\\+91-\\d{10}$&quot;),
+REGEX(Phone, &quot;^\\d{3}-\\d{3}-\\d{4}$&quot;)
+)
+)</errorConditionFormula>
+    <errorDisplayField>Phone</errorDisplayField>
+    <errorMessage>Enter a valid phone number: ex.+91-9876543210 or 123-456-7890</errorMessage>
+</ValidationRule>

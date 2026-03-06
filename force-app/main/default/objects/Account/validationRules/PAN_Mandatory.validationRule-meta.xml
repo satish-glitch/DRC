@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>PAN_Mandatory</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    NOT(ISBLANK(DRC_NBC_GST_Number__c)),
+    ISBLANK(DRC_NBC_PAN_No__c)
+)</errorConditionFormula>
+    <errorDisplayField>DRC_NBC_PAN_No__c</errorDisplayField>
+    <errorMessage>&quot;PAN Number is required when GST Number is provided.&quot;</errorMessage>
+</ValidationRule>
