@@ -83,5 +83,9 @@
     <members>*</members>
     <name>StaticResource</name>
 </types>
+<types>
+    <members>*</members>
+    <name>Flow</name>
+</types>
 <version>65.0</version>
 </Package>
