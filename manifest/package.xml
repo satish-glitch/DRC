@@ -75,5 +75,13 @@
     <members>Address_Record_page</members>
     <name>FlexiPage</name>
 </types>
+<types>
+    <members>*</members>
+    <name>CustomLabels</name>
+</types>
+<types>
+    <members>*</members>
+    <name>StaticResource</name>
+</types>
 <version>65.0</version>
 </Package>

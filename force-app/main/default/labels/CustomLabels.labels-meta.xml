@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>DRC_NBC_AccountNo</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_AccountNo</shortDescription>
+        <value>015805013849</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Bank</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Bank</shortDescription>
+        <value>ICICI</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_CGST_Tax_Rate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_CGST_Tax_Rate</shortDescription>
+        <value>0.09</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Domestic_CompanyAddressHTML</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Domestic_CompanyAddressHTML</shortDescription>
+        <value>&lt;div class=&quot;company-header&quot;&gt;
+    &lt;h1&gt;D.R.Coats Ink &amp;amp; Resins Pvt. Ltd.&lt;/h1&gt;
+    &lt;p&gt;J-51 MIDC TARAPUR&lt;/p&gt;
+    &lt;p&gt;BOISAR DIST PALGHAR, BOISAR 401501&lt;/p&gt;
+    &lt;p&gt;Phone No.: 91-22-28810575  Email: enquiry@drcresins.com&lt;/p&gt;
+    &lt;p&gt;CIN No.: U24220MH2003PTC14211 PAN No.: AABCD8645A&lt;/p&gt;
+    &lt;p&gt;GSTIN: 27AABCD8645A1ZV&lt;/p&gt;
+&lt;/div&gt;</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Domestic_GeneralProvision_Part1</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Domestic_GeneralProvision_Part1</shortDescription>
+        <value>&lt;p&gt;a. Changes: Customer may not make changes to the order at any time. If we accept any changes, an equitable amount will be compensated by Customer.&lt;/p&gt;&lt;p&gt;b. Termination for Convenience or Cause: We may terminate order confirmation or any part thereof at our sole convenience. Upon notice of such termination, all work and/or shipment of goods shall immediately stop accordingly.&lt;/p&gt;&lt;p&gt;c.Cancellation: Customer shall notify us in writing on cancellation and customer shall be liable for 20% of Selling Price for cancellation made within 30 days from date of Order Confirmation and subject to our acceptance.&lt;/p&gt;&lt;p&gt;d. Force Majeure: We may delay delivery, performance, or acceptance of the goods or services ordered hereunder in the event of causes beyond our control. We shall hold such goods or refrain from furnishing such services.&lt;/p&gt;</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Domestic_GeneralProvision_Part2</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Domestic_GeneralProvision_Part2</shortDescription>
+        <value>&lt;p&gt;e. Hold Harmless: Customer shall defend and hold harmless our directors, overseers, officers, agents and employees against and from any and all claims, liabilities, losses, damages, expenses, and legal fees whatsoever, without limitation, arising in connection with supply of goods or services purchased under the Order or from any act, omission, operation, product or services of Seller, its employees, agents, suppliers, and subcontractors.&lt;/p&gt;&lt;p&gt;f. Insurance: Customer shall maintain adequate insurance in any and all forms necessary to protect both Customer and us against all liabilities, accidents, losses, damages, claims, settlements.&lt;/p&gt;&lt;p&gt;g. Subject of Mumbai jurisdiction.&lt;/p&gt;</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Domestic_TermCondition_1</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Domestic_TermCondition_1</shortDescription>
+        <value>&lt;p&gt;2. Unless stated otherwise, validity of this offer is 30 days from the date of the offer unless revised and accepted by us in writing.&lt;/p&gt;&lt;p&gt;3. The prices indicated in order confirmation plus the statutory taxes and levies as applicable at the time of the delivery will be binding.&lt;/p&gt;&lt;p&gt;4. Further deliveries charges, wherever applicable will have to be paid for separately. The prices given in the order confirmation do not, unless it has been agreed otherwise, include specific/special packaging and delivery conditions.&lt;/p&gt;</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Domestic_TermCondition_2</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Domestic_TermCondition_2</shortDescription>
+        <value>&lt;p&gt;6. Title to the delivered goods shall not pass to Customer until all our claims against Customer from the current supplies have been paid in full. Customer should neither pledge nor assign the goods as security prior to the passage of title. In the event of actions on the part of customer in breach of contract, including, but not limited to, default of payment, we shall be entitled to repossess the goods following a notice of default, and customer shall be obliged to surrender possession. Neither the enforcement of the retention of title nor the pledging of the delivered goods by us shall be deemed to be a rescission of contract. An application for the initiation of insolvency proceedings concerning customer assets shall entitle us to rescind the contract and demand immediate return of the goods.&lt;/p&gt;&lt;p&gt;7. Our liability is only limited to curing the defects if any in the goods supplied as per technical specifications and MSDS accepted by the Customer. Under no circumstances, we can b</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Email</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Email</shortDescription>
+        <value>enquiry@drcresins.com</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Export_Starting_Sequence</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Export_Starting_Sequence</shortDescription>
+        <value>2000</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_IGST_Tax_Rate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_IGST_Tax_Rate</shortDescription>
+        <value>0.18</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Import_Starting_Sequence</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Import_Starting_Sequence</shortDescription>
+        <value>1000</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Phone</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Phone</shortDescription>
+        <value>022 68660700</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Production</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Production</shortDescription>
+        <value>DRC_NBC_Production</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_SGST_Tax_Rate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_SGST_Tax_Rate</shortDescription>
+        <value>0.09</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Sample_Sequence_Number</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Sample_Sequence_Number</shortDescription>
+        <value>1000</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Sandbox</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Sandbox</shortDescription>
+        <value>DRC_NBC_Sandbox</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Website</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Website</shortDescription>
+        <value>www.drcresins.com</value>
+    </labels>
+    <labels>
+        <fullName>DRC_UAT</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC UAT</shortDescription>
+        <value>Company(\&apos;DRC UAT 05032024\&apos;)/SalesOrderLineSalesForce</value>
+    </labels>
+</CustomLabels>
