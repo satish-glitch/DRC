@@ -264,11 +264,11 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     if (response.getStatusCode() == 200) {
                         System.debug('✓✓✓ OrderItems synced successfully for OrderId: ' + orderId);
                         // Log successful API call
-                        // System.enqueueJob(new DRC_NBC_OrderReadUpdateQueueable(orderId));
-                        //  DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
-                        DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
+                       // System.enqueueJob(new DRC_NBC_OrderReadUpdateQueueable(orderId));
+                       //  DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
+                           DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
                         logSuccess('OrderItems synced successfully', orderId, response, jsonBody);
-                        // DRC_NBC_OrderNumberGenerator_Helper.OrderStatusToReleased(orderId);
+                       // DRC_NBC_OrderNumberGenerator_Helper.OrderStatusToReleased(orderId);
                     } else {
                         System.debug('!!! Sync failed for OrderId: ' + orderId);
                         logError('Callout failed with status: ' + response.getStatusCode(), orderId, response, jsonBody);

@@ -161,6 +161,11 @@ export default class DRC_NBC_Business_Card_Scanner extends NavigationMixin(Light
         return;
     }
 
+    if (!this.apiResponse['country']) {
+        this.showToastMessage('Error', 'Country is required.', 'error');
+        return;
+    }
+
     const leadData = {
         name: this.apiResponse.name,
         jobTitle: this.apiResponse.job_title,

@@ -107,7 +107,7 @@
                     <lightning-layout>
                         <lightning-layout-item size="10">
                             <lightning-input type="text" label="Country"  name = 'country' value={apiResponse.country}
-                                readonly={isReadOnly} onchange={handleInputChange}>
+                                readonly={isReadOnly} onchange={handleInputChange} required>
                             </lightning-input>
                         </lightning-layout-item>
                         <lightning-layout-item size="2" style="padding-top: 24px;padding-left: 7px;text-align: right;">
