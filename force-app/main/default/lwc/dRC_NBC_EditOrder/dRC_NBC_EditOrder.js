@@ -17,6 +17,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     @track allData = [];
     @track filteredData = [];
     @api recordId;
+    @track isPartiallyShipped = false;
     @track showFilterData = false;
     @track showLoading = false;
     @track orderRec = {};
@@ -205,7 +206,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         getOrderRecord({ orderId: this.recordId })
             .then(result => {
                 this.orderRec = { ...result };
-
+                this.isPartiallyShipped = result.DRC_NBC_Order_PartiallyShipped__c === true;
                 if (result.DRC_NBC_Type__c === 'Domestic') {
                     this.isDomestic = true;
                     this.isExport   = false;
@@ -704,6 +705,15 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error');
                 isValid = false;
             }
+        }
+
+        if (this.isPartiallyShipped) {
+            this.showToastEvent(
+                'Error',
+                'Order cannot be modified because the order is partially shipped.',
+                'error'
+            );
+            isValid = false;
         }
 
         if (!this.orderRec?.EffectiveDate) {

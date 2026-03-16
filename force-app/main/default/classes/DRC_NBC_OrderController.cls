@@ -103,6 +103,7 @@ public class DRC_NBC_OrderController {
                        DRC_NBC_Consignee_Bank_Account_Number__c,
                        DRC_NBC_Consignee_Bank_Name__c,
                        Opportunity.Name,
+                       DRC_NBC_Order_PartiallyShipped__c,
                        Quote.Name
                 FROM Order
                 WHERE Id = :orderId
