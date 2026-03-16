@@ -517,12 +517,9 @@ public class DRC_NBC_OrderController {
             Boolean partiallyShipped = existing.DRC_NBC_Order_PartiallyShipped__c;
 
             if (partiallyShipped) {
-                if (orderData.DRC_NBC_Warehouse__c != null &&
-                    orderData.DRC_NBC_Warehouse__c != existing.DRC_NBC_Warehouse__c) {
                     throw new AuraHandledException(
-                        'Warehouse cannot be modified because the order is partially shipped.'
+                        'Order cannot be modified because the order is partially shipped.'
                     );
-                }
             }
             throw new AuraHandledException('Error saving Order and Line Items: ' + ex.getMessage());
         }
