@@ -532,13 +532,24 @@
                                     </lightning-combobox>
                                 </td>
                                 
-                                <td>
-                                    <lightning-input 
+                               <!-- <td>
+                                    <lightning-input  
                                         type="number" 
                                         variant="label-hidden"
                                         data-id={prod.Id} 
                                         value={prod.PackingQuantity} 
-                                        onchange={handlePackingQuantityChange} 
+                                       </lightning-input> onchange={handlePackingQuantityChange} 
+                                        class="small-input">
+                                    </lightning-input>
+                                </td> -->
+
+                                <td>
+                                    <lightning-input  
+                                        type="number" 
+                                        variant="label-hidden"
+                                        data-id={prod.Id} 
+                                        value={prod.PackingQuantity} 
+                                        readonly
                                         class="small-input">
                                     </lightning-input>
                                 </td>
