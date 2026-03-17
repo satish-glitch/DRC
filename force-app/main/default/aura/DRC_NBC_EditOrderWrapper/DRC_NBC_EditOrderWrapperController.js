@@ -26,7 +26,7 @@
         component.set("v.navigationLocation", navigationLocation);
 
         let showLWC = false;
-        if (navigationLocation && navigationLocation.includes('RELATED_LIST')) {
+        if (navigationLocation && navigationLocation.includes('RELATED_LIST') || navigationLocation.includes('LIST_VIEW_ROW')) {
             showLWC = true;
         }
 

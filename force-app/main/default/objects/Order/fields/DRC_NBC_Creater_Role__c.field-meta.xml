@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>DRC_NBC_Creater_Role__c</fullName>
     <externalId>false</externalId>
-    <formula>$UserRole.Name</formula>
+    <formula>CreatedBy.UserRole.Name</formula>
     <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
     <label>Creater Role</label>
     <required>false</required>

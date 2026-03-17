@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>DRC_NBC_Order_PartiallyShipped__c</fullName>
     <defaultValue>false</defaultValue>
-    <label>Order PartiallyShipped</label>
+    <label>Order Partially Shipped</label>
     <trackHistory>false</trackHistory>
     <type>Checkbox</type>
 </CustomField>

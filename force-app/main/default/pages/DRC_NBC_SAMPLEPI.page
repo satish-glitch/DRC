@@ -441,7 +441,7 @@
             <!-- ═══ TOTALS ═══ -->
             <table class="totals-table">
                 <tr class="total-line">
-                    <td class="t-label">Total INR Incl. VAT</td>
+                    <td class="t-label">Total INR Incl. GST</td>
                     <td class="t-value">{!totalWithTax}</td>
                 </tr>
             </table>

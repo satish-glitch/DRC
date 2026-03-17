@@ -384,12 +384,6 @@
             </value>
         </inputAssignments>
         <inputAssignments>
-            <field>NBC_DRC_Order_DRC_Code__c</field>
-            <value>
-                <elementReference>Get_Record.NBC_DRC_Order_DRC_Code__c</elementReference>
-            </value>
-        </inputAssignments>
-        <inputAssignments>
             <field>OpportunityId</field>
             <value>
                 <elementReference>Get_Record.OpportunityId</elementReference>
