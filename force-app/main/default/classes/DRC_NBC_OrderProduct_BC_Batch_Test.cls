@@ -4,7 +4,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
     private static String getSalesOrderLineUrl() {
         return System.Label.DRC_UAT;
     }
-
+    
     private class MockSuccess implements HttpCalloutMock {
         public HTTPResponse respond(HTTPRequest req) {
             HttpResponse res = new HttpResponse();
@@ -14,7 +14,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             return res;
         }
     }
-
+    
     private class MockFailure implements HttpCalloutMock {
         public HTTPResponse respond(HTTPRequest req) {
             HttpResponse res = new HttpResponse();
@@ -24,7 +24,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             return res;
         }
     }
-
+    
     // ─── Helper: Insert DRC_NBC_BC_Integration__c custom setting ─────────────
     // This is required so that DRC_NBC_BC_Callout_Utility.getConfig() SOQL
     // finds a record and does not throw System.QueryException.
@@ -41,7 +41,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             SELECT Id FROM DRC_NBC_BC_Integration__c LIMIT 1
         ];
         if (!existing.isEmpty()) return;
-
+        
         // isSandbox() queries Organization, so we must mirror the same logic.
         // In @isTest the org is a Sandbox, therefore targetEnv = DRC_NBC_Sandbox label.
         // Using a try/catch so the test does not blow up if the label is missing.
@@ -51,7 +51,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         } catch (Exception e) {
             targetEnvName = 'Sandbox'; // fallback – change to match your label value
         }
-
+        
         DRC_NBC_BC_Integration__c setting = new DRC_NBC_BC_Integration__c(
             Name__c                          = targetEnvName,
             DRC_NBC_Comapny_Name__c          = 'Test Company',
@@ -64,29 +64,47 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         );
         insert setting;
     }
-
+    
     // ─── Test Setup ───────────────────────────────────────────────────────────
-
+    
     @testSetup
     static void setupTestData() {
-
+        
         // ── 1. Integration custom setting (must exist before any execute() call) ──
         insertIntegrationSetting();
-
+        
         // ── 2. Account ──────────────────────────────────────────────────────────
         Account acc = new Account(
-            Name                         = 'Test Account',
-            DRC_NBC_Customer_Number__c   = 'CUST001',
-            BillingStreet                = '123 Main St',
-            BillingCity                  = 'Mumbai',
-            BillingState                 = 'Maharashtra',
-            BillingPostalCode            = '400001',
-            BillingCountry               = 'India'
+            Name = 'Test Account',
+            DRC_NBC_Customer_Number__c = 'CUST12345',
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            AccountNumber = 'A123',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert acc;
-
+        
         Id stdPbId = Test.getStandardPricebookId();
-
+        
         // ── 3. Product ──────────────────────────────────────────────────────────
         Product2 prod = new Product2(
             Name                       = 'Test Product',
@@ -96,7 +114,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_GST_Group_Code__c  = 'GST001'
         );
         insert prod;
-
+        
         PricebookEntry stdPbe = new PricebookEntry(
             Pricebook2Id = stdPbId,
             Product2Id   = prod.Id,
@@ -104,7 +122,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             IsActive     = true
         );
         insert stdPbe;
-
+        
         // ── 4. Orders – all include Pricebook2Id ────────────────────────────────
         Order ord = new Order(
             AccountId                    = acc.Id,
@@ -117,7 +135,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert ord;
-
+        
         Order ordNoTax = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -129,7 +147,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert ordNoTax;
-
+        
         Order ordNullTax = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -139,7 +157,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert ordNullTax;
-
+        
         // ── 5. Order Items ───────────────────────────────────────────────────────
         OrderItem oi = new OrderItem(
             OrderId                        = ord.Id,
@@ -154,7 +172,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Packing_Quantity__c    = '5'
         );
         insert oi;
-
+        
         OrderItem oiNoTax = new OrderItem(
             OrderId                        = ordNoTax.Id,
             PricebookEntryId               = stdPbe.Id,
@@ -164,7 +182,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Unit_Of_Measurement__c = 'KGS'
         );
         insert oiNoTax;
-
+        
         OrderItem oiNullTax = new OrderItem(
             OrderId                        = ordNullTax.Id,
             PricebookEntryId               = stdPbe.Id,
@@ -175,110 +193,110 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         );
         insert oiNullTax;
     }
-
+    
     // ─── Helpers ──────────────────────────────────────────────────────────────
-
+    
     private static Order getOrder(String custOrderNumber) {
         return [SELECT Id FROM Order WHERE DRC_NBC_Cust_Order_Number__c = :custOrderNumber LIMIT 1];
     }
-
+    
     // ══════════════════════════════════════════════════════════════════════════
     // DRC_NBC_OrderProduct_BC_Batch Tests
     // ══════════════════════════════════════════════════════════════════════════
-
+    
     /**
-     * Covers: Constructor → orderId stored
-     *         start() → QueryLocator built for correct order
-     *         execute() → items processed, OtherTax + TCS lines added
-     *         finish() → completes without error
-     *         Successful HTTP 200 → logSuccess called
-     */
+* Covers: Constructor → orderId stored
+*         start() → QueryLocator built for correct order
+*         execute() → items processed, OtherTax + TCS lines added
+*         finish() → completes without error
+*         Successful HTTP 200 → logSuccess called
+*/
     @isTest
     static void test_Batch_Success_WithTaxLines() {
         Order ord = getOrder('ORD-001');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
         Test.stopTest();
-
+        
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Order should still exist after batch');
         }
     }
-
+    
     /**
-     * Covers: execute() → HTTP 500 response → logError called
-     */
+* Covers: execute() → HTTP 500 response → logError called
+*/
     @isTest
     static void test_Batch_Failure_HTTP500() {
         Order ord = getOrder('ORD-001');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockFailure());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
         Test.stopTest();
-
+        
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Order should still exist after failed batch');
         }
     }
-
+    
     /**
-     * Covers: OtherTaxAmount = 0 → Other Tax line NOT added
-     *         TCSAmount = 0 → TCS line NOT added
-     */
+* Covers: OtherTaxAmount = 0 → Other Tax line NOT added
+*         TCSAmount = 0 → TCS line NOT added
+*/
     @isTest
     static void test_Batch_ZeroTaxAmounts() {
         Order ord = getOrder('ORD-002');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
         Test.stopTest();
-
+        
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Order should still exist after batch with zero tax');
         }
     }
-
+    
     /**
-     * Covers: OtherTaxAmount = null → Other Tax line NOT added
-     *         TCSAmount = null → TCS line NOT added
-     */
+* Covers: OtherTaxAmount = null → Other Tax line NOT added
+*         TCSAmount = null → TCS line NOT added
+*/
     @isTest
     static void test_Batch_NullTaxAmounts() {
         Order ord = getOrder('ORD-003');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
         Test.stopTest();
-
+        
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Order should exist after batch with null tax');
         }
     }
-
+    
     /**
-     * Covers: Order with no OrderItems → scope.isEmpty() = true → early return
-     *         requestList is empty → callout skipped
-     *
-     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
-     */
+* Covers: Order with no OrderItems → scope.isEmpty() = true → early return
+*         requestList is empty → callout skipped
+*
+* FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
+*/
     @isTest
     static void test_Batch_NoOrderItems() {
         Account acc    = [SELECT Id FROM Account LIMIT 1];
         Id stdPbId     = Test.getStandardPricebookId();
-
+        
         Order emptyOrd = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -288,37 +306,37 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert emptyOrd;
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(emptyOrd.Id), 200);
         Test.stopTest();
-
+        
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :emptyOrd.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Order should still exist after empty batch');
         }
     }
-
+    
     /**
-     * Covers: OrderItem with null Description → payload.Description = ''
-     *         OrderItem with null DRC_NBC_Packing_Size__c → Packing_Details = ''
-     *         OrderItem with null DRC_NBC_Packing_Quantity__c → No_of_Pkg_for_Qty = 0
-     *         OrderItem with null Discount → discountPercent = 0
-     *         OrderItem with null Total Price → totalPrice = 0
-     *         OrderItem with null Quantity → Quantity = 0
-     *         OrderItem with null UnitPrice → Unit_Price = 0
-     *
-     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
-     */
+* Covers: OrderItem with null Description → payload.Description = ''
+*         OrderItem with null DRC_NBC_Packing_Size__c → Packing_Details = ''
+*         OrderItem with null DRC_NBC_Packing_Quantity__c → No_of_Pkg_for_Qty = 0
+*         OrderItem with null Discount → discountPercent = 0
+*         OrderItem with null Total Price → totalPrice = 0
+*         OrderItem with null Quantity → Quantity = 0
+*         OrderItem with null UnitPrice → Unit_Price = 0
+*
+* FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
+*/
     @isTest
     static void test_Batch_NullOrderItemFields() {
         Account acc     = [SELECT Id FROM Account LIMIT 1];
         Product2 prod   = [SELECT Id FROM Product2 LIMIT 1];
         Id stdPbId      = Test.getStandardPricebookId();
         PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
-
+        
         Order ord = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -328,7 +346,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert ord;
-
+        
         OrderItem oi = new OrderItem(
             OrderId          = ord.Id,
             PricebookEntryId = pbe.Id,
@@ -338,38 +356,38 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             // Description, Discount, TotalPrice, PackingSize, PackingQuantity all null
         );
         insert oi;
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
         Test.stopTest();
-
+        
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Order should exist after null-fields batch');
         }
     }
-
+    
     /**
-     * Covers: Sample Order record type → isSampleOrder = true
-     *         → totalPrice = 0, lineDiscountAmount = 0, Unit_Price = 0
-     *
-     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
-     */
+* Covers: Sample Order record type → isSampleOrder = true
+*         → totalPrice = 0, lineDiscountAmount = 0, Unit_Price = 0
+*
+* FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
+*/
     @isTest
     static void test_Batch_SampleOrder() {
         Account acc   = [SELECT Id FROM Account LIMIT 1];
         Product2 prod = [SELECT Id FROM Product2 LIMIT 1];
         Id stdPbId    = Test.getStandardPricebookId();
         PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
-
+        
         List<RecordType> sampleRTs = [
             SELECT Id FROM RecordType
             WHERE SObjectType = 'Order' AND Name = 'Sample_Order'
             LIMIT 1
         ];
-
+        
         Order sampleOrd = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -382,7 +400,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             sampleOrd.RecordTypeId = sampleRTs[0].Id;
         }
         insert sampleOrd;
-
+        
         OrderItem oi = new OrderItem(
             OrderId                        = sampleOrd.Id,
             PricebookEntryId               = pbe.Id,
@@ -393,33 +411,33 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Unit_Of_Measurement__c = 'KGS'
         );
         insert oi;
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(sampleOrd.Id), 200);
         Test.stopTest();
-
+        
         List<Order> orders = [SELECT Id FROM Order WHERE Id = :sampleOrd.Id];
         if (orders.isEmpty()) {
             throw new IllegalArgumentException('Sample order should still exist after batch');
         }
     }
-
+    
     /**
-     * Covers: Multiple OrderItems in same batch → lineCounter increments
-     *         requestCounter increments per item
-     *         Both OtherTax and TCS lines added after items
-     *
-     * FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
-     */
+* Covers: Multiple OrderItems in same batch → lineCounter increments
+*         requestCounter increments per item
+*         Both OtherTax and TCS lines added after items
+*
+* FIX: Added Pricebook2Id to prevent FIELD_INTEGRITY_EXCEPTION.
+*/
     @isTest
     static void test_Batch_MultipleOrderItems() {
         Account acc   = [SELECT Id FROM Account LIMIT 1];
         Product2 prod = [SELECT Id FROM Product2 LIMIT 1];
         Id stdPbId    = Test.getStandardPricebookId();
         PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
-
+        
         Order ord = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -431,7 +449,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             DRC_NBC_Warehouse__c         = 'CFS - JNPT'
         );
         insert ord;
-
+        
         List<OrderItem> items = new List<OrderItem>();
         for (Integer i = 0; i < 5; i++) {
             items.add(new OrderItem(
@@ -444,54 +462,54 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             ));
         }
         insert items;
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
         Test.stopTest();
-
+        
         if ([SELECT COUNT() FROM Order WHERE Id = :ord.Id] == 0) {
             throw new IllegalArgumentException('Order should still exist after multi-item batch');
         }
     }
-
+    
     /**
-     * Covers: finish() method — verifies it completes without exception
-     */
+* Covers: finish() method — verifies it completes without exception
+*/
     @isTest
     static void test_Batch_FinishMethod() {
         Order ord = getOrder('ORD-001');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         DRC_NBC_OrderProduct_BC_Batch batch = new DRC_NBC_OrderProduct_BC_Batch(ord.Id);
         Database.executeBatch(batch, 200);
         Test.stopTest();
-
+        
         Boolean finished = true;
         if (!finished) {
             throw new IllegalArgumentException('Batch finish should complete without error');
         }
     }
-
+    
     // ══════════════════════════════════════════════════════════════════════════
     // DRC_NBC_OrderProduct_BC_Integration Tests
     // ══════════════════════════════════════════════════════════════════════════
-
+    
     /**
-     * Covers: Constructor → all fields stored
-     *         prepareRequest() → endpoint, method, body set
-     *         executeAndReturnResponse() → returns HttpResponse
-     *         processResponse() → 200 status → success branch
-     */
+* Covers: Constructor → all fields stored
+*         prepareRequest() → endpoint, method, body set
+*         executeAndReturnResponse() → returns HttpResponse
+*         processResponse() → 200 status → success branch
+*/
     @isTest
     static void test_Integration_Success200() {
         Order ord = getOrder('ORD-001');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         DRC_NBC_OrderProduct_BC_Integration integration =
             new DRC_NBC_OrderProduct_BC_Integration(
@@ -500,10 +518,10 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
                 '{"requests":[]}',
                 ord.Id
             );
-
+        
         HttpResponse response = integration.executeAndReturnResponse();
         Test.stopTest();
-
+        
         if (response == null) {
             throw new IllegalArgumentException('Response should not be null');
         }
@@ -513,16 +531,16 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             );
         }
     }
-
+    
     /**
-     * Covers: processResponse() → non-2xx status → error branch
-     */
+* Covers: processResponse() → non-2xx status → error branch
+*/
     @isTest
     static void test_Integration_Failure500() {
         Order ord = getOrder('ORD-001');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockFailure());
-
+        
         Test.startTest();
         DRC_NBC_OrderProduct_BC_Integration integration =
             new DRC_NBC_OrderProduct_BC_Integration(
@@ -531,10 +549,10 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
                 '{"requests":[]}',
                 ord.Id
             );
-
+        
         HttpResponse response = integration.executeAndReturnResponse();
         Test.stopTest();
-
+        
         if (response == null) {
             throw new IllegalArgumentException('Response should not be null for 500');
         }
@@ -544,14 +562,14 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             );
         }
     }
-
+    
     /**
-     * Covers: processResponse() directly with 201 (2xx boundary)
-     */
+* Covers: processResponse() directly with 201 (2xx boundary)
+*/
     @isTest
     static void test_Integration_ProcessResponse_201() {
         Order ord = getOrder('ORD-001');
-
+        
         DRC_NBC_OrderProduct_BC_Integration integration =
             new DRC_NBC_OrderProduct_BC_Integration(
                 'https://mock-endpoint.example.com/api',
@@ -559,28 +577,28 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
                 '{"requests":[]}',
                 ord.Id
             );
-
+        
         HttpResponse res = new HttpResponse();
         res.setStatusCode(201);
         res.setBody('{"status":"created"}');
-
+        
         Test.startTest();
         integration.processResponse(res);
         Test.stopTest();
-
+        
         Boolean processed = true;
         if (!processed) {
             throw new IllegalArgumentException('processResponse should handle 201 without error');
         }
     }
-
+    
     /**
-     * Covers: processResponse() directly with 400 (non-2xx error branch)
-     */
+* Covers: processResponse() directly with 400 (non-2xx error branch)
+*/
     @isTest
     static void test_Integration_ProcessResponse_400() {
         Order ord = getOrder('ORD-001');
-
+        
         DRC_NBC_OrderProduct_BC_Integration integration =
             new DRC_NBC_OrderProduct_BC_Integration(
                 'https://mock-endpoint.example.com/api',
@@ -588,30 +606,30 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
                 '{"requests":[]}',
                 ord.Id
             );
-
+        
         HttpResponse res = new HttpResponse();
         res.setStatusCode(400);
         res.setBody('{"error":"Bad Request"}');
-
+        
         Test.startTest();
         integration.processResponse(res);
         Test.stopTest();
-
+        
         Boolean processed = true;
         if (!processed) {
             throw new IllegalArgumentException('processResponse should handle 400 without error');
         }
     }
-
+    
     /**
-     * Covers: prepareRequest() — verifies endpoint and method are set correctly
-     */
+* Covers: prepareRequest() — verifies endpoint and method are set correctly
+*/
     @isTest
     static void test_Integration_PrepareRequest() {
         Order ord = getOrder('ORD-001');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         DRC_NBC_OrderProduct_BC_Integration integration =
             new DRC_NBC_OrderProduct_BC_Integration(
                 'https://mock-endpoint.example.com/orders',
@@ -619,11 +637,11 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
                 '{"test":"payload"}',
                 ord.Id
             );
-
+        
         Test.startTest();
         HttpRequest req = integration.prepareRequest();
         Test.stopTest();
-
+        
         if (req == null) {
             throw new IllegalArgumentException('prepareRequest should return a non-null HttpRequest');
         }
@@ -638,16 +656,16 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             );
         }
     }
-
+    
     /**
-     * Covers: Integration with empty payload body
-     */
+* Covers: Integration with empty payload body
+*/
     @isTest
     static void test_Integration_EmptyPayload() {
         Order ord = getOrder('ORD-001');
-
+        
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-
+        
         Test.startTest();
         DRC_NBC_OrderProduct_BC_Integration integration =
             new DRC_NBC_OrderProduct_BC_Integration(
@@ -658,19 +676,19 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             );
         HttpResponse response = integration.executeAndReturnResponse();
         Test.stopTest();
-
+        
         if (response == null) {
             throw new IllegalArgumentException('Response should not be null for empty payload');
         }
     }
-
+    
     /**
-     * Covers: processResponse() with exactly 299 (boundary of 2xx range)
-     */
+* Covers: processResponse() with exactly 299 (boundary of 2xx range)
+*/
     @isTest
     static void test_Integration_ProcessResponse_299() {
         Order ord = getOrder('ORD-001');
-
+        
         DRC_NBC_OrderProduct_BC_Integration integration =
             new DRC_NBC_OrderProduct_BC_Integration(
                 'https://mock-endpoint.example.com/api',
@@ -678,15 +696,15 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
                 '{}',
                 ord.Id
             );
-
+        
         HttpResponse res = new HttpResponse();
         res.setStatusCode(299);
         res.setBody('{"status":"ok"}');
-
+        
         Test.startTest();
         integration.processResponse(res);
         Test.stopTest();
-
+        
         Boolean processed = true;
         if (!processed) {
             throw new IllegalArgumentException('processResponse should handle 299 as success');

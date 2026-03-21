@@ -19,14 +19,14 @@ private class DRC_NBC_Account_BC_Callout_Test {
         }
     }
     
-      private static void insertIntegrationSetting() {
+    private static void insertIntegrationSetting() {
         // Guard: only insert if no record exists yet (avoids duplicate-key errors
         // when this helper is called more than once in the same transaction).
         List<DRC_NBC_BC_Integration__c> existing = [
             SELECT Id FROM DRC_NBC_BC_Integration__c LIMIT 1
         ];
         if (!existing.isEmpty()) return;
-
+        
         // isSandbox() queries Organization, so we must mirror the same logic.
         // In @isTest the org is a Sandbox, therefore targetEnv = DRC_NBC_Sandbox label.
         // Using a try/catch so the test does not blow up if the label is missing.
@@ -36,7 +36,7 @@ private class DRC_NBC_Account_BC_Callout_Test {
         } catch (Exception e) {
             targetEnvName = 'Sandbox'; // fallback – change to match your label value
         }
-
+        
         DRC_NBC_BC_Integration__c setting = new DRC_NBC_BC_Integration__c(
             Name__c                          = targetEnvName,
             DRC_NBC_Comapny_Name__c          = 'Test Company',
@@ -49,7 +49,7 @@ private class DRC_NBC_Account_BC_Callout_Test {
         );
         insert setting;
     }
-
+    
     
     @testSetup
     static void setupTestData() {
@@ -75,6 +75,15 @@ private class DRC_NBC_Account_BC_Callout_Test {
             BillingPostalCode = '462002',
             BillingState = 'Maharashtra',
             BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst',
             DRC_NBC_BC_Approval_Status__c = withApprovalStatus
         );
         insert acc;
@@ -490,11 +499,30 @@ System.assertEquals(jsonBody, req.getBody());
     private static Account createAccount(String customerNumber, String billingCountry) {
         Account acc = new Account(
             Name            = 'Test Account ' + customerNumber,
-            BillingCountry  = billingCountry,
-            BillingStreet   = '123 Street',
-            BillingCity     = 'City',
-            BillingState    = 'Maharashtra',
-            BillingPostalCode = '462002'
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            AccountNumber = 'A123',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+         //   DRC_NBC_Customer_Number__c = withCustomerNumber ? 'CUST123' : null,
+            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert acc;
         

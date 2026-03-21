@@ -1,8 +1,8 @@
 /**
- * @File Name : DRC_NBC_SalesPersonCode_Callout_Test.cls
- * @Description : Test class for DRC_NBC_SalesPersonCode_Callout and DRC_NBC_SalesPerson_BC_Integration
- * @Author : Satish
- * @Last Modified On : January 02, 2026
+* @File Name : DRC_NBC_SalesPersonCode_Callout_Test.cls
+* @Description : Test class for DRC_NBC_SalesPersonCode_Callout and DRC_NBC_SalesPerson_BC_Integration
+* @Author : Satish
+* @Last Modified On : January 02, 2026
 **/
 @isTest(SeeAllData=true)
 private class DRC_NBC_SalesPersonCode_Callout_Test {
@@ -28,12 +28,12 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
     private static Account createTestAccount() {
         Account acc = new Account(
             Name = 'Test Account',
+            DRC_NBC_Customer_Number__c = 'CUST12345',
             CurrencyIsoCode = 'INR',
             Phone = '1234567890',
             AccountNumber = 'A123',
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
-            DRC_NBC_Customer_Number__c = 'CUST123',
             DRC_NBC_Payment_Term_Code__c = '10 DAYS',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
@@ -42,7 +42,16 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
             BillingCountryCode = 'IN',
             BillingPostalCode = '462002',
             BillingState = 'Maharashtra',
-            BillingStateCode = 'MH'
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert acc;
         return acc;
@@ -232,11 +241,11 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name' => con.Name,
-            'Phone_No' => con.Phone,
-            'E_Mail' => con.Email,
-            'Code' => con.Id
-        };
-        String payload = JSON.serialize(payloadMap);
+                'Phone_No' => con.Phone,
+                'E_Mail' => con.Email,
+                'Code' => con.Id
+                };
+                    String payload = JSON.serialize(payloadMap);
         
         DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
             'test-endpoint',
@@ -262,11 +271,11 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name' => con.Name,
-            'Phone_No' => con.Phone,
-            'E_Mail' => con.Email,
-            'Code' => con.Id
-        };
-        String payload = JSON.serialize(payloadMap);
+                'Phone_No' => con.Phone,
+                'E_Mail' => con.Email,
+                'Code' => con.Id
+                };
+                    String payload = JSON.serialize(payloadMap);
         
         DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
             'test-endpoint',
@@ -295,11 +304,11 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name' => con.Name,
-            'Phone_No' => con.Phone,
-            'E_Mail' => con.Email,
-            'Code' => con.Id
-        };
-        String payload = JSON.serialize(payloadMap);
+                'Phone_No' => con.Phone,
+                'E_Mail' => con.Email,
+                'Code' => con.Id
+                };
+                    String payload = JSON.serialize(payloadMap);
         
         DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
             'test-endpoint',
@@ -328,11 +337,11 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name' => con.Name,
-            'Phone_No' => con.Phone,
-            'E_Mail' => con.Email,
-            'Code' => con.Id
-        };
-        String payload = JSON.serialize(payloadMap);
+                'Phone_No' => con.Phone,
+                'E_Mail' => con.Email,
+                'Code' => con.Id
+                };
+                    String payload = JSON.serialize(payloadMap);
         
         DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
             'test-endpoint',
@@ -361,11 +370,11 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name' => con.Name,
-            'Phone_No' => con.Phone,
-            'E_Mail' => con.Email,
-            'Code' => con.Id
-        };
-        String payload = JSON.serialize(payloadMap);
+                'Phone_No' => con.Phone,
+                'E_Mail' => con.Email,
+                'Code' => con.Id
+                };
+                    String payload = JSON.serialize(payloadMap);
         
         DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
             'test-endpoint',
@@ -394,11 +403,11 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name' => con.Name,
-            'Phone_No' => con.Phone,
-            'E_Mail' => con.Email,
-            'Code' => con.Id
-        };
-        String payload = JSON.serialize(payloadMap);
+                'Phone_No' => con.Phone,
+                'E_Mail' => con.Email,
+                'Code' => con.Id
+                };
+                    String payload = JSON.serialize(payloadMap);
         
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(201, '{"message": "Success"}'));
         
@@ -426,12 +435,12 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name' => con.Name,
-            'Phone_No' => con.Phone,
-            'E_Mail' => con.Email,
-            'Code' => con.Id
-        };
-        
-        Test.startTest();
+                'Phone_No' => con.Phone,
+                'E_Mail' => con.Email,
+                'Code' => con.Id
+                };
+                    
+                    Test.startTest();
         String payload = JSON.serialize(payloadMap);
         Map<String, Object> deserializedPayload = (Map<String, Object>) JSON.deserializeUntyped(payload);
         Test.stopTest();

@@ -4,9 +4,28 @@ private class DRC_NBC_BirthDayFilter_Test {
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private static Account createAccount() {
-        Account acc = new Account(Name = 'Test Account');
+        Account acc = new Account(
+            Name           = 'name',
+            BillingStreet  = '123 Test Street',
+            BillingCity    = 'Mumbai',
+            BillingState   = 'Maharashtra',
+            BillingPostalCode = '400001',
+            BillingCountry = 'India',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c ='1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
+            
+            
+        );
         insert acc;
         return acc;
+    
     }
 
     private static Contact createContact(String firstName, String lastName,

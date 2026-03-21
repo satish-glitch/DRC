@@ -1,15 +1,15 @@
 /**
- * @File Name : DRC_NBC_LineItemCreator_Test.cls
- * @Description : Test class for DRC_NBC_LineItemCreator
- * @Author : Satish Yadav
- * @Last Modified On : February 09, 2026
- **/
+* @File Name : DRC_NBC_LineItemCreator_Test.cls
+* @Description : Test class for DRC_NBC_LineItemCreator
+* @Author : Satish Yadav
+* @Last Modified On : February 09, 2026
+**/
 @isTest
 private class DRC_NBC_LineItemCreator_Test {
     
     /**
-     * Test Data Setup
-     */
+* Test Data Setup
+*/
     @testSetup
     static void setupTestData() {
         // Create Custom Setting
@@ -26,7 +26,30 @@ private class DRC_NBC_LineItemCreator_Test {
         // Create Account
         Account acc = new Account(
             Name = 'Test Customer',
-            DRC_NBC_Customer_Number__c = 'CUST001'
+            DRC_NBC_Customer_Number__c = 'CUST001',
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            AccountNumber = 'A123',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert acc;
         
@@ -97,8 +120,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Create single line item successfully
-     */
+* Test: Create single line item successfully
+*/
     @isTest
     static void testCreateSingleLineItem() {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
@@ -119,8 +142,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Create multiple line items successfully
-     */
+* Test: Create multiple line items successfully
+*/
     @isTest
     static void testCreateMultipleLineItems() {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
@@ -141,8 +164,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Create with empty items list
-     */
+* Test: Create with empty items list
+*/
     @isTest
     static void testCreateEmptyList() {
         Order ord = [SELECT Id, DRC_NBC_Cust_Order_Number__c, RecordType.Name FROM Order LIMIT 1];
@@ -156,8 +179,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Create with BC failure response
-     */
+* Test: Create with BC failure response
+*/
     @isTest
     static void testCreateWithBCFailure() {
         Test.setMock(HttpCalloutMock.class, new CreateFailureHttpMock());
@@ -178,8 +201,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Exception handling
-     */
+* Test: Exception handling
+*/
     @isTest
     static void testCreateException() {
         Test.setMock(HttpCalloutMock.class, new CreateExceptionHttpMock());
@@ -200,8 +223,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Legacy method createLineItems (counter-based)
-     */
+* Test: Legacy method createLineItems (counter-based)
+*/
     @isTest
     static void testLegacyCreateLineItems() {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
@@ -222,8 +245,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Line number increment logic (30000, 40000, 50000...)
-     */
+* Test: Line number increment logic (30000, 40000, 50000...)
+*/
     @isTest
     static void testLineNumberIncrement() {
         Test.setMock(HttpCalloutMock.class, new CreateLineNumberTrackingHttpMock());
@@ -244,8 +267,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Create items with discount calculations
-     */
+* Test: Create items with discount calculations
+*/
     @isTest
     static void testCreateWithDiscounts() {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
@@ -274,8 +297,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * Test: Create with high starting line number
-     */
+* Test: Create with high starting line number
+*/
     @isTest
     static void testCreateWithHighLineNumber() {
         Test.setMock(HttpCalloutMock.class, new CreateSuccessHttpMock());
@@ -296,8 +319,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * HTTP Mock for successful create responses
-     */
+* HTTP Mock for successful create responses
+*/
     private class CreateSuccessHttpMock implements HttpCalloutMock {
         public HTTPResponse respond(HTTPRequest req) {
             HttpResponse res = new HttpResponse();
@@ -315,8 +338,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * HTTP Mock for failed create responses
-     */
+* HTTP Mock for failed create responses
+*/
     private class CreateFailureHttpMock implements HttpCalloutMock {
         public HTTPResponse respond(HTTPRequest req) {
             HttpResponse res = new HttpResponse();
@@ -327,8 +350,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * HTTP Mock that throws exception
-     */
+* HTTP Mock that throws exception
+*/
     private class CreateExceptionHttpMock implements HttpCalloutMock {
         public HTTPResponse respond(HTTPRequest req) {
             throw new CalloutException('Connection timeout');
@@ -336,8 +359,8 @@ private class DRC_NBC_LineItemCreator_Test {
     }
     
     /**
-     * HTTP Mock to track line number increment
-     */
+* HTTP Mock to track line number increment
+*/
     private class CreateLineNumberTrackingHttpMock implements HttpCalloutMock {
         public HTTPResponse respond(HTTPRequest req) {
             HttpResponse res = new HttpResponse();

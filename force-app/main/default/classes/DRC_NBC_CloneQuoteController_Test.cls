@@ -19,14 +19,24 @@ private class DRC_NBC_CloneQuoteController_Test {
     @testSetup
     static void setupTestData() {
         // Create Test Account
-        Account testAccount = new Account(
-            Name = 'Test Account for Quote Clone',
-            BillingStreet = '123 Test Street',
-            BillingCity = 'Test City',
-            BillingStateCode = 'MH',
-            BillingPostalCode = '12345',
-            BillingCountryCode = 'IN'
+            Account testAccount = new Account(
+            Name           = 'name',
+            BillingStreet  = '123 Test Street',
+            BillingCity    = 'Mumbai',
+            BillingState   = 'Maharashtra',
+            BillingPostalCode = '400001',
+            BillingCountry = 'India',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c ='1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
+    
         insert testAccount;
         
         // Create Test Contacts

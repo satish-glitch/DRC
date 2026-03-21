@@ -11,26 +11,26 @@ private class DRC_NBC_Order_BC_Integration_Test {
     @testSetup
     static void setupTestData() {
         // ===== CREATE CUSTOM SETTING FIRST =====
-      /*  DRC_NBC_BC_Integration__c customSetting = new DRC_NBC_BC_Integration__c(
-            Name = 'Test_Config_Sandbox',
-            Name__c = 'Sandbox',
-            DRC_NBC_Comapny_Name__c = 'D.R. COATS INK AND RESINS PVT. LTD',
-            DRC_NBC_Endpoint__c = 'https://api.businesscentral.dynamics.com/v2.0/production/api/v2.0',
-            DRC_NBC_SendOrderEndpoint__c = 'SalesOrders',
-            DRC_NBC_Shipping_Address_Endpoint__c = 'ShipToAddress',
-            DRC_NBC_SendOrderLineEndpoint__c = 'SalesOrderLines',
-            DRC_NBC_SalesPerson_Code__c = 'SP001',
-            DRC_NBC_Token_Generated_Time__c = System.now()
-        );
-        insert customSetting;*/
+        /*  DRC_NBC_BC_Integration__c customSetting = new DRC_NBC_BC_Integration__c(
+Name = 'Test_Config_Sandbox',
+Name__c = 'Sandbox',
+DRC_NBC_Comapny_Name__c = 'D.R. COATS INK AND RESINS PVT. LTD',
+DRC_NBC_Endpoint__c = 'https://api.businesscentral.dynamics.com/v2.0/production/api/v2.0',
+DRC_NBC_SendOrderEndpoint__c = 'SalesOrders',
+DRC_NBC_Shipping_Address_Endpoint__c = 'ShipToAddress',
+DRC_NBC_SendOrderLineEndpoint__c = 'SalesOrderLines',
+DRC_NBC_SalesPerson_Code__c = 'SP001',
+DRC_NBC_Token_Generated_Time__c = System.now()
+);
+insert customSetting;*/
         
-         String targetEnvName;
+        String targetEnvName;
         try {
             targetEnvName = System.Label.DRC_NBC_Sandbox;
         } catch (Exception e) {
             targetEnvName = 'Sandbox'; // fallback – change to match your label value
         }
-
+        
         DRC_NBC_BC_Integration__c customSetting = new DRC_NBC_BC_Integration__c(
             Name__c                          = targetEnvName,
             DRC_NBC_Comapny_Name__c          = 'Test Company',
@@ -49,7 +49,29 @@ private class DRC_NBC_Order_BC_Integration_Test {
         Account testAccount = new Account(
             Name = 'Test Account',
             DRC_NBC_Customer_Number__c = 'CUST001',
-            DRC_NBC_PAN_No__c = 'AWVPY9594J'
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            AccountNumber = 'A123',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert testAccount;
         
@@ -517,11 +539,35 @@ private class DRC_NBC_Order_BC_Integration_Test {
     @isTest
     static void testMapOrderToBCPayload() {
         Order testOrder = [
-            SELECT Id, Name, AccountId, Account.Name, Account.DRC_NBC_Customer_Number__c,
-            EffectiveDate, PoNumber, PoDate, DRC_NBC_Warehouse__c, ShipToContactId,
+            SELECT Id, Name,  AccountId,
+            Account.Name,
+            Account.CurrencyIsoCode,
+            Account.Phone,
+            Account.AccountNumber,
+            Account.DRC_NBC_PAN_No__c,
+            Account.DRC_NBC_GST_Number__c,
+            Account.DRC_NBC_Payment_Term_Code__c,
+            Account.DRC_NBC_Account_Email_Email__c,
+            Account.BillingStreet,
+            Account.BillingCity,
+            Account.BillingCountry,
+            Account.BillingCountryCode,
+            Account.BillingPostalCode,
+            Account.BillingState,
+            Account.BillingStateCode,
+            Account.DRC_NBC_Volume__c,
+            Account.DRC_NBC_Credit_Limit__c,
+            Account.DRC_NBC_Value__c,
+            Account.DRC_NBC_Consignee_Bank_Account_Number__c,
+            Account.DRC_NBC_Consignee_Bank_Address__c,
+            Account.DRC_NBC_Consignee_Bank_IFSC_Code__c,
+            Account.DRC_NBC_Consignee_Bank_Name__c,
+            Account.Industry,
+            Account.Type, Account.DRC_NBC_Customer_Number__c,
+            EffectiveDate, PoNumber, PoDate, DRC_NBC_Warehouse__c, ShipToContactId, CurrencyIsoCode,
             DRC_NBC_Cust_Order_Number__c, Status, DRC_NBC_Payment_Terms__c,
             DRC_NBC_Inco_Terms__c, ShippingStreet, ShippingCity, ShippingState,
-            ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c,
+            ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c, DRC_NBC_Grand_Total__c,
             DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name
             FROM Order LIMIT 1
         ];

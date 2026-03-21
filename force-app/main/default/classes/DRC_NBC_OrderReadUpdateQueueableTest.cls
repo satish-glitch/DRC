@@ -16,7 +16,7 @@
 **/
 @isTest
 private class DRC_NBC_OrderReadUpdateQueueableTest {
-
+    
     // =========================================================================
     // SOAP RESPONSE CONSTANTS
     // =========================================================================
@@ -38,7 +38,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
         '</Read_Result>' +
         '</Soap:Body>' +
         '</Soap:Envelope>';
-
+    
     private static final String READ_NO_KEY_RESPONSE =
         '<?xml version="1.0" encoding="utf-8"?>' +
         '<Soap:Envelope xmlns:Soap="http://schemas.xmlsoap.org/soap/envelope/">' +
@@ -50,7 +50,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
         '</Read_Result>' +
         '</Soap:Body>' +
         '</Soap:Envelope>';
-
+    
     private static final String UPDATE_SUCCESS_RESPONSE =
         '<?xml version="1.0" encoding="utf-8"?>' +
         '<Soap:Envelope xmlns:Soap="http://schemas.xmlsoap.org/soap/envelope/">' +
@@ -64,30 +64,30 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
         '</Update_Result>' +
         '</Soap:Body>' +
         '</Soap:Envelope>';
-
+    
     // =========================================================================
     // MOCK CLASSES
     // =========================================================================
-
+    
     /**
-     * Controls READ (1st call) and UPDATE (2nd call) independently.
-     */
+* Controls READ (1st call) and UPDATE (2nd call) independently.
+*/
     private class MultiCalloutMock implements HttpCalloutMock {
         private Integer callCount    = 0;
         private Integer readStatus;
         private String  readBody;
         private Integer updateStatus;
         private String  updateBody;
-
+        
         public MultiCalloutMock(
-                Integer readStatus,   String readBody,
-                Integer updateStatus, String updateBody) {
-            this.readStatus   = readStatus;
-            this.readBody     = readBody;
-            this.updateStatus = updateStatus;
-            this.updateBody   = updateBody;
-        }
-
+            Integer readStatus,   String readBody,
+            Integer updateStatus, String updateBody) {
+                this.readStatus   = readStatus;
+                this.readBody     = readBody;
+                this.updateStatus = updateStatus;
+                this.updateBody   = updateBody;
+            }
+        
         public HttpResponse respond(HttpRequest req) {
             callCount++;
             HttpResponse res = new HttpResponse();
@@ -101,17 +101,17 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             return res;
         }
     }
-
+    
     /** Single-callout mock – used when only READ is expected (no UPDATE). */
     private class SingleCalloutMock implements HttpCalloutMock {
         private Integer statusCode;
         private String  body;
-
+        
         public SingleCalloutMock(Integer statusCode, String body) {
             this.statusCode = statusCode;
             this.body       = body;
         }
-
+        
         public HttpResponse respond(HttpRequest req) {
             HttpResponse res = new HttpResponse();
             res.setStatusCode(statusCode);
@@ -119,23 +119,23 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             return res;
         }
     }
-
+    
     // =========================================================================
     // SETUP HELPER
     // =========================================================================
-
+    
     /**
-     * Inserts the custom setting + Account + Order required by most tests.
-     * Returns the Order Id.
-     *
-     * NOTE: DRC_NBC_BC_Integration__c is a Hierarchy Custom Setting so we use
-     *       SetupOwnerId = UserInfo.getOrganizationId() for the org-default tier.
-     *       The static initialisers in the production class call getInstance()
-     *       which reads the Hierarchy record, so this record must exist before
-     *       the class is even loaded – that is why we insert it first.
-     */
+* Inserts the custom setting + Account + Order required by most tests.
+* Returns the Order Id.
+*
+* NOTE: DRC_NBC_BC_Integration__c is a Hierarchy Custom Setting so we use
+*       SetupOwnerId = UserInfo.getOrganizationId() for the org-default tier.
+*       The static initialisers in the production class call getInstance()
+*       which reads the Hierarchy record, so this record must exist before
+*       the class is even loaded – that is why we insert it first.
+*/
     private static Id setupTestData() {
-
+        
         DRC_NBC_BC_Integration__c settings = new DRC_NBC_BC_Integration__c(
             SetupOwnerId                    = UserInfo.getOrganizationId(),
             DRC_NBC_BC_Order_Endpoint__c    = 'https://bc.example.com/order',
@@ -146,18 +146,37 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             DRC_NBC_Password__c             = 'testpass'
         );
         insert settings;
-
+        
         Account acc = new Account(
-            Name                          = 'Test Account',
-            BillingStreet                 = '302, Amar Business Park',
-            BillingCity                   = 'Pune',
-            BillingPostalCode             = '411045',
-            BillingCountry                = 'India',
+            Name = 'Test Account',
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            AccountNumber = 'A123',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst',
             DRC_NBC_Customer_Number__c    = 'CUSTDOM/2526-00014',
             DRC_NBC_BC_Approval_Status__c = true
         );
         insert acc;
-
+        
         Order ord = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -177,107 +196,107 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             OwnerId                      = UserInfo.getUserId()
         );
         insert ord;
-
+        
         return ord.Id;
     }
-
+    
     // =========================================================================
     // TEST 1: Happy Path – READ 200 + UPDATE 200 → SF Order Status = Released
     // =========================================================================
     @isTest
     static void testExecute_HappyPath_OrderStatusSetToReleased() {
-
+        
         Id orderId = setupTestData();
-
+        
         Test.setMock(HttpCalloutMock.class, new MultiCalloutMock(
             200, READ_SUCCESS_RESPONSE,
             200, UPDATE_SUCCESS_RESPONSE
         ));
-
+        
         Test.startTest();
         // FIX: call the static execute() method directly – no constructor needed
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
         System.debug('Final Order Status: ' + result.Status);
         System.assertEquals('Released', result.Status,
-            'Order Status should be Released after successful BC READ + UPDATE');
+                            'Order Status should be Released after successful BC READ + UPDATE');
     }
-
+    
     // =========================================================================
     // TEST 2: READ returns HTTP 500 → exits early, Status stays Draft
     // =========================================================================
     @isTest
     static void testExecute_ReadHttpFailure_StatusNotChanged() {
-
+        
         Id orderId = setupTestData();
-
+        
         Test.setMock(HttpCalloutMock.class, new SingleCalloutMock(
             500, '<error>Internal Server Error</error>'
         ));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
         System.debug('Order Status after READ failure: ' + result.Status);
         System.assertNotEquals('Released', result.Status,
-            'Order Status should NOT be Released when BC READ returns 500');
+                               'Order Status should NOT be Released when BC READ returns 500');
     }
-
+    
     // =========================================================================
     // TEST 3: READ returns 200 but no <Key> → exits early, Status stays Draft
     // =========================================================================
     @isTest
     static void testExecute_ReadNoKeyInResponse_StatusNotChanged() {
-
+        
         Id orderId = setupTestData();
-
+        
         Test.setMock(HttpCalloutMock.class, new SingleCalloutMock(
             200, READ_NO_KEY_RESPONSE
         ));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
         System.debug('Order Status after no Key in response: ' + result.Status);
         System.assertNotEquals('Released', result.Status,
-            'Order Status should NOT be Released when READ response has no Key');
+                               'Order Status should NOT be Released when READ response has no Key');
     }
-
+    
     // =========================================================================
     // TEST 4: READ 200 + UPDATE 400 → SF Status NOT changed
     // =========================================================================
     @isTest
     static void testExecute_UpdateHttpFailure_StatusNotChanged() {
-
+        
         Id orderId = setupTestData();
-
+        
         Test.setMock(HttpCalloutMock.class, new MultiCalloutMock(
             200, READ_SUCCESS_RESPONSE,
             400, '<error>Bad Request</error>'
         ));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
         System.debug('Order Status after UPDATE failure: ' + result.Status);
         System.assertNotEquals('Released', result.Status,
-            'Order Status should NOT be Released when BC UPDATE returns 400');
+                               'Order Status should NOT be Released when BC UPDATE returns 400');
     }
-
+    
     // =========================================================================
     // TEST 5: Null Order Id passed → graceful no-op, no exception
     // =========================================================================
     @isTest
     static void testExecute_NullOrderId_GracefulNoOp() {
-
+        
         // Custom setting still needs to exist for the class static init
         DRC_NBC_BC_Integration__c settings = new DRC_NBC_BC_Integration__c(
             SetupOwnerId                    = UserInfo.getOrganizationId(),
@@ -287,17 +306,17 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             DRC_NBC_Password__c             = 'p'
         );
         insert settings;
-
+        
         Test.startTest();
         // Should return immediately without throwing
         DRC_NBC_OrderReadUpdateQueueable.execute(null);
         Test.stopTest();
-
+        
         // If we reach here without an exception the test passes
         System.assert(true, 'execute(null) should exit gracefully without exception');
     }
-
-   
+    
+    
     // =========================================================================
     // TEST 7: Static method runs without exception (replaces constructor test)
     //         FIX: DRC_NBC_OrderReadUpdateQueueable has no constructor –
@@ -305,28 +324,28 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
     // =========================================================================
     @isTest
     static void testExecute_StaticMethod_NoException() {
-
+        
         Id orderId = setupTestData();
-
+        
         Test.setMock(HttpCalloutMock.class, new MultiCalloutMock(
             200, READ_SUCCESS_RESPONSE,
             200, UPDATE_SUCCESS_RESPONSE
         ));
-
+        
         Test.startTest();
         // Just verify calling the static method does not throw
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         System.assert(true, 'Static execute() should run without throwing an exception');
     }
-
+    
     // =========================================================================
     // TEST 8: Sample Order record type → isSample = true path
     // =========================================================================
     @isTest
     static void testExecute_SampleOrder_HappyPath() {
-
+        
         DRC_NBC_BC_Integration__c settings = new DRC_NBC_BC_Integration__c(
             SetupOwnerId                    = UserInfo.getOrganizationId(),
             DRC_NBC_BC_Order_Endpoint__c    = 'https://bc.example.com/order',
@@ -335,22 +354,42 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             DRC_NBC_Password__c             = 'testpass'
         );
         insert settings;
-
+        
         Account acc = new Account(
-            Name                       = 'Sample Account',
-            DRC_NBC_Customer_Number__c = 'CUSTDOM/SAMPLE-001',
-            BillingStreet              = 'Sample Street',
-            BillingCity                = 'Sample City',
-            BillingPostalCode          = '123456'
+            Name = 'Test Account234',
+            DRC_NBC_Customer_Number__c = 'CUST12345',
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            AccountNumber = 'A123',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert acc;
-
+        
         List<RecordType> sampleRT = [
             SELECT Id FROM RecordType
             WHERE SObjectType = 'Order' AND DeveloperName = 'Sample_Order'
             LIMIT 1
         ];
-
+        
         Order ord = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -372,28 +411,28 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             ord.RecordTypeId = sampleRT[0].Id;
         }
         insert ord;
-
+        
         Test.setMock(HttpCalloutMock.class, new MultiCalloutMock(
             200, READ_SUCCESS_RESPONSE,
             200, UPDATE_SUCCESS_RESPONSE
         ));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(ord.Id);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :ord.Id LIMIT 1];
         System.debug('Sample Order Status after execution: ' + result.Status);
         System.assertEquals('Released', result.Status,
-            'Sample Order Status should be Released after successful BC round-trip');
+                            'Sample Order Status should be Released after successful BC round-trip');
     }
-
+    
     // =========================================================================
     // TEST 9: Shipping Address populated path
     // =========================================================================
     @isTest
     static void testExecute_WithShippingAddress_HappyPath() {
-
+        
         DRC_NBC_BC_Integration__c settings = new DRC_NBC_BC_Integration__c(
             SetupOwnerId                    = UserInfo.getOrganizationId(),
             DRC_NBC_BC_Order_Endpoint__c    = 'https://bc.example.com/order',
@@ -402,22 +441,42 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             DRC_NBC_Password__c             = 'testpass'
         );
         insert settings;
-
+        
         Account acc = new Account(
-            Name                       = 'Test Account With Ship To',
-            DRC_NBC_Customer_Number__c = 'CUSTDOM/SHIP-001',
-            BillingStreet              = 'Billing Line 1',
-            BillingCity                = 'Billing City',
-            BillingPostalCode          = '111111'
+            Name = 'Test Account45',
+            DRC_NBC_Customer_Number__c = 'CUST12345',
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            AccountNumber = 'A123',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert acc;
-
+        
         DRC_NBC_Addresses__c shipAddr = new DRC_NBC_Addresses__c(
             DRC_NBC_Ship_To_Code__c = 'SHIP-TO-001',
             DRC_NBC_Warehouse__c    = 'CFS - JNPT'
         );
         insert shipAddr;
-
+        
         Order ord = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -437,51 +496,51 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             OwnerId                      = UserInfo.getUserId()
         );
         insert ord;
-
+        
         Test.setMock(HttpCalloutMock.class, new MultiCalloutMock(
             200, READ_SUCCESS_RESPONSE,
             200, UPDATE_SUCCESS_RESPONSE
         ));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(ord.Id);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :ord.Id LIMIT 1];
         System.assertEquals('Released', result.Status,
-            'Order with shipping address should reach Released status');
+                            'Order with shipping address should reach Released status');
     }
-
+    
     // =========================================================================
     // TEST 10: All fields populated – exercises every branch in execute()
     // =========================================================================
     @isTest
     static void testExecute_AllFieldsPopulated_HappyPath() {
-
+        
         Id orderId = setupTestData();
-
+        
         Test.setMock(HttpCalloutMock.class, new MultiCalloutMock(
             200, READ_SUCCESS_RESPONSE,
             200, UPDATE_SUCCESS_RESPONSE
         ));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
         System.assertEquals('Released', result.Status,
-            'All-fields-populated Order should reach Released status');
+                            'All-fields-populated Order should reach Released status');
     }
-
+    
     // =========================================================================
     // TEST 11: READ returns SOAP Fault → exits early (hasSoapFault branch)
     // =========================================================================
     @isTest
     static void testExecute_ReadSoapFault_StatusNotChanged() {
-
+        
         Id orderId = setupTestData();
-
+        
         String soapFaultBody =
             '<?xml version="1.0" encoding="utf-8"?>' +
             '<Soap:Envelope xmlns:Soap="http://schemas.xmlsoap.org/soap/envelope/">' +
@@ -492,26 +551,26 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             '</Soap:Fault>' +
             '</Soap:Body>' +
             '</Soap:Envelope>';
-
+        
         Test.setMock(HttpCalloutMock.class, new SingleCalloutMock(200, soapFaultBody));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
         System.assertNotEquals('Released', result.Status,
-            'Order Status should NOT change when READ returns a SOAP Fault');
+                               'Order Status should NOT change when READ returns a SOAP Fault');
     }
-
+    
     // =========================================================================
     // TEST 12: UPDATE returns SOAP Fault → SF Status NOT changed
     // =========================================================================
     @isTest
     static void testExecute_UpdateSoapFault_StatusNotChanged() {
-
+        
         Id orderId = setupTestData();
-
+        
         String soapFaultBody =
             '<?xml version="1.0" encoding="utf-8"?>' +
             '<Soap:Envelope xmlns:Soap="http://schemas.xmlsoap.org/soap/envelope/">' +
@@ -522,18 +581,18 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             '</Soap:Fault>' +
             '</Soap:Body>' +
             '</Soap:Envelope>';
-
+        
         Test.setMock(HttpCalloutMock.class, new MultiCalloutMock(
             200, READ_SUCCESS_RESPONSE,
             200, soapFaultBody          // HTTP 200 but SOAP Fault in body
         ));
-
+        
         Test.startTest();
         DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
         Test.stopTest();
-
+        
         Order result = [SELECT Id, Status FROM Order WHERE Id = :orderId LIMIT 1];
         System.assertNotEquals('Released', result.Status,
-            'Order Status should NOT change when UPDATE response contains a SOAP Fault');
+                               'Order Status should NOT change when UPDATE response contains a SOAP Fault');
     }
 }

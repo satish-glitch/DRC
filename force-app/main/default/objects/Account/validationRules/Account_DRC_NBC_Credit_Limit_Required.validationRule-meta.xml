@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account_DRC_NBC_Credit_Limit_Required</fullName>
+    <active>true</active>
+    <errorConditionFormula>ISBLANK(DRC_NBC_Credit_Limit__c)</errorConditionFormula>
+    <errorDisplayField>DRC_NBC_Credit_Limit__c</errorDisplayField>
+    <errorMessage>Credit Limit is mandatory.</errorMessage>
+</ValidationRule>
