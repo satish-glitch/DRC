@@ -68,9 +68,6 @@
                             <value>Convert</value>
                         </valueListItems>
                         <valueListItems>
-                            <value>ChangeOwnerOne</value>
-                        </valueListItems>
-                        <valueListItems>
                             <value>Edit</value>
                         </valueListItems>
                     </valueList>
@@ -713,12 +710,6 @@
                             <value>DRC_NBC_Competitor_s_Name__c</value>
                         </valueListItems>
                         <valueListItems>
-                            <value>DRC_NBC_Account__c</value>
-                        </valueListItems>
-                        <valueListItems>
-                            <value>DRC_NBC_Product__c</value>
-                        </valueListItems>
-                        <valueListItems>
                             <value>DRC_NBC_Quantity__c</value>
                         </valueListItems>
                         <valueListItems>
@@ -1030,7 +1021,7 @@
         </properties>
         <properties>
             <name>saveOptions</name>
-            <value>[{&quot;name&quot;:&quot;UseDefaultAssignmentRule&quot;,&quot;value&quot;:&quot;SHOW_CHECKBOX_WITH_DEFAULT_OFF&quot;}]</value>
+            <value>[{&quot;name&quot;:&quot;UseDefaultAssignmentRule&quot;,&quot;value&quot;:&quot;NONE&quot;}]</value>
         </properties>
     </template>
     <type>RecordPage</type>
