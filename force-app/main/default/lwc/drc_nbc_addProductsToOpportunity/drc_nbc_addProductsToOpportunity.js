@@ -26,6 +26,7 @@ export default class Drc_nbc_addProductsToOpportunity extends NavigationMixin(Li
     _rowCounter        = 0;             // unique key generator
 
     // ─── Wire: get recordId when opened as Quick Action ──────────────────────
+
     @wire(CurrentPageReference)
     getStateParameters(currentPageReference) {
         if (currentPageReference) {
@@ -46,10 +47,21 @@ export default class Drc_nbc_addProductsToOpportunity extends NavigationMixin(Li
         }
     }
 
+    // ADD this — fires when recordId is set via @api from Aura wrapper
     connectedCallback() {
         loadStyle(this, AddProductCSS).catch(() => {});
+        if (this.recordId) {
+            this.fetchOLIData();
+        }
     }
 
+    // ADD this — fires when @api recordId changes after component is connected
+    renderedCallback() {
+        if (this.recordId && !this._dataLoaded) {
+            this._dataLoaded = true;
+            this.fetchOLIData();
+        }
+    }
     // ─── Section toggle ──────────────────────────────────────────────────────
     toggleProduct() { this.isProductOpen = !this.isProductOpen; }
 

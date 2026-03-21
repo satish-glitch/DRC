@@ -1,31 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<apex:page docType="html-5.0" showHeader="true" sidebar="false">
+<apex:page 
+    standardController="Opportunity"
+    docType="html-5.0" 
+    showHeader="true" 
+    sidebar="false">
+
     <apex:includeLightning />
     <div id="loContainer" class="slds-p-around_medium"></div>
 
     <script>
-        // Bootstraps Lightning Out and creates the Aura wrapper, which hosts the LWC
         document.addEventListener('DOMContentLoaded', function () {
             $Lightning.use(
                 "c:DRC_NBC_LightningOutApp",
                 function () {
                     $Lightning.createComponent(
                         "c:DRC_NBC_AddProductsWrapper",
-                        {
-                            // Pass recordId from URL param if present: ?id=006XXXXXXXXXXXX
-                            "recordId": (function() {
-                                var m = /[?&]id=([^&]+)/.exec(window.location.search);
-                                return m && m[1] ? decodeURIComponent(m[1]) : null;
-                            })()
-                        },
+                        { "recordId": "{!Opportunity.Id}" },
                         "loContainer",
-                        function (cmp) {
-                            // Component created successfully
+                        function (cmp, status, errorMessage) {
+                            if (status === "ERROR") {
+                                console.error("Error creating component: " + errorMessage);
+                            }
                         }
                     );
                 },
-                // Lightning Experience domain (default namespace)
-                (window.location.protocol + '//' + window.location.host)
+                window.location.protocol + '//' + window.location.host
             );
         });
     </script>

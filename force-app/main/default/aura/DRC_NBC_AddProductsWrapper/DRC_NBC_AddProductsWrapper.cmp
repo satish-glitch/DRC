@@ -1,5 +1,4 @@
 <aura:component access="GLOBAL" implements="flexipage:availableForAllPageTypes,force:hasRecordId,force:appHostable">
-    <!-- Wrapper Aura component to host the LWC in Lightning Out -->
     <aura:attribute name="recordId" type="String"/>
     <c:drc_nbc_addProductsToOpportunity record-id="{!v.recordId}"></c:drc_nbc_addProductsToOpportunity>
 </aura:component>
