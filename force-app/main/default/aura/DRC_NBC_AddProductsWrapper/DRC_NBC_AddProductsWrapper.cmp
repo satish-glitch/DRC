@@ -1,4 +1,12 @@
-<aura:component access="GLOBAL" implements="flexipage:availableForAllPageTypes,force:hasRecordId,force:appHostable">
+<!-- DRC_NBC_AddProductsWrapper.cmp -->
+<aura:component access="GLOBAL" 
+    implements="flexipage:availableForAllPageTypes,force:hasRecordId,force:appHostable">
+
     <aura:attribute name="recordId" type="String"/>
-    <c:drc_nbc_addProductsToOpportunity record-id="{!v.recordId}"></c:drc_nbc_addProductsToOpportunity>
+
+    <!-- aura:init fires AFTER the LWC child is rendered, guaranteeing recordId is set -->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+    <c:drc_nbc_addProductsToOpportunity aura:id="lwcChild" ></c:drc_nbc_addProductsToOpportunity>
+
 </aura:component>

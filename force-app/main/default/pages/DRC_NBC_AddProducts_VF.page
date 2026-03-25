@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<apex:page 
-    standardController="Opportunity"
+<apex:page standardController="Opportunity"
     docType="html-5.0" 
     showHeader="true" 
     sidebar="false">

@@ -25,23 +25,31 @@
     </processMetadataValues>
     <processType>AutoLaunchedFlow</processType>
     <recordUpdates>
-        <name>Update_Opportunity_Quote_Id</name>
-        <label>Update Opportunity Quote Id</label>
+        <name>Update_Opportunity_SyncedQuoteId</name>
+        <label>Update Opportunity SyncedQuoteId</label>
         <locationX>0</locationX>
         <locationY>0</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.OpportunityId</elementReference>
+            </value>
+        </filters>
         <inputAssignments>
             <field>SyncedQuoteId</field>
             <value>
                 <elementReference>$Record.Id</elementReference>
             </value>
         </inputAssignments>
-        <inputReference>$Record.Opportunity</inputReference>
+        <object>Opportunity</object>
     </recordUpdates>
     <start>
         <locationX>0</locationX>
         <locationY>0</locationY>
         <connector>
-            <targetReference>Update_Opportunity_Quote_Id</targetReference>
+            <targetReference>Update_Opportunity_SyncedQuoteId</targetReference>
         </connector>
         <filterLogic>and</filterLogic>
         <filters>
@@ -51,8 +59,15 @@
                 <stringValue>Accepted</stringValue>
             </value>
         </filters>
+        <filters>
+            <field>Status</field>
+            <operator>IsChanged</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </filters>
         <object>Quote</object>
-        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <recordTriggerType>Update</recordTriggerType>
         <triggerType>RecordAfterSave</triggerType>
     </start>
     <status>Active</status>

@@ -1,15 +1,14 @@
 <template>
     <!-- Header -->
     <div class="slds-modal__content slds-p-around_large"
-         style="position: sticky; top: 0; z-index: 1000; background: white; text-align:center; padding-top:0.5rem;">
+         style="position:sticky; top:0; z-index:1000; background:white; text-align:center; padding-top:0.5rem;">
         <h1 class="slds-text-heading_medium slds-m-vertical_small">
             Add / Edit Opportunity Products
         </h1>
     </div>
 
-    <div class="slds-modal__content slds-p-around_medium" style="max-height: 65vh; overflow-y: auto;">
+    <div class="slds-modal__content slds-p-around_medium" style="max-height:65vh; overflow-y:auto;">
 
-        <!-- Product Information Section -->
         <template if:false={showLoading}>
             <div class={getProductClass}>
                 <h3 class="slds-section__title slds-theme_shade">
@@ -17,15 +16,18 @@
                             onclick={toggleProduct}
                             aria-expanded={isProductOpen}
                             aria-controls="product-info-content">
-                        <lightning-icon icon-name={getProductIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                        <lightning-icon icon-name={getProductIcon} size="small"
+                                        class="slds-section__title-icon"></lightning-icon>
                         <span class="slds-truncate slds-p-horizontal_small">Product Information</span>
                     </button>
                 </h3>
 
                 <div id="product-info-content" class="slds-section__content">
-                    <!-- Add Products Button -->
-                    <div class="slds-grid slds-grid_align-spread slds-p-horizontal_small slds-m-bottom_small" style="padding-top:1rem">
-                        <div class="slds-text-heading_small" style="flex: 1; text-align: right;">
+
+                    <!-- Add Row button -->
+                    <div class="slds-grid slds-grid_align-spread slds-p-horizontal_small slds-m-bottom_small"
+                         style="padding-top:1rem;">
+                        <div style="flex:1; text-align:right;">
                             <lightning-button
                                 label="Add Products"
                                 icon-name="utility:add"
@@ -38,9 +40,9 @@
 
                     <lightning-card>
                         <template if:true={hasProducts}>
-                            <div class="slds-scrollable" style="max-height: 450px; overflow-y: auto;">
+                            <div class="slds-scrollable" style="max-height:450px; overflow-y:auto;">
                                 <table class="slds-table slds-table_bordered slds-table_striped">
-                                    <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                                    <thead style="position:sticky; top:0; background:white; z-index:10;">
                                         <tr>
                                             <th>Product Name <span style="color:red;">*</span></th>
                                             <th style="text-align:center;">FG Code</th>
@@ -58,39 +60,76 @@
                                         <template for:each={filteredData} for:item="row" for:index="index">
                                             <tr key={row.recordData.rowKey}>
 
-                                                <!-- Product Name / Search -->
+                                                <!-- ── Product Name cell ── -->
                                                 <template if:true={row.recordData.showSearch}>
-                                                    <td style="position:relative; min-width:220px;">
+                                                    <td style="position:relative; min-width:230px;">
+
                                                         <lightning-input
-                                                            style="width:200px;"
+                                                            style="width:210px;"
                                                             value={row.recordData.ProductName}
                                                             name="ProductName"
                                                             data-index={index}
                                                             onchange={handleValueChange}
-                                                            placeholder="Search Product...">
+                                                            placeholder="Search product by name...">
                                                         </lightning-input>
-                                                        <template if:true={row.recordData.searchResults}>
-                                                            <div class="slds-box slds-m-top_xx-small custom-dropdown">
-                                                                <template for:each={row.recordData.searchResults} for:item="product">
-                                                                    <div key={product.Id}
+
+                                                        <!-- Searching spinner -->
+                                                        <template if:true={row.recordData.isSearching}>
+                                                            <div style="position:absolute; z-index:200;
+                                                                        background:white; width:210px;
+                                                                        padding:8px; text-align:center;
+                                                                        border:1px solid #dddbda;
+                                                                        border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,.15);">
+                                                                <lightning-spinner
+                                                                    alternative-text="Searching..."
+                                                                    size="x-small"
+                                                                    variant="brand">
+                                                                </lightning-spinner>
+                                                                <span style="margin-left:8px; font-size:12px; color:#706e6b;">
+                                                                    Searching...
+                                                                </span>
+                                                            </div>
+                                                        </template>
+
+                                                        <!-- Results dropdown -->
+                                                        <!-- product2Name is a FLAT string from ProductWrapper — always renders correctly -->
+                                                        <template if:true={row.recordData.searchResults.length}>
+                                                            <div style="position:absolute; z-index:200;
+                                                                        background:white; width:210px;
+                                                                        max-height:200px; overflow-y:auto;
+                                                                        border:1px solid #dddbda;
+                                                                        border-radius:4px; padding:0;
+                                                                        box-shadow:0 2px 6px rgba(0,0,0,.15);">
+                                                                <template for:each={row.recordData.searchResults}
+                                                                          for:item="product">
+                                                                    <div key={product.pricebookEntryId}
                                                                          class="slds-p-around_x-small"
-                                                                         style="cursor:pointer;"
-                                                                         data-id={product.Id}
+                                                                         style="cursor:pointer;
+                                                                                border-bottom:1px solid #f3f2f2;
+                                                                                font-size:13px;"
+                                                                         data-id={product.pricebookEntryId}
                                                                          data-index={index}
                                                                          onclick={handleProductSelect}>
-                                                                        {product.Product2.Name}
+                                                                        {product.product2Name}
                                                                     </div>
                                                                 </template>
                                                             </div>
                                                         </template>
+
+                                                        <!-- No results -->
                                                         <template if:true={row.recordData.noResultsFound}>
-                                                            <div class="slds-box slds-m-top_xx-small"
-                                                                 style="position:absolute; z-index:10; background:white; width:200px; padding:8px; color:grey; font-style:italic;">
-                                                                No results found
+                                                            <div style="position:absolute; z-index:200;
+                                                                        background:white; width:210px;
+                                                                        padding:8px; color:#706e6b;
+                                                                        font-style:italic; font-size:13px;
+                                                                        border:1px solid #dddbda; border-radius:4px;">
+                                                                No products found
                                                             </div>
                                                         </template>
                                                     </td>
                                                 </template>
+
+                                                <!-- Selected product display -->
                                                 <template if:false={row.recordData.showSearch}>
                                                     <td style="min-width:180px;">
                                                         <div style="display:flex; align-items:center; gap:8px;">
@@ -108,10 +147,14 @@
                                                 </template>
 
                                                 <!-- FG Code -->
-                                                <td style="text-align:center;">{row.recordData.DRC_NBC_FG_Code__c}</td>
+                                                <td style="text-align:center;">
+                                                    {row.recordData.DRC_NBC_FG_Code__c}
+                                                </td>
 
                                                 <!-- HSN Code -->
-                                                <td style="text-align:center;">{row.recordData.DRC_NBC_HSN_SAC_Code__c}</td>
+                                                <td style="text-align:center;">
+                                                    {row.recordData.DRC_NBC_HSN_SAC_Code__c}
+                                                </td>
 
                                                 <!-- Quantity -->
                                                 <td class="input-cell">
@@ -126,7 +169,9 @@
                                                 </td>
 
                                                 <!-- UOM -->
-                                                <td style="text-align:center; vertical-align:middle;">{row.recordData.DRC_NBC_Unit_Of_Measurement__c}</td>
+                                                <td style="text-align:center; vertical-align:middle;">
+                                                    {row.recordData.DRC_NBC_Unit_Of_Measurement__c}
+                                                </td>
 
                                                 <!-- Packing Size -->
                                                 <td class="input-cell">
@@ -156,7 +201,7 @@
                                                     </template>
                                                 </td>
 
-                                                <!-- Unit Price (Sales Price) -->
+                                                <!-- Unit Price -->
                                                 <td class="input-cell">
                                                     <lightning-input
                                                         type="number"
@@ -176,7 +221,7 @@
                                                         value={row.recordData.Description}
                                                         name="Description"
                                                         data-index={index}
-                                                        onchange={handleValueChange}>
+                                                        onchange={handleDescriptionChange}>
                                                     </lightning-input>
                                                 </td>
 
@@ -186,7 +231,6 @@
                                                         class="slds-p-top_medium"
                                                         style="cursor:pointer; margin-right:6px;"
                                                         data-index={index}
-                                                        variant="brand"
                                                         icon-name="utility:new"
                                                         title="Add Row"
                                                         onclick={handleAddRow}>
@@ -201,15 +245,19 @@
                                                         onclick={handleRemoveRow}>
                                                     </lightning-icon>
                                                 </td>
+
                                             </tr>
                                         </template>
                                     </tbody>
                                 </table>
                             </div>
                         </template>
+
                         <template if:false={hasProducts}>
                             <div class="slds-text-align_center slds-p-around_medium">
-                                <p class="slds-text-color_weak">No products added yet. Click "Add Products" to get started.</p>
+                                <p class="slds-text-color_weak">
+                                    No products added yet. Click "Add Products" to get started.
+                                </p>
                             </div>
                         </template>
                     </lightning-card>
@@ -219,7 +267,7 @@
             <!-- Save / Cancel -->
             <div style="padding:1rem; text-align:center;">
                 <button class="slds-button slds-button_neutral" onclick={handleCancel}>Cancel</button>
-                <button class="slds-button slds-button_brand" onclick={handleSave}>Save</button>
+                <button class="slds-button slds-button_brand"   onclick={handleSave}>Save</button>
             </div>
         </template>
 

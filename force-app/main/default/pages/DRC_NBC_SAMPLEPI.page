@@ -27,8 +27,6 @@
 
                 /* ══════════════════════════════════════
                    REPEATING HEADER
-                   Left  : "Order Confirmation" title block
-                   Right : Company address (centred) + Logo
                 ══════════════════════════════════════ */
                 #pageHeader {
                     position: running(pageHeader);
@@ -41,7 +39,6 @@
                     table-layout: fixed;
                 }
 
-                /* Col 1 — Title block (Order Confirmation + Order No + Date + Page) */
                 td.hcol-title {
                     vertical-align: top;
                     padding: 0;
@@ -68,7 +65,6 @@
                     padding: 0;
                 }
 
-                /* Col 2 — Address centred + logo stacked */
                 td.hcol-addr-logo {
                     vertical-align: top;
                     text-align: center;
@@ -89,7 +85,6 @@
                     padding: 0;
                 }
 
-                /* Logo sits top-right inside the address cell */
                 .logo-wrapper {
                     text-align: right;
                     margin-bottom: 4px;
@@ -99,7 +94,6 @@
                     height: auto;
                 }
 
-                /* Divider below header */
                 .header-divider {
                     border-top: 1.5px solid #000;
                     margin-top: 6px;
@@ -207,7 +201,7 @@
                     word-break: break-word;
                 }
 
-                /* ── META ROW (Ext Doc / Salesperson / Quote / Shipment) ── */
+                /* ── META ROW ── */
                 .meta-divider {
                     border-top: 1px solid #ccc;
                     margin: 8px 0 4px 0;
@@ -300,10 +294,7 @@
         </head>
         <body>
 
-            <!-- ═══ REPEATING HEADER ═══
-                 LEFT  : "Order Confirmation" large, Order No, Date, Page
-                 RIGHT : Logo (top-right) + Company address (centred below)
-            -->
+            <!-- ═══ REPEATING HEADER ═══ -->
             <div id="pageHeader">
                 <table class="header-table">
                     <tr>
@@ -319,7 +310,7 @@
                             <p class="oc-page">Page 1 / 1</p>
                         </td>
 
-                        <!-- Col 2: Logo (top-right) + Company Address (centred) -->
+                        <!-- Col 2: Logo -->
                         <td class="hcol-addr-logo">
                             <div class="logo-wrapper">
                                 <apex:image url="{!URLFOR($Resource.DRC_NBC_DR_Logo)}" styleClass="company-logo" />
@@ -384,9 +375,6 @@
                 </table>
             </div>
 
-            <!-- ═══ ORDER DETAIL COLUMNS ═══ -->
-       
-
             <!-- ═══ META ROW ═══ -->
             <div class="meta-divider"></div>
             <table class="meta-table">
@@ -410,16 +398,32 @@
                 </tr>
             </table>
 
-            <!-- ═══ ITEMS TABLE ═══ -->
+            <!-- ═══ ITEMS TABLE ═══
+                 GST % column is shown ONLY when billing country is India
+            -->
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width:6%;  text-align:center;">No.</th>
-                        <th style="width:28%; text-align:left;">Description</th>
-                        <th style="width:12%; text-align:center;">Quantity</th>
-                        <th style="width:18%; text-align:center;">Unit Price Excl. GST</th>
-                        <th style="width:10%; text-align:center;">GST %</th>
-                        <th style="width:18%; text-align:right;">Line Amount Excl. GST</th>
+                        <!-- Width redistributed: when GST hidden, remaining columns share the 10% -->
+                        <th style="text-align:center;">No.</th>
+                        <th style="text-align:left;">Description</th>
+                        <th style="text-align:center;">Quantity</th>
+                        <apex:outputText rendered="{!isIndianBilling}">
+                            <th style="text-align:center;">Unit Price Excl. GST</th>
+                        </apex:outputText>
+                        <apex:outputText rendered="{!NOT(isIndianBilling)}">
+                            <th style="text-align:center;">Unit Price</th>
+                        </apex:outputText>
+                        <!-- GST % column: visible only for India billing -->
+                        <apex:outputText rendered="{!isIndianBilling}">
+                            <th style="text-align:center;">GST </th>
+                        </apex:outputText>
+                        <apex:outputText rendered="{!isIndianBilling}">
+                            <th style="text-align:right;">Line Amount Excl. GST</th>
+                        </apex:outputText>
+                        <apex:outputText rendered="{!NOT(isIndianBilling)}">
+                            <th style="text-align:right;">Line Amount</th>
+                        </apex:outputText>
                     </tr>
                 </thead>
                 <tbody>
@@ -429,8 +433,11 @@
                             <td class="center">{!rowNum}</td>
                             <td class="left">{!item.Description}</td>
                             <td class="center">{!item.quantity}</td>
-                            <td class="right">{!item.unitPrice}</td>
-                            <td class="center">{!item.ItemGST}</td>
+                            <td class="center">{!item.unitPrice}</td>
+                            <!-- GST % cell: visible only for India billing -->
+                            <apex:outputText rendered="{!isIndianBilling}">
+                                <td class="center">{!item.ItemGST}</td>
+                            </apex:outputText>
                             <td class="right">{!item.amount}</td>
                         </tr>
                         <apex:variable var="rowNum" value="{!rowNum + 1}" />
@@ -438,26 +445,21 @@
                 </tbody>
             </table>
 
-            <!-- ═══ TOTALS ═══ -->
+            <!-- ═══ TOTALS ═══
+                 Label uses dynamic currency code from Order
+            -->
             <table class="totals-table">
                 <tr class="total-line">
-                    <td class="t-label">Total INR Incl. GST</td>
+                    <td class="t-label">
+                        Total {!currencyCode}
+                        <!-- Show "Incl. GST" only for Indian billing -->
+                        <apex:outputText value=" Incl. GST" rendered="{!isIndianBilling}" />
+                    </td>
                     <td class="t-value">{!totalWithTax}</td>
                 </tr>
             </table>
 
             <div style="clear:both;"></div>
-
-            <!-- ═══ TERMS AND CONDITIONS ═══ -->
-          <!--  <div class="terms-section">
-                <h3>General terms and condition:</h3>
-                <p>1. Unless stated otherwise, all prices indicated are ex-works (Incoterms) basis.</p>
-                <apex:outputText value="{!$Label.DRC_NBC_Domestic_TermCondition_1}" escape="false"/>
-                <apex:outputText value="{!$Label.DRC_NBC_Domestic_TermCondition_2}" escape="false"/>
-                <h3>General Provisions:</h3>
-                <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part1}" escape="false"/>
-                <apex:outputText value="{!$Label.DRC_NBC_Domestic_GeneralProvision_Part2}" escape="false"/>
-            </div>-->
 
         </body>
     </html>
