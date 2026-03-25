@@ -276,29 +276,29 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
     @isTest
     static void testSearchProducts_AccountIdWithNoRestrictions() {
         Account newAcc = new Account( Name = 'Test678 Account345',
-            CurrencyIsoCode = 'INR',
-            Phone = '1234567890',
-            AccountNumber = 'A123',
-            DRC_NBC_PAN_No__c = 'AWVPY9594J',
-            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
-            DRC_NBC_Account_Email_Email__c = 'test@example.com',
-            BillingStreet = '123 Street',
-            BillingCity = 'City',
-            BillingCountry = 'India',
-            BillingCountryCode = 'IN',
-            BillingPostalCode = '462002',
-            BillingState = 'Maharashtra',
-            BillingStateCode = 'MH',
-            DRC_NBC_Volume__c = 70, 
-            DRC_NBC_Credit_Limit__c = 123456787,
-            DRC_NBC_Value__c = 900,
-            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
-            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
-            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
-            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
-            Industry = 'Chemicals Construction',
-            Type = 'Analyst');
+                                     CurrencyIsoCode = 'INR',
+                                     Phone = '1234567890',
+                                     AccountNumber = 'A123',
+                                     DRC_NBC_PAN_No__c = 'AWVPY9594J',
+                                     DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+                                     DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+                                     DRC_NBC_Account_Email_Email__c = 'test@example.com',
+                                     BillingStreet = '123 Street',
+                                     BillingCity = 'City',
+                                     BillingCountry = 'India',
+                                     BillingCountryCode = 'IN',
+                                     BillingPostalCode = '462002',
+                                     BillingState = 'Maharashtra',
+                                     BillingStateCode = 'MH',
+                                     DRC_NBC_Volume__c = 70, 
+                                     DRC_NBC_Credit_Limit__c = 123456787,
+                                     DRC_NBC_Value__c = 900,
+                                     DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+                                     DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+                                     DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+                                     DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+                                     Industry = 'Chemicals Construction',
+                                     Type = 'Analyst');
         insert newAcc;
         Test.startTest();
         DRC_NBC_GenerateQuotes_Controller.searchProducts('Test', 'INR', newAcc.Id);
@@ -897,6 +897,233 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         li.PackingSize     = '50KG';
         li.PackingQuantity = '20';
         
+        Test.stopTest();
+    }
+    
+    // ─── getExistingOLIs ──────────────────────────────────────────────────────
+    
+    /**
+* Covers:
+*   String.isBlank(oppId) → TRUE → AuraHandledException thrown
+*/
+    @isTest
+    static void testGetExistingOLIs_BlankOppId() {
+        Test.startTest();
+        try {
+            DRC_NBC_GenerateQuotes_Controller.getExistingOLIs(null);
+        } catch (AuraHandledException e) {
+        }
+        Test.stopTest();
+    }
+    
+    /**
+* Covers:
+*   Valid oppId with NO OLIs → olis empty → product2Ids empty →
+*   !product2Ids.isEmpty() → FALSE → packingMap loop entirely skipped →
+*   OLIWrapper returned with empty olis and empty packingMap
+*/
+    @isTest
+    static void testGetExistingOLIs_NoOLIs() {
+        Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
+        Test.startTest();
+        DRC_NBC_GenerateQuotes_Controller.getExistingOLIs(opp.Id);
+        Test.stopTest();
+    }
+    
+    /**
+* Covers:
+*   Valid oppId WITH OLIs → olis non-empty → product2Ids populated →
+*   !product2Ids.isEmpty() → TRUE → packing details loop runs:
+*     !packingMap.containsKey() → TRUE  → new list created      (first pd)
+*     !packingMap.containsKey() → FALSE → existing list appended (second pd for same product)
+*     DRC_NBC_Packing_Qauntity__c != null → String.valueOf() branch (both prod1 records)
+*   OLIWrapper returned with populated olis and packingMap
+*/
+    @isTest
+    static void testGetExistingOLIs_WithOLIs_WithPackingDetails() {
+        Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
+        Product2 prod   = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe = [
+            SELECT Id FROM PricebookEntry
+            WHERE  Product2Id = :prod.Id
+            AND  Pricebook2.Name = 'DRC PriceBook'
+            AND  CurrencyIsoCode = 'INR'
+            LIMIT 1
+        ];
+        
+        OpportunityLineItem oli = new OpportunityLineItem(
+            OpportunityId    = opp.Id,
+            Product2Id       = prod.Id,
+            PricebookEntryId = pbe.Id,
+            Quantity         = 2,
+            UnitPrice        = 100
+        );
+        insert oli;
+        
+        Test.startTest();
+        DRC_NBC_GenerateQuotes_Controller.getExistingOLIs(opp.Id);
+        Test.stopTest();
+    }
+    
+    /**
+* Covers:
+*   OLI exists for a product that has a packing detail with NULL qty →
+*   DRC_NBC_Packing_Qauntity__c == null → qtyStr = '' branch
+*/
+    @isTest
+    static void testGetExistingOLIs_WithOLIs_NullPackingQty() {
+        Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
+        Product2 prod   = [SELECT Id FROM Product2 WHERE Name = 'Test Product 2' LIMIT 1];
+        PricebookEntry pbe = [
+            SELECT Id FROM PricebookEntry
+            WHERE  Product2Id = :prod.Id
+            AND  Pricebook2.Name = 'DRC PriceBook'
+            AND  CurrencyIsoCode = 'INR'
+            LIMIT 1
+        ];
+        
+        OpportunityLineItem oli = new OpportunityLineItem(
+            OpportunityId    = opp.Id,
+            Product2Id       = prod.Id,
+            PricebookEntryId = pbe.Id,
+            Quantity         = 1,
+            UnitPrice        = 100
+        );
+        insert oli;
+        
+        Test.startTest();
+        DRC_NBC_GenerateQuotes_Controller.getExistingOLIs(opp.Id);
+        Test.stopTest();
+    }
+    
+    /**
+* Covers:
+*   opp.Pricebook2Id == null → opp.Pricebook2Id = drcPricebookId → update opp branch
+*   resolvedPricebookId = drcPricebookId (else branch)
+*/
+    @isTest
+    static void testCreateQuote_NullOppPricebook_SetsAndUpdates() {
+        Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
+        opp.Pricebook2Id = null;
+        update opp;
+        
+        Contact con    = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        Product2 prod  = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe = [
+            SELECT Id FROM PricebookEntry
+            WHERE  Product2Id = :prod.Id
+            AND  Pricebook2.Name = 'DRC PriceBook'
+            AND  CurrencyIsoCode = 'INR'
+            LIMIT 1
+        ];
+        
+        Quote quote = new Quote(
+            Name               = 'Null Pricebook Opp Quote',
+            ExpirationDate     = Date.today().addDays(30),
+            CurrencyIsoCode    = 'INR',
+            ContactId          = con.Id,
+            BillingStreet      = '10 Null PB St',
+            BillingCity        = 'Nagpur',
+            BillingPostalCode  = '440001',
+            BillingCountry     = 'India',
+            BillingCountryCode = 'IN',
+            DRC_NBC_Type__c = 'Domestic'
+            
+        );
+        
+        Test.startTest();
+        DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines(
+            opp.Id, quote,
+            new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{
+                makeItem(prod.Id, pbe.Id, 1, 100, null, null)
+                    }
+        );
+        Test.stopTest();
+    }
+    
+    /**
+* Covers:
+*   String.isNotBlank(quoteData.Status) → TRUE → existing status reused (not defaulted to 'Draft')
+*/
+    @isTest
+    static void testCreateQuote_ExistingStatusNotOverridden() {
+        Opportunity opp = [SELECT Id FROM Opportunity LIMIT 1];
+        Contact con     = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        Product2 prod   = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe = [
+            SELECT Id FROM PricebookEntry
+            WHERE  Product2Id = :prod.Id
+            AND  Pricebook2.Name = 'DRC PriceBook'
+            AND  CurrencyIsoCode = 'INR'
+            LIMIT 1
+        ];
+        
+        Quote quote = new Quote(
+            Name               = 'Existing Status Quote',
+            ExpirationDate     = Date.today().addDays(30),
+            CurrencyIsoCode    = 'INR',
+            ContactId          = con.Id,
+            Status             = 'Approved',   // already set → isNotBlank → TRUE → kept as-is
+            BillingStreet      = '11 Status St',
+            BillingCity        = 'Surat',
+            BillingPostalCode  = '395001',
+            BillingCountry     = 'India',
+            BillingCountryCode = 'IN',
+            DRC_NBC_Type__c = 'Domestic'
+            
+        );
+        
+        Test.startTest();
+        DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines(
+            opp.Id, quote,
+            new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{
+                makeItem(prod.Id, pbe.Id, 1, 100, null, null)
+                    }
+        );
+        Test.stopTest();
+    }
+    
+    /**
+* Covers:
+*   catch (Exception e) → Database.rollback(sp) →
+*   return JSON with 'Error creating quote: ...'
+*
+*   Strategy: pass a null oppId so the Opportunity SOQL throws a
+*   QueryException, which is caught by the outer catch block.
+*/
+    @isTest
+    static void testCreateQuote_ExceptionCatch_Rollback() {
+        Contact con   = [SELECT Id FROM Contact WHERE Email != null LIMIT 1];
+        Product2 prod = [SELECT Id FROM Product2 WHERE Name = 'Test Product 1' LIMIT 1];
+        PricebookEntry pbe = [
+            SELECT Id FROM PricebookEntry
+            WHERE  Product2Id = :prod.Id
+            AND  Pricebook2.Name = 'DRC PriceBook'
+            AND  CurrencyIsoCode = 'INR'
+            LIMIT 1
+        ];
+        
+        Quote quote = new Quote(
+            Name               = 'Exception Catch Quote',
+            ExpirationDate     = Date.today().addDays(30),
+            CurrencyIsoCode    = 'INR',
+            ContactId          = con.Id,
+            BillingStreet      = '12 Crash St',
+            BillingCity        = 'Jaipur',
+            BillingPostalCode  = '302001',
+            BillingCountry     = 'India',
+            BillingCountryCode = 'IN',
+            DRC_NBC_Type__c = 'Domestic'
+        );
+        
+        Test.startTest();
+        DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines(
+            null,   // null oppId → SOQL on Opportunity throws QueryException → catch fires
+            quote,
+            new List<DRC_NBC_GenerateQuotes_Controller.LineItemWrapper>{
+                makeItem(prod.Id, pbe.Id, 1, 100, null, null)
+                    }
+        );
         Test.stopTest();
     }
 }
