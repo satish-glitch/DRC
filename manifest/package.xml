@@ -87,5 +87,9 @@
     <members>*</members>
     <name>Flow</name>
 </types>
-<version>65.0</version>
+<types>
+    <members>*</members>
+    <name>CustomApplication</name>
+</types>
+<version>66.0</version>
 </Package>

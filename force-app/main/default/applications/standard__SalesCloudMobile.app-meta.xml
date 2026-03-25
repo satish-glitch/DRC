@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <formFactors>Small</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
+    <label>Sales Cloud Mobile</label>
+    <navType>Standard</navType>
+    <tabs>standard-MobileHome</tabs>
+    <tabs>standard-home</tabs>
+    <tabs>standard-Contact</tabs>
+    <tabs>standard-Opportunity</tabs>
+    <tabs>standard-Account</tabs>
+    <tabs>standard-Lead</tabs>
+    <tabs>standard-Campaign</tabs>
+    <tabs>standard-Task</tabs>
+    <tabs>standard-Event</tabs>
+    <tabs>standard-report</tabs>
+    <tabs>standard-Dashboard</tabs>
+    <tabs>standard-Case</tabs>
+    <tabs>standard-Feed</tabs>
+    <tabs>standard-CollaborationGroup</tabs>
+    <tabs>standard-File</tabs>
+    <tabs>standard-ContentNote</tabs>
+    <tabs>DRC_NBC_Invoice__c</tabs>
+    <tabs>DRC_NBC_Lead_Product__c</tabs>
+    <tabs>DRC_NBC_Restricted_Product__c</tabs>
+    <tabs>DRC_NBC_Addresses__c</tabs>
+    <tabs>DRC_NBC_API_Log__c</tabs>
+    <tabs>DRC_NBC_Invoice_Line_Item__c</tabs>
+    <tabs>DRC_NBC_Case_Product_Junction__c</tabs>
+    <tabs>DRC_NBC_Invoice_Lot__c</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>

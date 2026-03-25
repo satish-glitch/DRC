@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <defaultLandingTab>standard-AppLauncher</defaultLandingTab>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
+    <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
+    <tabs>standard-AppLauncher</tabs>
+    <tabs>DRC_NBC_Invoice__c</tabs>
+    <tabs>DRC_NBC_Lead_Product__c</tabs>
+    <tabs>standard-Quote</tabs>
+    <tabs>DRC_NBC_Restricted_Product__c</tabs>
+    <tabs>DRC_NBC_Addresses__c</tabs>
+    <tabs>DRC_NBC_API_Log__c</tabs>
+    <tabs>DRC_NBC_Invoice_Line_Item__c</tabs>
+    <tabs>DRC_NBC_Case_Product_Junction__c</tabs>
+    <tabs>DRC_NBC_Invoice_Lot__c</tabs>
+</CustomApplication>
