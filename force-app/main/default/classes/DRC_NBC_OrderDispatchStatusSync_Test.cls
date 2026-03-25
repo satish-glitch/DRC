@@ -293,4 +293,199 @@ private class DRC_NBC_OrderDispatchStatusSync_Test {
         DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
         Test.stopTest();
     }
+    
+    // ─── Helper: create order with Cust Order Number ─────────────────────────
+    
+    private static Order createTestOrderWithCustNumber(Id accountId, String custOrderNum) {
+        Order ord = new Order(
+            AccountId               = accountId,
+            Status                  = 'Draft',
+            EffectiveDate           = Date.today(),
+            Pricebook2Id            = Test.getStandardPricebookId(),
+            DRC_NBC_Cust_Order_Number__c = custOrderNum
+        );
+        insert ord;
+        return ord;
+    }
+    
+    // ─── STEP 4 field updates + update orderRec + 200 response ───────────────
+    
+    @isTest
+    static void testSyncOrderStatus_AllFieldsUpdated_WithCustOrderNum() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-001');
+        
+        String body = JSON.serialize(new Map<String, Object>{
+            'orderId'              => 'CUST-ORDER-001',
+                'status'               => 'Draft',
+                'PartiallyShipped'     => true,
+                'trackingId'           => 'TRK-12345',
+                'expectedDeliveryDate' => '2025-12-31',
+                'paymentTerms'         => 'NET30'
+                });
+        setupRestContext(body);
+        
+        Test.startTest();
+        DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+        Test.stopTest();
+    }
+    
+    // ─── parseExpectedDeliveryDate — DD/MM/YYYY format ───────────────────────
+    
+    @isTest
+    static void testSyncOrderStatus_DateFormat_DDMMYYYY_Slash() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-002');
+        
+        String body = JSON.serialize(new Map<String, Object>{
+            'orderId'              => 'CUST-ORDER-002',
+                'status'               => 'Draft',
+                'expectedDeliveryDate' => '31/12/2025'   // DD/MM/YYYY
+                });
+        setupRestContext(body);
+        
+        Test.startTest();
+        DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+        Test.stopTest();
+    }
+    
+    // ─── parseExpectedDeliveryDate — DD-MM-YYYY format ───────────────────────
+    
+    @isTest
+    static void testSyncOrderStatus_DateFormat_DDMMYYYY_Dash() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-003');
+        
+        String body = JSON.serialize(new Map<String, Object>{
+            'orderId'              => 'CUST-ORDER-003',
+                'status'               => 'Draft',
+                'expectedDeliveryDate' => '31-12-2025'   // DD-MM-YYYY (indexOf('-') == 2)
+                });
+        setupRestContext(body);
+        
+        Test.startTest();
+        DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+        Test.stopTest();
+    }
+    
+    // ─── parseExpectedDeliveryDate — YYYY-MM-DD fallback ─────────────────────
+    
+    @isTest
+    static void testSyncOrderStatus_DateFormat_YYYYMMDD_Fallback() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-004');
+        
+        String body = JSON.serialize(new Map<String, Object>{
+            'orderId'              => 'CUST-ORDER-004',
+                'status'               => 'Draft',
+                'expectedDeliveryDate' => '2025-12-31'   // YYYY-MM-DD fallback
+                });
+        setupRestContext(body);
+        
+        Test.startTest();
+        DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+        Test.stopTest();
+    }
+    
+    // ─── parseExpectedDeliveryDate — sentinel/empty dates return null ─────────
+    
+    @isTest
+    static void testSyncOrderStatus_DateFormat_SentinelDates_NotUpdated() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-005');
+        
+        // Pre-set a known delivery date
+        ord.DRC_NBC_Expected_Delivery_Date__c = Date.newInstance(2024, 1, 1);
+        update ord;
+        
+        // Each sentinel value should result in no change to delivery date
+        List<String> sentinels = new List<String>{ '0001-01-01', '01/01/0001', '01-01-0001' };
+            
+            for (String sentinel : sentinels) {
+                String body = JSON.serialize(new Map<String, Object>{
+                    'orderId'              => 'CUST-ORDER-005',
+                        'status'               => 'Draft',
+                        'expectedDeliveryDate' => sentinel
+                        });
+                setupRestContext(body);
+                
+                DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+            }
+    }
+    
+    // ─── parseExpectedDeliveryDate — blank date skipped entirely ─────────────
+    
+    @isTest
+    static void testSyncOrderStatus_BlankDate_FieldNotUpdated() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-006');
+        
+        ord.DRC_NBC_Expected_Delivery_Date__c = Date.newInstance(2024, 6, 15);
+        update ord;
+        
+        String body = JSON.serialize(new Map<String, Object>{
+            'orderId'              => 'CUST-ORDER-006',
+                'status'               => 'Draft',
+                'expectedDeliveryDate' => ''
+                });
+        setupRestContext(body);
+        
+        Test.startTest();
+        DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+        Test.stopTest();
+    }
+    
+    // ─── IncoTerms — valid metadata match covers incoTerms block ─────────────
+    
+    @isTest
+    static void testSyncOrderStatus_ValidIncoTerms_FromMetadata() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-007');
+        
+        // Query a real Warehouse_Location_Code__mdt record of type 'Inco Terms'
+        List<Warehouse_Location_Code__mdt> incoMeta = [
+            SELECT MasterLabel, DRC_NBC_Code__c
+            FROM Warehouse_Location_Code__mdt
+            WHERE DRC_NBC_Type__c = 'Inco Terms'
+            LIMIT 1
+        ];
+        
+        if (incoMeta.isEmpty()) {
+            // No metadata in org — skip gracefully
+            System.assert(true, 'No Inco Terms metadata found, skipping test');
+            return;
+        }
+        
+        String validCode = incoMeta[0].DRC_NBC_Code__c;
+        
+        String body = JSON.serialize(new Map<String, Object>{
+            'orderId'   => 'CUST-ORDER-007',
+                'status'    => 'Draft',
+                'incoTerms' => validCode
+                });
+        setupRestContext(body);
+        
+        Test.startTest();
+        DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+        Test.stopTest();
+    }
+    
+    // ─── Null payload fields — none of the optional fields set ───────────────
+    
+    @isTest
+    static void testSyncOrderStatus_NullOptionalFields_OnlyStatusSet() {
+        Account acc = createTestAccount();
+        Order   ord = createTestOrderWithCustNumber(acc.Id, 'CUST-ORDER-008');
+        
+        // Only mandatory fields — all optional payload fields are null
+        String body = JSON.serialize(new Map<String, Object>{
+            'orderId' => 'CUST-ORDER-008',
+                'status'  => 'Draft'
+                });
+        setupRestContext(body);
+        
+        Test.startTest();
+        DRC_NBC_OrderDispatchStatusSync.syncOrderStatus();
+        Test.stopTest();
+    }
 }

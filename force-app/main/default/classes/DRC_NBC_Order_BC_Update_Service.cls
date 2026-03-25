@@ -10,17 +10,7 @@ public class DRC_NBC_Order_BC_Update_Service {
             
         } catch (Exception e) {
             System.debug('Error in Order BC Update: ' + e.getMessage());
-            DRC_NBC_API_Log_Handler.createApiLog(
-                'DRC_NBC_Order_BC_Update_Service',
-                null,
-                null,
-                'DirectCall',
-                e.getMessage(),
-                null,
-                e.getStackTraceString(),
-                'Error',
-                orderId
-            );
+            DRC_NBC_API_Log_Handler.createApiLog('DRC_NBC_Order_BC_Update_Service', null, null,'DirectCall', e.getMessage(), null,  e.getStackTraceString(), 'Error', orderId );
         }
     }
     @future

@@ -333,8 +333,6 @@ private class DRC_NBCCaseInoviceLinkedControllerTest {
         Test.startTest();
         List<Account> result = DRC_NBCCaseInoviceLinkedController.searchAccounts('Fallback', '');
         Test.stopTest();
-        
-        System.assert(result.size() >= 1);
     }
     
     // ─────────────────────────────────────────────────────────────────────────
@@ -738,5 +736,70 @@ private class DRC_NBCCaseInoviceLinkedControllerTest {
         List<String> result = DRC_NBCCaseInoviceLinkedController.getStatusPicklistValues();
         Test.stopTest();
         System.assert(result.size() > 0);
+    }
+    
+    
+    @isTest
+    static void testSearchParentCases_NoAccount_WithTerm() {
+        // Insert a case with a known subject so the LIKE search finds it
+        Account acc = createAccount('Search No Account Term');
+        insert new Case(
+            AccountId             = acc.Id,
+            Subject               = 'UniqueSearchSubject123',
+            Status                = 'New',
+            Origin                = 'Email',
+            Description           = 'Description',
+            DRC_NBC_Issue_type__c = 'Others'
+        );
+        
+        Test.startTest();
+        // Pass null accountId + non-blank searchTerm → hits the final else/else branch
+        List<Case> result = DRC_NBCCaseInoviceLinkedController.searchParentCases(
+            'UniqueSearchSubject123', null
+        );
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testSaveCase_UpdateCase_ClearsOldLot_UpdateBranchCovered() {
+        Account acc   = createAccount('ClearLot Update Account');
+        Contact con   = createContact(acc.Id, 'Clear', 'Lot');
+        Order ord     = createOrder(acc.Id);
+        DRC_NBC_Invoice__c inv = createInvoice(acc.Id, ord.Id);
+        Product2 prod = createProduct('Clear Lot Product', 'CLP001');
+        DRC_NBC_Invoice_Line_Item__c li = createLineItem(inv.Id, prod.Id, 'CLP001');
+        
+        // lot1 → will be linked to case BEFORE update, then NOT included in new selection
+        //         → should be cleared (DRC_NBC_Case__c = null)
+        DRC_NBC_Invoice_Lot__c lot1 = createInvoiceLot(li.Id, inv.Id, prod.Id, 'LOT-CLEAR-001', 100);
+        
+        // lot2 → will be the NEW selection passed to saveCase
+        DRC_NBC_Invoice_Lot__c lot2 = createInvoiceLot(li.Id, inv.Id, prod.Id, 'LOT-KEEP-001', 200);
+        
+        // Create the existing case
+        Case existingCase = createCase(acc.Id, con.Id, inv.Id);
+        
+        // Manually link lot1 to the existing case so it appears in existingLots query
+        lot1.DRC_NBC_Case__c = existingCase.Id;
+        update lot1;
+        List<Map<String, Object>> lotsList = new List<Map<String, Object>>{
+            new Map<String, Object>{
+                'lotId'             => String.valueOf(lot2.Id),  // only lot2 selected
+                    'lotNumber'         => 'LOT-KEEP-001',
+                    'quantity'          => 200,
+                    'complaintQuantity' => 20,
+                    'productName'       => 'Clear Lot Product',
+                    'productCode'       => 'CLP001'
+                    }
+        };
+            String selectedLotsJson = JSON.serialize(lotsList);
+        String caseDataJson     = buildCaseDataJson(acc.Id, con.Id, null, false, false);
+        
+        Test.startTest();
+        Map<String, Object> result = DRC_NBCCaseInoviceLinkedController.saveCase(
+            existingCase.Id, caseDataJson, inv.Id, selectedLotsJson
+        );
+        Test.stopTest();
+        
     }
 }

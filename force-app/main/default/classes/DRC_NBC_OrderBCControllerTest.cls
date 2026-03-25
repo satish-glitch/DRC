@@ -91,26 +91,47 @@ private class DRC_NBC_OrderBCControllerTest {
         Test.stopTest();
     }
     
-   /* @isTest
-    static void testGetAccountDetails_OrderWithoutAccount() {
-        // Create an order without an account
-        Order orderWithoutAccount = new Order(
-            Status = 'Draft',
-            EffectiveDate = Date.today(),
-            Name = 'Order Without Account'
-        );
-        insert orderWithoutAccount;
-        
-        Boolean exceptionThrown = false;
-        String exceptionMessage = '';
+    /* @isTest
+static void testGetAccountDetails_OrderWithoutAccount() {
+// Create an order without an account
+Order orderWithoutAccount = new Order(
+Status = 'Draft',
+EffectiveDate = Date.today(),
+Name = 'Order Without Account'
+);
+insert orderWithoutAccount;
+
+Boolean exceptionThrown = false;
+String exceptionMessage = '';
+
+Test.startTest();
+try {
+Account result = DRC_NBC_OrderBCController.getAccountDetails(orderWithoutAccount.Id);
+} catch (AuraHandledException e) {
+exceptionThrown = true;
+exceptionMessage = e.getMessage();
+}
+Test.stopTest();
+}*/
+    
+    @isTest
+    static void testGetIntegrationStatus_ReturnsStatus() {
+        Order testOrder = [SELECT Id FROM Order LIMIT 1];
         
         Test.startTest();
-        try {
-            Account result = DRC_NBC_OrderBCController.getAccountDetails(orderWithoutAccount.Id);
-        } catch (AuraHandledException e) {
-            exceptionThrown = true;
-            exceptionMessage = e.getMessage();
-        }
+        String result = DRC_NBC_OrderBCController.getIntegrationStatus(testOrder.Id);
+        Test.stopTest();}
+    
+    @isTest
+    static void testGetIntegrationStatus_WithStatusValueSet() {
+        Order testOrder = [SELECT Id FROM Order LIMIT 1];
+        
+        // Set a known integration status value on the order
+        testOrder.DRC_NBC_Integration_Status__c = 'Success'; // adjust to valid picklist value in your org
+        update testOrder;
+        
+        Test.startTest();
+        String result = DRC_NBC_OrderBCController.getIntegrationStatus(testOrder.Id);
         Test.stopTest();
-    }*/
+    }
 }

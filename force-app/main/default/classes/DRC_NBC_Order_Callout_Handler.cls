@@ -43,7 +43,7 @@ public class DRC_NBC_Order_Callout_Handler implements Queueable, Database.Allows
     }
     
     // Process shipping callout (pure callout, no DML)
-    private String processShippingCallout(Id accountId, Id orderId) {
+    public String processShippingCallout(Id accountId, Id orderId) {
         try {
             DRC_NBC_Integration_Payload.ShipToPayload payload = 
                 DRC_NBC_Shipping_BC_Callout.getShippingPayload(accountId, orderId);
