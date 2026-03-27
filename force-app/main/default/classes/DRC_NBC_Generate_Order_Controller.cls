@@ -79,6 +79,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     DRC_NBC_Consignee_Bank_IFSC_Code__c,
                     DRC_NBC_Consignee_Bank_Name__c,
                     DRC_NBC_Consignee_Bank_Address__c,
+                    DRC_NBC_Special_Instructions__c,
                     (
                         SELECT
                             ID,

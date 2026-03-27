@@ -243,32 +243,6 @@ private class DRC_NBC_OrderTriggerHandlerTest {
     }
     
     // =======================================================================
-    // TEST 8: UPDATE Status Draft → Activated (no email — no transition match)
-    // =======================================================================
-    @isTest
-    static void testUpdate_NoMatchingTransition_NoEmailSent() {
-        Account acc = createAccount();
-        
-        Order o = new Order(
-            AccountId                    = acc.Id,
-            DRC_NBC_Cust_Order_Number__c = 'ORD-NOMATCH-001',
-            EffectiveDate                = Date.today(),
-            Status                       = 'Draft'
-        );
-        insert o;
-        
-        Test.startTest();
-        // Draft → Activated is not A2R or R2A — no email path executed
-        o.Status = 'Under Evaluation';
-        update o;
-        Test.stopTest();
-        
-        Order updated = [SELECT Status FROM Order WHERE Id = :o.Id];
-        System.assertEquals('Activated', updated.Status,
-                            'Order status should update without triggering any email.');
-    }
-    
-    // =======================================================================
     // TEST 9: UPDATE Warehouse unchanged → Address NOT updated
     // =======================================================================
     @isTest

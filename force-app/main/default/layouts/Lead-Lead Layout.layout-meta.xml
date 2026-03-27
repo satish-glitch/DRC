@@ -64,6 +64,10 @@
                 <behavior>Edit</behavior>
                 <field>DRC_NBC_Application_Area__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>DRC_NBC_LandLine__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

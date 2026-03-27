@@ -203,16 +203,12 @@
                                     </lightning-record-edit-form>
                                 </div>-->
                                 <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                    <lightning-record-edit-form 
-                                        object-api-name="Order" 
-                                        record-type-id={selectedRecordTypeId}
-                                        onload={handleFormLoad}>
-                                        <lightning-input-field 
-                                            field-name="DRC_NBC_Special_Instructions__c" 
-                                            data-field="DRC_NBC_Special_Instructions__c" 
-                                            onchange={handleInputFieldChange}>
-                                        </lightning-input-field>
-                                    </lightning-record-edit-form>
+                                     <lightning-input
+                                        label="Special Instructions"
+                                        value={samplingRec.DRC_NBC_Special_Instructions__c}
+                                        data-field="DRC_NBC_Special_Instructions__c"
+                                        onchange={handleInputFieldChange}>
+                                    </lightning-input>
                                 </div>
                                  
                                <!-- <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">

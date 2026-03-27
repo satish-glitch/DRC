@@ -411,7 +411,8 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
         this.samplingRec.DRC_NBC_Inco_Terms__c = result.incoTerm;
         this.samplingRec.DRC_NBC_Type__c = result.types;
         this.samplingRec.DRC_NBC_Delivery_Terms__c = result.deliveryTerm;
-        this.samplingRec.DRC_NBC_Consignee_Bank_Name__c = result.acc[0].DRC_NBC_Consignee_Bank_Name__c;
+        this.samplingRec.DRC_NBC_Consignee_Bank_Address__c = result.acc[0].DRC_NBC_Consignee_Bank_Address__c;
+        this.samplingRec.DRC_NBC_Special_Instructions__c = result.acc[0].DRC_NBC_Special_Instructions__c;
         this.samplingRec.DRC_NBC_Consignee_Bank_Account_Number__c = result.acc[0].DRC_NBC_Consignee_Bank_Account_Number__c;
         this.samplingRec.DRC_NBC_Consignee_Bank_IFSC_Code__c = result.acc[0].DRC_NBC_Consignee_Bank_IFSC_Code__c;
         this.samplingRec.DRC_NBC_Consignee_Bank_Address__c = result.acc[0].DRC_NBC_Consignee_Bank_Address__c;
