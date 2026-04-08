@@ -44,7 +44,7 @@ public with sharing class DRC_NBC_OrderBCController {
         }
     }
     
-    @AuraEnabled(cacheable=true)
+  /*  @AuraEnabled
     public static Account getAccountDetails(Id orderId) {
         if (orderId == null) {
             throw new AuraHandledException('Order Id is required.');
@@ -62,13 +62,20 @@ public with sharing class DRC_NBC_OrderBCController {
         }
         
         Account acc = [
-            SELECT Id, Name, DRC_NBC_Customer_Number__c
+            SELECT Id, Name, DRC_NBC_Customer_Number__c, DRC_NBC_Posted_To_BC__c
             FROM Account
             WHERE Id = :ord.AccountId
             LIMIT 1
         ];
         
         return acc;
+    }*/
+
+    @AuraEnabled
+    public static Boolean getAccountSyncStatus(Id orderId) {
+        Order ord = [SELECT AccountId FROM Order WHERE Id = :orderId LIMIT 1];
+        Account acc = [SELECT DRC_NBC_Posted_To_BC__c FROM Account WHERE Id = :ord.AccountId LIMIT 1];
+        return acc.DRC_NBC_Posted_To_BC__c;
     }
 
     @AuraEnabled(cacheable=true)

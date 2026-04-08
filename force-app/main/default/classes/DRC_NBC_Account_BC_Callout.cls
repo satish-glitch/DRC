@@ -57,7 +57,11 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         payload.City = acc.BillingCity;
         payload.State_Code = acc.BillingStateCode;
         payload.Post_Code = acc.BillingPostalCode;
-        payload.Country_Region_Code = 'IND';
+        if (acc.BillingCountryCode == 'IN') {
+            payload.Country_Region_Code = 'IND';
+        } else {
+            payload.Country_Region_Code = acc.BillingCountryCode;
+        }
         payload.Shipment_Method_Code = '';
         payload.Approval_Status = 'Open';
         return payload;
@@ -72,7 +76,7 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
                 WHERE Id = :accountId
                 LIMIT 1
             ];
-            acc.DRC_NBC_Posted_To_bc__c = true;
+            acc.DRC_NBC_Posted_To_bc__c = true; 
             update acc;
         } catch (Exception ex) {
             System.debug('Future method failed to update Order: ' + ex.getMessage());
