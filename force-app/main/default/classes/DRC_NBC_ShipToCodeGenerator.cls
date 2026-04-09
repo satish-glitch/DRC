@@ -66,7 +66,7 @@ public class DRC_NBC_ShipToCodeGenerator {
                 paddedNumber = '0'.repeat(paddingNeeded) + paddedNumber;
             }
             
-            address.DRC_NBC_Ship_To_Code__c = 'SF-' + paddedNumber;
+            address.DRC_NBC_Ship_To_Code__c = label.DRC_NBC_Ship_To_Code + paddedNumber;
             
             System.debug('Generated Ship-To Code: ' + address.DRC_NBC_Ship_To_Code__c);
             

@@ -20,8 +20,7 @@ public class DRC_NBC_AccountNumberGenerator_Helper {
             }
             
             String country = acc.BillingCountry != null ? acc.BillingCountry.trim().toLowerCase() : '';
-            String type = country == 'india' ? 'CustDOM' : 'CustEXP';
-            
+            String type = country == 'india' ? Label.DRC_NBC_Domestic_Customer : Label.DRC_NBC_Export_Customer;            
             Integer nextNumber = getNextNumber(type);
             String padded = String.valueOf(100000 + nextNumber).right(5);
             String year = String.valueOf(Date.today().year()).right(2) +

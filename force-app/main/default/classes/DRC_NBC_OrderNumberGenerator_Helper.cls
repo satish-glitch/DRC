@@ -17,11 +17,11 @@ continue;
             String rawType = ord.DRC_NBC_Type__c != null ? ord.DRC_NBC_Type__c.trim() : '';
             String type;
             if (rawType.equalsIgnoreCase('Domestic')) {
-                type = 'DOM';
+                type = label.DRC_NBC_DOM_OrderNumber;
             } else if (rawType.equalsIgnoreCase('Export')) {
-                type = 'EXP';
+                type = label.DRC_NBC_Export_OrderNumber;
             } else {
-                type = 'SAMPLE';
+                type = label.DRC_NBC_Sample_OrderNumber;
             }
             System.debug ('type before next Number>> ' + type);
             Integer nextNumber = getNextNumberFromOrders(type);
