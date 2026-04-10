@@ -496,8 +496,12 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             this.showToastEvent("Error", "Selected contact must have a phone number.", "error");
             isValid = false;
         }
-        if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) {
-            this.showToastEvent("Error", "Payment Term is required.", "error");
+        if (!this.quoteRec.DRC_NBC_Payment_Term_Description__c) {
+            this.showToastEvent("Error", "Payment Term Description is required.", "error");
+            isValid = false;
+        }
+         if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) {
+            this.showToastEvent("Error", "Payment Term Code is required.", "error");
             isValid = false;
         }
         if (!this.quoteRec.DRC_NBC_Inco_terms__c) {
@@ -552,6 +556,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 Status: this.quoteRec.Status,
                 DRC_NBC_Type__c: this.quoteRec.DRC_NBC_Type__c,
                 DRC_NBC_Payemnt_Term__c: this.quoteRec.DRC_NBC_Payemnt_Term__c,
+                DRC_NBC_Payment_Term_Description__c: this.quoteRec.DRC_NBC_Payment_Term_Description__c,
                 DRC_NBC_Inco_terms__c: this.quoteRec.DRC_NBC_Inco_terms__c,
                 DRC_NBC_Special_Requirements__c: this.quoteRec.DRC_NBC_Special_Requirements__c,
                 DRC_NBC_Other_Tax_Amount__c: this.quoteRec.DRC_NBC_Other_Tax_Amount__c || 0,

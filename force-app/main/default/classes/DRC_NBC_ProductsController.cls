@@ -59,6 +59,7 @@ public class DRC_NBC_ProductsController {
                        CurrencyIsoCode,
                        DRC_NBC_Type__c,
                        DRC_NBC_Payemnt_Term__c,
+                       DRC_NBC_Payment_Term_Description__c,
                        DRC_NBC_Inco_terms__c,
                        DRC_NBC_Special_Requirements__c,
                        OpportunityId,
@@ -197,6 +198,7 @@ public class DRC_NBC_ProductsController {
                 else if (fieldName == 'CurrencyIsoCode') qToUpdate.CurrencyIsoCode = (String)fieldValue;
                 else if (fieldName == 'DRC_NBC_Type__c') qToUpdate.DRC_NBC_Type__c = (String)fieldValue;
                 else if (fieldName == 'DRC_NBC_Payemnt_Term__c') qToUpdate.DRC_NBC_Payemnt_Term__c = (String)fieldValue;
+                else if (fieldName == 'DRC_NBC_Payment_Term_Description__c') qToUpdate.DRC_NBC_Payment_Term_Description__c = (String)fieldValue;
                 else if (fieldName == 'DRC_NBC_Inco_terms__c') qToUpdate.DRC_NBC_Inco_terms__c = (String)fieldValue;
                 else if (fieldName == 'DRC_NBC_Special_Requirements__c') qToUpdate.DRC_NBC_Special_Requirements__c = (String)fieldValue;
                 else if (fieldName == 'ContactId') qToUpdate.ContactId = (Id)fieldValue;
@@ -412,6 +414,7 @@ public class DRC_NBC_ProductsController {
                     Status = quoteData.Status,
                     DRC_NBC_Type__c = quoteData.DRC_NBC_Type__c,
                     DRC_NBC_Payemnt_Term__c = quoteData.DRC_NBC_Payemnt_Term__c,
+                    DRC_NBC_Payment_Term_Description__c = quoteData.DRC_NBC_Payment_Term_Description__c,   
                     DRC_NBC_Inco_terms__c = quoteData.DRC_NBC_Inco_terms__c,
                     DRC_NBC_Special_Requirements__c = quoteData.DRC_NBC_Special_Requirements__c,
                     DRC_NBC_Other_Tax_Amount__c = quoteData.DRC_NBC_Other_Tax_Amount__c,
