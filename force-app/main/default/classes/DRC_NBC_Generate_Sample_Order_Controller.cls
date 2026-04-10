@@ -201,13 +201,13 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
                 allowedProductIds.add(restriction.DRC_NBC_Product__c);
             }
         }
-
+        String externalId = Label.DRC_Price_Books_External_Id;
         Pricebook2 drcPriceBook = [
             SELECT Id
             FROM Pricebook2
             WHERE Name = 'DRC PriceBook'
               AND IsActive = true
-              AND DRC_NBC_External_Id__c = 'DRC001'
+              AND DRC_NBC_External_Id__c = :externalId
             LIMIT 1
         ];
 

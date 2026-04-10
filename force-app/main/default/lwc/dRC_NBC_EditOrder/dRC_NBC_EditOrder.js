@@ -800,6 +800,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             Type: this.orderRec.Type,
             DRC_NBC_Type__c: this.orderRec.DRC_NBC_Type__c,
             DRC_NBC_Payment_Terms__c: this.orderRec.DRC_NBC_Payment_Terms__c,
+            DRC_NBC_Payment_Term_Description__c: this.orderRec.DRC_NBC_Payment_Term_Description__c,
             DRC_NBC_Reject_Reason_Text__c: this.orderRec.DRC_NBC_Reject_Reason_Text__c,
             DRC_NBC_Other_Rejection_Reason__c: this.orderRec.DRC_NBC_Other_Rejection_Reason__c,
             DRC_NBC_Inco_Terms__c: this.orderRec.DRC_NBC_Inco_Terms__c,

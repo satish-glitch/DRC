@@ -403,6 +403,7 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
         this.priceBookId = result.Pricebook2Id;
         
         this.samplingRec.DRC_NBC_Payment_Terms__c = result.paymentTerm;
+         this.samplingRec.DRC_NBC_Payment_Term_Description__c = result.paymentTermDes;
         this.samplingRec.DRC_NBC_TCS_Amount__c = result.tcsAmount;
         this.samplingRec.DRC_NBC_IGST__c = result.igst;
         this.samplingRec.DRC_NBC_CGST__c = result.cgst;
@@ -679,7 +680,8 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
             { field: 'Pricebook2Id', message: 'Enter Price Book.' },
             { field: 'BillToContactId', message: 'Enter Bill To Contact.' },
             { field: 'ShipToContactId', message: 'Enter Ship To Contact.' },
-            { field: 'DRC_NBC_Payment_Terms__c', message: 'Enter Payment Term.' },
+            { field: 'DRC_NBC_Payment_Terms__c', message: 'Enter Payment Term Code.' },
+            { field: 'DRC_NBC_Payment_Term_Description__c', message: 'Enter Payment Term Description.' },
             { field: 'DRC_NBC_Inco_Terms__c', message: 'Enter Inco Term.' },
             { field: 'DRC_NBC_Warehouse__c', message: 'Enter Warehouse.' },
         ];

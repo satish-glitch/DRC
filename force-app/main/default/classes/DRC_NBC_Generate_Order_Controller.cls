@@ -51,6 +51,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                 Pricebook2Id,
                 OpportunityId,
                 DRC_NBC_Payemnt_Term__c,
+                DRC_NBC_Payment_Term_Description__c,
                 DRC_NBC_Inco_terms__c,
                 DRC_NBC_I_GST__c,
                 DRC_NBC_C_GST__c,
@@ -113,6 +114,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             ];
             ord.customerContacts = customerContacts;
             ord.paymentTerm = quoteObj.DRC_NBC_Payemnt_Term__c;
+            ord.paymentTermDes = quoteObj.DRC_NBC_Payment_Term_Description__c;
             ord.incoTerm = quoteObj.DRC_NBC_Inco_terms__c;
             ord.igst = quoteObj.DRC_NBC_I_GST__c;
             ord.types = quoteObj.DRC_NBC_Type__c;
@@ -321,6 +323,9 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
        
         @AuraEnabled 
         public String paymentTerm;
+
+         @AuraEnabled 
+        public String paymentTermDes;
         @AuraEnabled 
         public String incoTerm;
         @AuraEnabled 
