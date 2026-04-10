@@ -125,6 +125,7 @@ public class DRC_NBC_CloneQuoteController {
                        CurrencyIsoCode,
                        DRC_NBC_Type__c,
                        DRC_NBC_Payemnt_Term__c,
+                       DRC_NBC_Payment_Term_Description__c,
                        DRC_NBC_Inco_terms__c,
                        DRC_NBC_Special_Requirements__c,
                        OpportunityId,
@@ -164,8 +165,8 @@ public class DRC_NBC_CloneQuoteController {
             wrapper.quoteData.DRC_NBC_Lead_Time__c = originalQuote.DRC_NBC_Lead_Time__c; 
             wrapper.quoteData.Description = originalQuote.Description;
             wrapper.quoteData.CurrencyIsoCode = originalQuote.CurrencyIsoCode;
-            wrapper.quoteData.DRC_NBC_Type__c = originalQuote.DRC_NBC_Type__c;
             wrapper.quoteData.DRC_NBC_Payemnt_Term__c = originalQuote.DRC_NBC_Payemnt_Term__c;
+            wrapper.quoteData.DRC_NBC_Payment_Term_Description__c = originalQuote.DRC_NBC_Payment_Term_Description__c;
             wrapper.quoteData.DRC_NBC_Inco_terms__c = originalQuote.DRC_NBC_Inco_terms__c;
             wrapper.quoteData.DRC_NBC_Special_Requirements__c = originalQuote.DRC_NBC_Special_Requirements__c;
             wrapper.quoteData.OpportunityId = originalQuote.OpportunityId;
@@ -459,6 +460,7 @@ public class DRC_NBC_CloneQuoteController {
                 CurrencyIsoCode = quoteData.CurrencyIsoCode,
                 DRC_NBC_Type__c = quoteData.DRC_NBC_Type__c,
                 DRC_NBC_Payemnt_Term__c = quoteData.DRC_NBC_Payemnt_Term__c,
+                DRC_NBC_Payment_Term_Description__c = quoteData.DRC_NBC_Payment_Term_Description__c,
                 DRC_NBC_Inco_terms__c = quoteData.DRC_NBC_Inco_terms__c,
                 DRC_NBC_Special_Requirements__c = quoteData.DRC_NBC_Special_Requirements__c,
                 OpportunityId = quoteData.OpportunityId,

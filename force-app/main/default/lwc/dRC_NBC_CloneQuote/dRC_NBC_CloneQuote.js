@@ -507,9 +507,10 @@ export default class DRC_NBC_CloneQuote extends NavigationMixin(LightningElement
             ExpirationDate: this.quoteRec.ExpirationDate,
              DRC_NBC_Lead_Time__c: this.quoteRec.DRC_NBC_Lead_Time__c,
             Description: this.quoteRec.Description,
-            CurrencyIsoCode: this.quoteRec.CurrencyIsoCode,
+            CurrencyIsoCode: this.quoteRec.CurrencyIsoCode,    
             DRC_NBC_Type__c: this.quoteRec.DRC_NBC_Type__c,
             DRC_NBC_Payemnt_Term__c: this.quoteRec.DRC_NBC_Payemnt_Term__c,
+            DRC_NBC_Payment_Term_Description__c: this.quoteRec.DRC_NBC_Payment_Term_Description__c,
             DRC_NBC_Inco_terms__c: this.quoteRec.DRC_NBC_Inco_terms__c,
             DRC_NBC_Special_Requirements__c: this.quoteRec.DRC_NBC_Special_Requirements__c,
             OpportunityId: this.selectedOpportunityId,
@@ -624,7 +625,12 @@ export default class DRC_NBC_CloneQuote extends NavigationMixin(LightningElement
 
         // Validate Financial Fields
         if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) {
-            this.showToastEvent("Error", "Payment Term is required", "error");
+            this.showToastEvent("Error", "Payment Term  Code is required", "error");
+            isValid = false;
+        }
+
+         if (!this.quoteRec.DRC_NBC_Payment_Term_Description__c) {
+            this.showToastEvent("Error", "Payment Term  Description is required", "error");
             isValid = false;
         }
 
