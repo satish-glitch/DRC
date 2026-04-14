@@ -403,7 +403,7 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
         this.priceBookId = result.Pricebook2Id;
         
         this.samplingRec.DRC_NBC_Payment_Terms__c = result.paymentTerm;
-         this.samplingRec.DRC_NBC_Payment_Term_Description__c = result.paymentTermDes;
+        this.samplingRec.DRC_NBC_Payment_Term_Description__c = result.paymentTermDes;
         this.samplingRec.DRC_NBC_TCS_Amount__c = result.tcsAmount;
         this.samplingRec.DRC_NBC_IGST__c = result.igst;
         this.samplingRec.DRC_NBC_CGST__c = result.cgst;

@@ -46,8 +46,12 @@ private class DRC_NBC_BaseIntegrationTest {
     
     @testSetup
     static void setupTestData() {
+        String targetEnvName;
+        Boolean isSandbox = [SELECT IsSandbox FROM Organization LIMIT 1].IsSandbox;
+        targetEnvName = isSandbox ? System.Label.DRC_NBC_Sandbox : System.Label.DRC_NBC_Production;
+        
         DRC_NBC_BC_Integration__c config = new DRC_NBC_BC_Integration__c(
-            Name__c = System.Label.DRC_NBC_Sandbox,
+            Name__c = targetEnvName,
             DRC_NBC_Comapny_Name__c = 'Test Company',
             DRC_NBC_Endpoint__c = '/api/test',
             DRC_NBC_SendOrderEndpoint__c = 'SendOrder',

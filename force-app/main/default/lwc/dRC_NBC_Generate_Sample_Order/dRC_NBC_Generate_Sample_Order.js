@@ -1,4 +1,7 @@
-import { LightningElement, api, track } from 'lwc';
+import { LightningElement, api, track, wire } from 'lwc';
+import { getPicklistValues, getObjectInfo } from 'lightning/uiObjectInfoApi';
+import ORDER_OBJECT from '@salesforce/schema/Order';
+import PAYMENT_TERMS_FIELD from '@salesforce/schema/Order.DRC_NBC_Payment_Terms__c';
 import getOrderRecordTypes from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getOrderRecordTypes';
 import getOpportunityContacts from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getOpportunityContacts';
 import getAllProducts from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getAllProducts';
@@ -47,6 +50,26 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
     @track showProductSuggestions = false;
     @track selectedProducts = [];
 
+    // ─── Payment Term Dependent Picklist ─────────────────────────────────────────
+    @track autoSelectedPaymentTerm = '';
+    paymentTermsPicklistData = null;
+
+    @wire(getObjectInfo, { objectApiName: ORDER_OBJECT })
+    orderObjectInfo;
+
+    @wire(getPicklistValues, {
+        recordTypeId: '$orderObjectInfo.data.defaultRecordTypeId',
+        fieldApiName: PAYMENT_TERMS_FIELD
+    })
+    wiredPaymentTermsPicklist({ data, error }) {
+        if (data) {
+            this.paymentTermsPicklistData = data;
+        }
+        if (error) {
+            console.error('Error loading payment terms picklist:', error);
+        }
+    }
+
     // Packing details map: Product2Id → List of { packingSize, packingQuantity (raw divisor) }
     // Built from packingDetailsList returned by Apex (List instead of Map for LWC compatibility)
     packingDetailsMap = {};
@@ -79,9 +102,6 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
     // ─── Packing helpers (same pattern as Quote/Order modules) ──────────────────
 
-    /**
-     * Builds combobox options from the packing details list for a product.
-     */
     buildPackingSizeOptions(packingDetailsList) {
         if (!packingDetailsList || packingDetailsList.length === 0) return [];
         return packingDetailsList.map(pd => ({
@@ -90,18 +110,11 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         }));
     }
 
-    /**
-     * Returns packing detail records for a given Product2Id from the cached map.
-     */
     getPackingDetailsForProduct(product2Id) {
         if (!product2Id || !this.packingDetailsMap) return [];
         return this.packingDetailsMap[product2Id] || [];
     }
 
-    /**
-     * Builds the JS map from the List<ProductPackingWrapper> returned by Apex.
-     * Apex Map<Id,...> doesn't serialize correctly to LWC, so Apex returns a List instead.
-     */
     buildPackingDetailsMap(packingDetailsList) {
         const map = {};
         (packingDetailsList || []).forEach(item => {
@@ -112,17 +125,35 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         return map;
     }
 
-    /**
-     * Displayed packing quantity = ceil(Quantity / rawPackingQuantity)
-     * rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from child record (the bag/pack size divisor)
-     */
     _recalcPackingQuantity(quantity, rawPackingQuantity) {
-        const qty    = parseFloat(quantity)         || 0;
+        const qty    = parseFloat(quantity)           || 0;
         const rawQty = parseFloat(rawPackingQuantity) || 0;
         if (rawQty > 0 && qty > 0) {
             return Math.ceil(qty / rawQty);
         }
         return null;
+    }
+
+    // ─── Payment Term helper ─────────────────────────────────────────────────────
+
+    _getMatchingPaymentTermCode(selectedDescription) {
+        try {
+            const picklistData = this.paymentTermsPicklistData;
+            if (!picklistData || !picklistData.controllerValues || !picklistData.values) return '';
+
+            // Get the controller index for the selected description
+            const controllerIndex = picklistData.controllerValues[selectedDescription];
+            if (controllerIndex === undefined) return '';
+
+            // Find the dependent value whose validFor includes this controller index
+            const matched = picklistData.values.find(opt =>
+                opt.validFor && opt.validFor.includes(controllerIndex)
+            );
+            return matched ? matched.value : '';
+        } catch (e) {
+            console.error('Error mapping payment term:', e);
+            return '';
+        }
     }
 
     // ─── Lifecycle ───────────────────────────────────────────────────────────────
@@ -204,7 +235,6 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             this.currencyCode = currencyCode;
 
             // Build packing details map from Apex list
-            // Apex returns List<ProductPackingWrapper> (not Map) for LWC compatibility
             this.packingDetailsMap = this.buildPackingDetailsMap(productResult.packingDetailsList);
 
             // Billing address
@@ -217,11 +247,11 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                 if (billingAddress.country)    labelParts.push(billingAddress.country);
                 this.billingAddressDisplay = labelParts.join(', ') || 'No billing address found';
 
-                this.samplingRec.BillingStreet     = billingAddress.street      || '';
-                this.samplingRec.BillingCity       = billingAddress.city        || '';
-                this.samplingRec.BillingState      = billingAddress.state       || '';
-                this.samplingRec.BillingPostalCode = billingAddress.postalCode  || '';
-                this.samplingRec.BillingCountry    = billingAddress.country     || '';
+                this.samplingRec.BillingStreet      = billingAddress.street      || '';
+                this.samplingRec.BillingCity        = billingAddress.city        || '';
+                this.samplingRec.BillingState       = billingAddress.state       || '';
+                this.samplingRec.BillingPostalCode  = billingAddress.postalCode  || '';
+                this.samplingRec.BillingCountry     = billingAddress.country     || '';
                 this.samplingRec.BillingCountryCode = billingAddress.countryCode || '';
             }
 
@@ -234,7 +264,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             }
 
             // Shipping address options
-            this.addrDetails           = shippingAddresses || [];
+            this.addrDetails            = shippingAddresses || [];
             this.shippingAddressOptions = [];
             shippingAddresses.forEach(addr => {
                 const details = addr.DRC_NBC_Address__c;
@@ -272,14 +302,14 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
             // Map Apex products to row objects with packing details from child object
             this.oppProducts = (productResult.products || []).map(prod => {
-                const packingDetails    = this.getPackingDetailsForProduct(prod.Product2Id);
+                const packingDetails     = this.getPackingDetailsForProduct(prod.Product2Id);
                 const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
                 return {
                     Id: prod.Product2Id,
                     Product2Id: prod.Product2Id,
                     Product2Name: prod.Name || 'Unknown Product',
-                    FGCode: prod.FGCode  || '',
-                    HSNCode: prod.HSNCode || '',
+                    FGCode: prod.FGCode   || '',
+                    HSNCode: prod.HSNCode  || '',
                     PricebookEntryId: prod.PricebookEntryId,
                     OriginalUnitPrice: prod.UnitPrice || 0,
                     UnitPrice: prod.UnitPrice  || 0,
@@ -287,11 +317,11 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                     Quantity: 1,
                     Description: '',
                     DRC_NBC_Unit_Of_Measurement__c: prod.UOM,
-                    packingDetails: packingDetails,           // full list for lookup
-                    PackingSizeOptions: packingSizeOptions,   // combobox options
+                    packingDetails: packingDetails,
+                    PackingSizeOptions: packingSizeOptions,
                     SelectedPackingSize: '',
-                    rawPackingQuantity: '',                   // divisor from child record
-                    PackingQuantity: null,                    // displayed: ceil(Qty / rawPackingQuantity)
+                    rawPackingQuantity: '',
+                    PackingQuantity: null,
                     isSelected: false
                 };
             });
@@ -330,7 +360,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
     handleBillToInputChange(event) {
         try {
-            this.billToContactName    = event.target.value || '';
+            this.billToContactName     = event.target.value || '';
             this.showBillToSuggestions = true;
         } catch (error) { console.error('Error in handleBillToInputChange:', error); }
     }
@@ -349,7 +379,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
     handleShipToInputChange(event) {
         try {
-            this.shipToContactName    = event.target.value || '';
+            this.shipToContactName     = event.target.value || '';
             this.showShipToSuggestions = true;
         } catch (error) { console.error('Error in handleShipToInputChange:', error); }
     }
@@ -391,8 +421,8 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             packingDetails: [],
             PackingSizeOptions: [],
             SelectedPackingSize: '',
-            rawPackingQuantity: '',    // divisor from DRC_NBC_Packing_Qauntity__c
-            PackingQuantity: null,     // displayed: ceil(Qty / rawPackingQuantity)
+            rawPackingQuantity: '',
+            PackingQuantity: null,
             isSelected: false,
             showSuggestions: false,
             showSearch: true,
@@ -414,8 +444,6 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
         searchProducts({ keyword: searchTerm, currencyIsoCode: this.currencyCode, oppId: this.recordId })
             .then(searchResult => {
-                // searchResult is now a ProductSearchResult: { products, packingDetailsList }
-                // Merge any new packing details into our cached map
                 (searchResult.packingDetailsList || []).forEach(item => {
                     if (item.product2Id) {
                         this.packingDetailsMap[item.product2Id] = item.packingDetails || [];
@@ -465,26 +493,22 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         }, 200);
     }
 
-    // When a product is selected from dropdown:
-    // - Fetch packing details from cached map
-    // - Reset rawPackingQuantity and PackingQuantity (user must pick a packing size)
     handleProductSelectInline(event) {
-        const rowId    = event.currentTarget.dataset.rowid;
+        const rowId     = event.currentTarget.dataset.rowid;
         const productId = event.currentTarget.dataset.productid;
-        const name     = event.currentTarget.dataset.name;
-        const fgCode   = event.currentTarget.dataset.fgcode;
-        const hsnCode  = event.currentTarget.dataset.hsncode;
+        const name      = event.currentTarget.dataset.name;
+        const fgCode    = event.currentTarget.dataset.fgcode;
+        const hsnCode   = event.currentTarget.dataset.hsncode;
         const unitPrice = parseFloat(event.currentTarget.dataset.unitprice);
-        const pbeId    = event.currentTarget.dataset.pbeid;
-        const uom      = event.currentTarget.dataset.uom;
+        const pbeId     = event.currentTarget.dataset.pbeid;
+        const uom       = event.currentTarget.dataset.uom;
 
         if (!rowId || !productId) {
             console.error('Missing rowId or productId in handleProductSelectInline');
             return;
         }
 
-        // Look up packing details for selected product from cached map
-        const packingDetails    = this.getPackingDetailsForProduct(productId);
+        const packingDetails     = this.getPackingDetailsForProduct(productId);
         const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
 
         this.selectedProducts = this.selectedProducts.map(prod => {
@@ -502,7 +526,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                     packingDetails: packingDetails,
                     PackingSizeOptions: packingSizeOptions,
                     SelectedPackingSize: '',
-                    rawPackingQuantity: '',    // will be set when user picks packing size
+                    rawPackingQuantity: '',
                     PackingQuantity: null,
                     showSuggestions: false,
                     searchResults: [],
@@ -513,20 +537,15 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         });
     }
 
-    // When packing size is selected:
-    // - Store raw divisor (DRC_NBC_Packing_Qauntity__c) as rawPackingQuantity
-    // - Displayed PackingQuantity = ceil(Quantity / rawPackingQuantity)
     handlePackingSizeChange(event) {
         const id           = event.target.dataset.id;
         const selectedSize = event.detail.value;
 
         this.selectedProducts = this.selectedProducts.map(prod => {
             if (prod.Id === id) {
-                // Find the matching child record to get the raw divisor
                 const matchedDetail = (prod.packingDetails || []).find(pd => pd.packingSize === selectedSize);
                 const rawQty        = matchedDetail ? (matchedDetail.packingQuantity || '') : '';
                 const packingQty    = this._recalcPackingQuantity(prod.Quantity, rawQty);
-
                 return {
                     ...prod,
                     SelectedPackingSize: selectedSize,
@@ -538,7 +557,6 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         });
     }
 
-    // Manual override of packing quantity by user
     handlePackingQuantityChange(event) {
         const id    = event.target.dataset.id;
         const value = parseFloat(event.target.value);
@@ -553,7 +571,6 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         );
     }
 
-    // When quantity changes, recalculate PackingQuantity if packing size is already selected
     handleQuantityChange(event) {
         const id    = event.target.dataset.id;
         const value = parseInt(event.target.value, 10);
@@ -565,11 +582,9 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
         this.selectedProducts = this.selectedProducts.map(prod => {
             if (prod.Id === id) {
-                // Recalculate displayed packing qty: ceil(Quantity / rawPackingQuantity)
                 const packingQty = prod.SelectedPackingSize
                     ? this._recalcPackingQuantity(value, prod.rawPackingQuantity)
                     : prod.PackingQuantity;
-
                 return { ...prod, Quantity: value, PackingQuantity: packingQty };
             }
             return prod;
@@ -643,7 +658,22 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
             if (fieldName) {
                 this.samplingRec[fieldName] = value;
-                if (fieldName === 'Status')                  this.sampleStatus = value;
+                if (fieldName === 'Status') this.sampleStatus = value;
+
+                // Auto-map Payment Term Code when Payment Term Description changes
+                if (fieldName === 'DRC_NBC_Payment_Term_Description__c') {
+                    const mappedCode = this._getMatchingPaymentTermCode(value);
+                    if (mappedCode) {
+                        this.samplingRec['DRC_NBC_Payment_Terms__c'] = mappedCode;
+                        this.autoSelectedPaymentTerm = mappedCode;
+
+                        // Update the DOM field
+                        const paymentTermField = this.template.querySelector(
+                            'lightning-input-field[field-name="DRC_NBC_Payment_Terms__c"]'
+                        );
+                        if (paymentTermField) paymentTermField.value = mappedCode;
+                    }
+                }
             }
         } catch (error) {
             console.error('Error in handleFieldChange:', error);
@@ -654,12 +684,12 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
     validateOrderData() {
         const validations = [
-            { field: 'EffectiveDate',    message: 'Enter Order Start Date.'   },
-            { field: 'EndDate',          message: 'Enter Order End Date.'     },
-            { field: 'BillToContactId',  message: 'Select Bill To Contact.'  },
-            { field: 'ShipToContactId',  message: 'Select Ship To Contact.'  },
-            { field: 'ShippingStreet',   message: 'Select Shipping Address.' },
-             { field: 'DRC_NBC_Warehouse__c',   message: 'Select Warehouse.' }
+            { field: 'EffectiveDate',          message: 'Enter Order Start Date.'   },
+            { field: 'EndDate',                message: 'Enter Order End Date.'     },
+            { field: 'BillToContactId',        message: 'Select Bill To Contact.'  },
+            { field: 'ShipToContactId',        message: 'Select Ship To Contact.'  },
+            { field: 'ShippingStreet',         message: 'Select Shipping Address.' },
+            { field: 'DRC_NBC_Warehouse__c',   message: 'Select Warehouse.'        }
         ];
 
         for (const v of validations) {
@@ -708,7 +738,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
     // ─── Save ────────────────────────────────────────────────────────────────────
 
     async handleSave() {
-        this.isLoading     = true;
+        this.isLoading      = true;
         this.disabledButton = true;
 
         if (!this.validateOrderData()) {
@@ -728,14 +758,13 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             this.samplingRec.RecordTypeId = this.selectedRecordTypeId;
 
             const selectedItems = this.selectedProducts.map(p => ({
-                Product2Id:             p.Product2Id,
-                PriceBookEntryId:       p.PricebookEntryId,
-                Quantity:               p.Quantity   || 1,
-                UnitPrice:              p.TotalPrice || p.UnitPrice || 0,
-                Description:            p.Description || '',
-                PackingSize:            p.SelectedPackingSize || '',
-                // Save the calculated ceil(Quantity / rawPackingQuantity) value
-                PackingQuantity:        p.PackingQuantity || null
+                Product2Id:       p.Product2Id,
+                PriceBookEntryId: p.PricebookEntryId,
+                Quantity:         p.Quantity   || 1,
+                UnitPrice:        p.TotalPrice || p.UnitPrice || 0,
+                Description:      p.Description || '',
+                PackingSize:      p.SelectedPackingSize || '',
+                PackingQuantity:  p.PackingQuantity || null
             }));
 
             if (selectedItems.length === 0) {
@@ -746,9 +775,9 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             }
 
             const result = await createSampleOrder({
-                orderObj:       this.samplingRec,
-                orderItems:     selectedItems,
-                opportunityId:  this.recordId
+                orderObj:      this.samplingRec,
+                orderItems:    selectedItems,
+                opportunityId: this.recordId
             });
 
             const parsed = JSON.parse(result);

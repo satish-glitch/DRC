@@ -1,0 +1,132 @@
+<apex:page showHeader="false" sidebar="false" standardStylesheets="false" applyHtmlTag="true" title="DRC Login Right Frame">
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+            <title>DRC Login Right Frame</title>
+            <link rel="stylesheet" type="text/css" 
+                  href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&amp;family=Inter:wght@300;400;500&amp;display=swap"/>
+            <style>
+                *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                }
+                
+                :root {
+                --dark-blue: #163a63;
+                --heading-light: #6fa8dc;
+                --white-bg: #ffffff;
+                --text-dark: #2f3b4a;
+                --border-light: #d9e3ee;
+                }
+                
+                html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background: var(--white-bg);
+                }
+                
+                body {
+                font-family: 'Inter', sans-serif;
+                background: var(--white-bg);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+                }
+                
+                .right-panel-header {
+                background: var(--dark-blue);
+                padding: 22px 36px;
+                }
+                
+                .right-panel-header h1 {
+                font-family: 'Rajdhani', sans-serif;
+                font-size: 28px;
+                font-weight: 700;
+                color: #ffffff;
+                letter-spacing: 1px;
+                margin: 0;
+                }
+                
+                .right-panel-body {
+                padding: 30px;
+                flex: 1;
+                background: var(--white-bg);
+                }
+                
+                .info-section {
+                margin-bottom: 8px;
+                }
+                
+                .info-section h2,
+                .map-title {
+                font-family: 'Rajdhani', sans-serif;
+                font-size: 20px;
+                font-weight: 700;
+                color: #000000;
+                letter-spacing: 1px;
+                margin-bottom: 6px;
+                text-transform: uppercase;
+                }
+                
+                .info-section p,
+                .reach-text {
+                font-size: 14px;
+                line-height: 1.75;
+                color: var(--text-dark);
+                }
+                
+                .divider {
+                height: 1px;
+                background: var(--border-light);
+                margin: 12px 0;
+                }
+                
+                .map-section {
+                margin-top: 0px;
+                }
+                
+                .reach-text {
+                margin-bottom: 10px;
+                }
+                
+                .map-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+                border-radius: 12px;
+                margin: 0 auto 5px auto;
+                }
+            </style>
+        </head>
+        
+        <body>
+            <div class="right-panel-header">
+                <h1>D.R. Coats Ink &amp; Resins Pvt. Ltd.</h1>
+            </div>
+            
+            <div class="right-panel-body">
+                <div class="info-section">
+                    <h2>Our Mission</h2>
+                    <p>
+                        D.R. Coats Ink &amp; Resins Pvt. Ltd. (DRC) is a professionally managed company established in the year 2003 with the vision of becoming one of the leading manufacturers of Synthetic Resins catering to Coatings, Printing Inks &amp; Adhesives.
+                    </p>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="map-section">
+                    <h2 class="map-title">Our Reach</h2>
+                    <p class="reach-text">
+                        Our high quality products have enabled us to export to more than 55 countries across 6 continents &amp; our excellent performance in export has been acknowledged by the Government of India by awarding us with Star Export House status.
+                    </p>
+                    <img src="{!URLFOR($Resource.DRC_Map)}" alt="DRC Map" class="map-image"/>
+                </div>
+            </div>
+        </body>
+    </html>
+</apex:page>

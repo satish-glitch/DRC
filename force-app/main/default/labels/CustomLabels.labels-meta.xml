@@ -140,4 +140,53 @@
         <shortDescription>DRC UAT</shortDescription>
         <value>Company(\&apos;DRC UAT 05032024\&apos;)/SalesOrderLineSalesForce</value>
     </labels>
+    <labels>
+        <fullName>DRC_NBC_DOM_OrderNumber</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_DOM_OrderNumber</shortDescription>
+        <value>DOM</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Domestic_Customer</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Domestic_Customer</shortDescription>
+        <value>CustDOM</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Export_Customer</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Export_Customer</shortDescription>
+        <value>CustEXP</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Export_OrderNumber</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Export_OrderNumber</shortDescription>
+        <value>EXP</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Sample_OrderNumber</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Sample_OrderNumber</shortDescription>
+        <value>SAMPLE</value>
+    </labels>
+    <labels>
+        <fullName>DRC_NBC_Ship_To_Code</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_NBC_Ship_To_Code</shortDescription>
+        <value>SF -</value>
+    </labels>
+    <labels>
+        <fullName>DRC_Price_Books_External_Id</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC Price Books External Id</shortDescription>
+        <value>DRC001</value>
+    </labels>
 </CustomLabels>

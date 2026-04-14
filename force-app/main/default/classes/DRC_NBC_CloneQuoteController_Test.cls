@@ -114,7 +114,7 @@ private class DRC_NBC_CloneQuoteController_Test {
             Description = 'Original Quote Description',
             Pricebook2Id = pricebookId,
             DRC_NBC_Type__c = 'Domestic',
-            DRC_NBC_Payemnt_Term__c = '10 DAYS',
+            DRC_NBC_Payemnt_Term__c = 'PDC90',
             DRC_NBC_Inco_terms__c = 'Charges Collect (CC)',
             DRC_NBC_Special_Requirements__c = 'Special requirements text',
             Email = testContacts[0].Email,

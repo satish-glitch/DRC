@@ -6,443 +6,28 @@
     <trackHistory>false</trackHistory>
     <type>Picklist</type>
     <valueSet>
-        <restricted>true</restricted>
+        <controllingField>DRC_NBC_Payment_Term_Description__c</controllingField>
         <valueSetDefinition>
             <sorted>false</sorted>
             <value>
-                <fullName>100%</fullName>
+                <fullName>PDC90</fullName>
                 <default>false</default>
-                <label>100%</label>
+                <label>PDC90</label>
             </value>
             <value>
-                <fullName>10 DAYS</fullName>
+                <fullName>PDC60</fullName>
                 <default>false</default>
-                <label>10 DAYS</label>
+                <label>PDC60</label>
             </value>
             <value>
-                <fullName>10 DAYS ID</fullName>
+                <fullName>PDC45</fullName>
                 <default>false</default>
-                <label>10 DAYS ID</label>
+                <label>PDC45</label>
             </value>
             <value>
-                <fullName>10% - 90%</fullName>
+                <fullName>PDC30</fullName>
                 <default>false</default>
-                <label>10% - 90%</label>
-            </value>
-            <value>
-                <fullName>10% ADV</fullName>
-                <default>false</default>
-                <label>10% ADV</label>
-            </value>
-            <value>
-                <fullName>100</fullName>
-                <default>false</default>
-                <label>100</label>
-            </value>
-            <value>
-                <fullName>100% ADV</fullName>
-                <default>false</default>
-                <label>100% ADV</label>
-            </value>
-            <value>
-                <fullName>100% BL</fullName>
-                <default>false</default>
-                <label>100% BL</label>
-            </value>
-            <value>
-                <fullName>100% PAY</fullName>
-                <default>false</default>
-                <label>100% PAY</label>
-            </value>
-            <value>
-                <fullName>100%ADV PI</fullName>
-                <default>false</default>
-                <label>100%ADV PI</label>
-            </value>
-            <value>
-                <fullName>120 D</fullName>
-                <default>false</default>
-                <label>120 D</label>
-            </value>
-            <value>
-                <fullName>120D BL</fullName>
-                <default>false</default>
-                <label>120D BL</label>
-            </value>
-            <value>
-                <fullName>15D</fullName>
-                <default>false</default>
-                <label>15D</label>
-            </value>
-            <value>
-                <fullName>20 - 80%</fullName>
-                <default>false</default>
-                <label>20 - 80%</label>
-            </value>
-            <value>
-                <fullName>20% - 80%</fullName>
-                <default>false</default>
-                <label>20% - 80%</label>
-            </value>
-            <value>
-                <fullName>20% + BA</fullName>
-                <default>false</default>
-                <label>20% + BA</label>
-            </value>
-            <value>
-                <fullName>20% + MT</fullName>
-                <default>false</default>
-                <label>20% + MT</label>
-            </value>
-            <value>
-                <fullName>20% ADV</fullName>
-                <default>false</default>
-                <label>20% ADV</label>
-            </value>
-            <value>
-                <fullName>25 - 75%</fullName>
-                <default>false</default>
-                <label>25 - 75%</label>
-            </value>
-            <value>
-                <fullName>25%+75%</fullName>
-                <default>false</default>
-                <label>25%+75%</label>
-            </value>
-            <value>
-                <fullName>25%-75%</fullName>
-                <default>false</default>
-                <label>25%-75%</label>
-            </value>
-            <value>
-                <fullName>25%-75% LC</fullName>
-                <default>false</default>
-                <label>25%-75% LC</label>
-            </value>
-            <value>
-                <fullName>25-75 60D</fullName>
-                <default>false</default>
-                <label>25-75 60D</label>
-            </value>
-            <value>
-                <fullName>30 - 70%</fullName>
-                <default>false</default>
-                <label>30 - 70%</label>
-            </value>
-            <value>
-                <fullName>30 DAY PDC</fullName>
-                <default>false</default>
-                <label>30 DAY PDC</label>
-            </value>
-            <value>
-                <fullName>30 DN</fullName>
-                <default>false</default>
-                <label>30 DN</label>
-            </value>
-            <value>
-                <fullName>30% - 70%</fullName>
-                <default>false</default>
-                <label>30% - 70%</label>
-            </value>
-            <value>
-                <fullName>30% ADV</fullName>
-                <default>false</default>
-                <label>30% ADV</label>
-            </value>
-            <value>
-                <fullName>30%-70% BL</fullName>
-                <default>false</default>
-                <label>30%-70% BL</label>
-            </value>
-            <value>
-                <fullName>30%ADV-70%</fullName>
-                <default>false</default>
-                <label>30%ADV-70%</label>
-            </value>
-            <value>
-                <fullName>30-70 CAD</fullName>
-                <default>false</default>
-                <label>30-70 CAD</label>
-            </value>
-            <value>
-                <fullName>30D ARRIVA</fullName>
-                <default>false</default>
-                <label>30D ARRIVA</label>
-            </value>
-            <value>
-                <fullName>30D BL</fullName>
-                <default>false</default>
-                <label>30D BL</label>
-            </value>
-            <value>
-                <fullName>30D DA</fullName>
-                <default>false</default>
-                <label>30D DA</label>
-            </value>
-            <value>
-                <fullName>30D INV</fullName>
-                <default>false</default>
-                <label>30D INV</label>
-            </value>
-            <value>
-                <fullName>30PDC</fullName>
-                <default>false</default>
-                <label>30PDC</label>
-            </value>
-            <value>
-                <fullName>40%</fullName>
-                <default>false</default>
-                <label>40%</label>
-            </value>
-            <value>
-                <fullName>40% ADV</fullName>
-                <default>false</default>
-                <label>40% ADV</label>
-            </value>
-            <value>
-                <fullName>40%-60%</fullName>
-                <default>false</default>
-                <label>40%-60%</label>
-            </value>
-            <value>
-                <fullName>40D NET</fullName>
-                <default>false</default>
-                <label>40D NET</label>
-            </value>
-            <value>
-                <fullName>45 D</fullName>
-                <default>false</default>
-                <label>45 D</label>
-            </value>
-            <value>
-                <fullName>45 DAYPDC</fullName>
-                <default>false</default>
-                <label>45 DAYPDC</label>
-            </value>
-            <value>
-                <fullName>45 DAYS</fullName>
-                <default>false</default>
-                <label>45 DAYS</label>
-            </value>
-            <value>
-                <fullName>45-60</fullName>
-                <default>false</default>
-                <label>45-60</label>
-            </value>
-            <value>
-                <fullName>45DAYS</fullName>
-                <default>false</default>
-                <label>45DAYS</label>
-            </value>
-            <value>
-                <fullName>50 - 50%</fullName>
-                <default>false</default>
-                <label>50 - 50%</label>
-            </value>
-            <value>
-                <fullName>50 + BL 60</fullName>
-                <default>false</default>
-                <label>50 + BL 60</label>
-            </value>
-            <value>
-                <fullName>50 +50 NS</fullName>
-                <default>false</default>
-                <label>50 +50 NS</label>
-            </value>
-            <value>
-                <fullName>50 DAYS</fullName>
-                <default>false</default>
-                <label>50 DAYS</label>
-            </value>
-            <value>
-                <fullName>50%</fullName>
-                <default>false</default>
-                <label>50%</label>
-            </value>
-            <value>
-                <fullName>50% TT ADV</fullName>
-                <default>false</default>
-                <label>50% TT ADV</label>
-            </value>
-            <value>
-                <fullName>50%, +INV</fullName>
-                <default>false</default>
-                <label>50%, +INV</label>
-            </value>
-            <value>
-                <fullName>50%+ 50%CR</fullName>
-                <default>false</default>
-                <label>50%+ 50%CR</label>
-            </value>
-            <value>
-                <fullName>50%-50%ETA</fullName>
-                <default>false</default>
-                <label>50%-50%ETA</label>
-            </value>
-            <value>
-                <fullName>50+50</fullName>
-                <default>false</default>
-                <label>50+50</label>
-            </value>
-            <value>
-                <fullName>60 D CAD</fullName>
-                <default>false</default>
-                <label>60 D CAD</label>
-            </value>
-            <value>
-                <fullName>60 D LR</fullName>
-                <default>false</default>
-                <label>60 D LR</label>
-            </value>
-            <value>
-                <fullName>60 DAYPADC</fullName>
-                <default>false</default>
-                <label>60 DAYPADC</label>
-            </value>
-            <value>
-                <fullName>60 DAYS</fullName>
-                <default>false</default>
-                <label>60 DAYS</label>
-            </value>
-            <value>
-                <fullName>60 NET</fullName>
-                <default>false</default>
-                <label>60 NET</label>
-            </value>
-            <value>
-                <fullName>60D</fullName>
-                <default>false</default>
-                <label>60D</label>
-            </value>
-            <value>
-                <fullName>60D BL</fullName>
-                <default>false</default>
-                <label>60D BL</label>
-            </value>
-            <value>
-                <fullName>60D INV</fullName>
-                <default>false</default>
-                <label>60D INV</label>
-            </value>
-            <value>
-                <fullName>60D NET</fullName>
-                <default>false</default>
-                <label>60D NET</label>
-            </value>
-            <value>
-                <fullName>64DAYS</fullName>
-                <default>false</default>
-                <label>64DAYS</label>
-            </value>
-            <value>
-                <fullName>7 DAYS</fullName>
-                <default>false</default>
-                <label>7 DAYS</label>
-            </value>
-            <value>
-                <fullName>70 % ADVAN</fullName>
-                <default>false</default>
-                <label>70 % ADVAN</label>
-            </value>
-            <value>
-                <fullName>70% ADVANC</fullName>
-                <default>false</default>
-                <label>70% ADVANC</label>
-            </value>
-            <value>
-                <fullName>75 D INV</fullName>
-                <default>false</default>
-                <label>75 D INV</label>
-            </value>
-            <value>
-                <fullName>75 DAYS BL</fullName>
-                <default>false</default>
-                <label>75 DAYS BL</label>
-            </value>
-            <value>
-                <fullName>90 DAYS AC</fullName>
-                <default>false</default>
-                <label>90 DAYS AC</label>
-            </value>
-            <value>
-                <fullName>90 DAYS DA</fullName>
-                <default>false</default>
-                <label>90 DAYS DA</label>
-            </value>
-            <value>
-                <fullName>90 PDC</fullName>
-                <default>false</default>
-                <label>90 PDC</label>
-            </value>
-            <value>
-                <fullName>90D</fullName>
-                <default>false</default>
-                <label>90D</label>
-            </value>
-            <value>
-                <fullName>90D BL</fullName>
-                <default>false</default>
-                <label>90D BL</label>
-            </value>
-            <value>
-                <fullName>94DAYS</fullName>
-                <default>false</default>
-                <label>94DAYS</label>
-            </value>
-            <value>
-                <fullName>AGN DELRY</fullName>
-                <default>false</default>
-                <label>AGN DELRY</label>
-            </value>
-            <value>
-                <fullName>BOND TRANS</fullName>
-                <default>false</default>
-                <label>BOND TRANS</label>
-            </value>
-            <value>
-                <fullName>CACD</fullName>
-                <default>false</default>
-                <label>CACD</label>
-            </value>
-            <value>
-                <fullName>CAD</fullName>
-                <default>false</default>
-                <label>CAD</label>
-            </value>
-            <value>
-                <fullName>CADB</fullName>
-                <default>false</default>
-                <label>CADB</label>
-            </value>
-            <value>
-                <fullName>CASH ADV</fullName>
-                <default>false</default>
-                <label>CASH ADV</label>
-            </value>
-            <value>
-                <fullName>DA 60</fullName>
-                <default>false</default>
-                <label>DA 60</label>
-            </value>
-            <value>
-                <fullName>DP SIGHT</fullName>
-                <default>false</default>
-                <label>DP SIGHT</label>
-            </value>
-            <value>
-                <fullName>FREE</fullName>
-                <default>false</default>
-                <label>FREE</label>
-            </value>
-            <value>
-                <fullName>HIGH SEA</fullName>
-                <default>false</default>
-                <label>HIGH SEA</label>
-            </value>
-            <value>
-                <fullName>IMME</fullName>
-                <default>false</default>
-                <label>IMME</label>
+                <label>PDC30</label>
             </value>
             <value>
                 <fullName>IRRELC</fullName>
@@ -450,19 +35,9 @@
                 <label>IRRELC</label>
             </value>
             <value>
-                <fullName>IRRLC30</fullName>
+                <fullName>IRRLC90</fullName>
                 <default>false</default>
-                <label>IRRLC30</label>
-            </value>
-            <value>
-                <fullName>IRRLC40</fullName>
-                <default>false</default>
-                <label>IRRLC40</label>
-            </value>
-            <value>
-                <fullName>IRRLC45</fullName>
-                <default>false</default>
-                <label>IRRLC45</label>
+                <label>IRRLC90</label>
             </value>
             <value>
                 <fullName>IRRLC60</fullName>
@@ -470,77 +45,525 @@
                 <label>IRRLC60</label>
             </value>
             <value>
-                <fullName>IRRLC90</fullName>
+                <fullName>IRRLC45</fullName>
                 <default>false</default>
-                <label>IRRLC90</label>
+                <label>IRRLC45</label>
             </value>
             <value>
-                <fullName>PAY</fullName>
+                <fullName>IRRLC30</fullName>
                 <default>false</default>
-                <label>PAY</label>
+                <label>IRRLC30</label>
             </value>
             <value>
-                <fullName>PDC 45</fullName>
+                <fullName>FOC</fullName>
                 <default>false</default>
-                <label>PDC 45</label>
+                <label>FOC</label>
             </value>
             <value>
-                <fullName>PDC 60</fullName>
+                <fullName>DPSIGHT</fullName>
                 <default>false</default>
-                <label>PDC 60</label>
+                <label>DPSIGHT</label>
             </value>
             <value>
-                <fullName>REMARK</fullName>
+                <fullName>DP90</fullName>
                 <default>false</default>
-                <label>REMARK</label>
+                <label>DP90</label>
             </value>
             <value>
-                <fullName>T/T</fullName>
+                <fullName>DP60</fullName>
                 <default>false</default>
-                <label>T/T</label>
+                <label>DP60</label>
             </value>
             <value>
-                <fullName>T/T AND LC</fullName>
+                <fullName>DP30</fullName>
                 <default>false</default>
-                <label>T/T AND LC</label>
+                <label>DP30</label>
             </value>
             <value>
-                <fullName>TT</fullName>
+                <fullName>DA90</fullName>
                 <default>false</default>
-                <label>TT</label>
+                <label>DA90</label>
             </value>
             <value>
-                <fullName>TT 45</fullName>
+                <fullName>DA60</fullName>
                 <default>false</default>
-                <label>TT 45</label>
+                <label>DA60</label>
             </value>
             <value>
-                <fullName>TT 60D</fullName>
+                <fullName>DA45</fullName>
                 <default>false</default>
-                <label>TT 60D</label>
+                <label>DA45</label>
             </value>
             <value>
-                <fullName>TT 90</fullName>
+                <fullName>DA30</fullName>
                 <default>false</default>
-                <label>TT 90</label>
+                <label>DA30</label>
             </value>
             <value>
-                <fullName>WITHIN 45D</fullName>
+                <fullName>BONTRN</fullName>
                 <default>false</default>
-                <label>WITHIN 45D</label>
+                <label>BONTRN</label>
             </value>
             <value>
-                <fullName>10%</fullName>
+                <fullName>BL90</fullName>
                 <default>false</default>
-                <isActive>false</isActive>
-                <label>10%</label>
+                <label>BL90</label>
             </value>
             <value>
-                <fullName>30%</fullName>
+                <fullName>BL75</fullName>
                 <default>false</default>
-                <isActive>false</isActive>
-                <label>30%</label>
+                <label>BL75</label>
+            </value>
+            <value>
+                <fullName>BL60</fullName>
+                <default>false</default>
+                <label>BL60</label>
+            </value>
+            <value>
+                <fullName>BL45</fullName>
+                <default>false</default>
+                <label>BL45</label>
+            </value>
+            <value>
+                <fullName>BL30</fullName>
+                <default>false</default>
+                <label>BL30</label>
+            </value>
+            <value>
+                <fullName>BL120</fullName>
+                <default>false</default>
+                <label>BL120</label>
+            </value>
+            <value>
+                <fullName>INV90</fullName>
+                <default>false</default>
+                <label>INV90</label>
+            </value>
+            <value>
+                <fullName>INV75</fullName>
+                <default>false</default>
+                <label>INV75</label>
+            </value>
+            <value>
+                <fullName>70ADV-30CD</fullName>
+                <default>false</default>
+                <label>70ADV-30CD</label>
+            </value>
+            <value>
+                <fullName>INV07</fullName>
+                <default>false</default>
+                <label>INV07</label>
+            </value>
+            <value>
+                <fullName>LR60</fullName>
+                <default>false</default>
+                <label>LR60</label>
+            </value>
+            <value>
+                <fullName>INV60</fullName>
+                <default>false</default>
+                <label>INV60</label>
+            </value>
+            <value>
+                <fullName>50ADV50PDC</fullName>
+                <default>false</default>
+                <label>50ADV50PDC</label>
+            </value>
+            <value>
+                <fullName>50ADV-50CD</fullName>
+                <default>false</default>
+                <label>50ADV-50CD</label>
+            </value>
+            <value>
+                <fullName>50AD-50BL</fullName>
+                <default>false</default>
+                <label>50AD-50BL</label>
+            </value>
+            <value>
+                <fullName>50ADV-50BL</fullName>
+                <default>false</default>
+                <label>50ADV-50BL</label>
+            </value>
+            <value>
+                <fullName>50ADV50INS</fullName>
+                <default>false</default>
+                <label>50ADV50INS</label>
+            </value>
+            <value>
+                <fullName>50ADV50DIS</fullName>
+                <default>false</default>
+                <label>50ADV50DIS</label>
+            </value>
+            <value>
+                <fullName>50ADV50INV</fullName>
+                <default>false</default>
+                <label>50ADV50INV</label>
+            </value>
+            <value>
+                <fullName>INV45</fullName>
+                <default>false</default>
+                <label>INV45</label>
+            </value>
+            <value>
+                <fullName>40ADV60DIS</fullName>
+                <default>false</default>
+                <label>40ADV60DIS</label>
+            </value>
+            <value>
+                <fullName>INV40</fullName>
+                <default>false</default>
+                <label>INV40</label>
+            </value>
+            <value>
+                <fullName>30ADV-70CD</fullName>
+                <default>false</default>
+                <label>30ADV-70CD</label>
+            </value>
+            <value>
+                <fullName>30ADV70DIS</fullName>
+                <default>false</default>
+                <label>30ADV70DIS</label>
+            </value>
+            <value>
+                <fullName>INV30</fullName>
+                <default>false</default>
+                <label>INV30</label>
+            </value>
+            <value>
+                <fullName>30DDEL</fullName>
+                <default>false</default>
+                <label>30DDEL</label>
+            </value>
+            <value>
+                <fullName>25ADV-75LC</fullName>
+                <default>false</default>
+                <label>25ADV-75LC</label>
+            </value>
+            <value>
+                <fullName>25ADV-75CD</fullName>
+                <default>false</default>
+                <label>25ADV-75CD</label>
+            </value>
+            <value>
+                <fullName>25ADV-75BL</fullName>
+                <default>false</default>
+                <label>25ADV-75BL</label>
+            </value>
+            <value>
+                <fullName>25ADV75DIS</fullName>
+                <default>false</default>
+                <label>25ADV75DIS</label>
+            </value>
+            <value>
+                <fullName>20ADV-80CD</fullName>
+                <default>false</default>
+                <label>20ADV-80CD</label>
+            </value>
+            <value>
+                <fullName>20ADV80DIS</fullName>
+                <default>false</default>
+                <label>20ADV80DIS</label>
+            </value>
+            <value>
+                <fullName>20ADV80INV</fullName>
+                <default>false</default>
+                <label>20ADV80INV</label>
+            </value>
+            <value>
+                <fullName>INV20</fullName>
+                <default>false</default>
+                <label>INV20</label>
+            </value>
+            <value>
+                <fullName>INV15</fullName>
+                <default>false</default>
+                <label>INV15</label>
+            </value>
+            <value>
+                <fullName>INV120</fullName>
+                <default>false</default>
+                <label>INV120</label>
+            </value>
+            <value>
+                <fullName>CACD</fullName>
+                <default>false</default>
+                <label>CACD</label>
+            </value>
+            <value>
+                <fullName>100%DEL</fullName>
+                <default>false</default>
+                <label>100%DEL</label>
+            </value>
+            <value>
+                <fullName>100%PI</fullName>
+                <default>false</default>
+                <label>100%PI</label>
+            </value>
+            <value>
+                <fullName>100%CBL</fullName>
+                <default>false</default>
+                <label>100%CBL</label>
+            </value>
+            <value>
+                <fullName>100%ADV</fullName>
+                <default>false</default>
+                <label>100%ADV</label>
+            </value>
+            <value>
+                <fullName>10ADV-90BL</fullName>
+                <default>false</default>
+                <label>10ADV-90BL</label>
+            </value>
+            <value>
+                <fullName>10ADV-90CD</fullName>
+                <default>false</default>
+                <label>10ADV-90CD</label>
+            </value>
+            <value>
+                <fullName>INV10</fullName>
+                <default>false</default>
+                <label>INV10</label>
             </value>
         </valueSetDefinition>
+        <valueSettings>
+            <controllingFieldValue>30 days from invoice</controllingFieldValue>
+            <valueName>INV30</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>30 days from goods arrival</controllingFieldValue>
+            <valueName>30DDEL</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>25% advance &amp; 75% LC at sight</controllingFieldValue>
+            <valueName>25ADV-75LC</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>25% advance &amp; 75% CACD</controllingFieldValue>
+            <valueName>25ADV-75CD</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>25% advance &amp; 75% BL 60 days</controllingFieldValue>
+            <valueName>25ADV-75BL</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>25% advance &amp; 75% before dispatch</controllingFieldValue>
+            <valueName>25ADV75DIS</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>20% advance &amp; 80% CACD</controllingFieldValue>
+            <valueName>20ADV-80CD</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>20% advance &amp; 80% before dispatch</controllingFieldValue>
+            <valueName>20ADV80DIS</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>20% advance &amp; 80% 60 days from invoice</controllingFieldValue>
+            <valueName>20ADV80INV</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>20 days from invoice</controllingFieldValue>
+            <valueName>INV20</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Free sample</controllingFieldValue>
+            <valueName>FOC</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>15 days from invoice</controllingFieldValue>
+            <valueName>INV15</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DP AT SIGHT</controllingFieldValue>
+            <valueName>DPSIGHT</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>120 days from invoice</controllingFieldValue>
+            <valueName>INV120</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DP 90 days</controllingFieldValue>
+            <valueName>DP90</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>100% cash against copy documents</controllingFieldValue>
+            <valueName>CACD</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DP 60 days</controllingFieldValue>
+            <valueName>DP60</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>100% against delivery</controllingFieldValue>
+            <valueName>100%DEL</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DP 30 days</controllingFieldValue>
+            <valueName>DP30</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>100% advance against proforma</controllingFieldValue>
+            <valueName>100%PI</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DA 90 days</controllingFieldValue>
+            <valueName>DA90</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>100% advance against BL copy</controllingFieldValue>
+            <valueName>100%CBL</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DA 60 days</controllingFieldValue>
+            <valueName>DA60</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DA 45 days</controllingFieldValue>
+            <valueName>DA45</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>DA 30 days</controllingFieldValue>
+            <valueName>DA30</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Bond transfer</controllingFieldValue>
+            <valueName>BONTRN</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>PDC 90 days</controllingFieldValue>
+            <valueName>PDC90</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>PDC 60 days</controllingFieldValue>
+            <valueName>PDC60</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>PDC 45 days</controllingFieldValue>
+            <valueName>PDC45</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>PDC 30 days</controllingFieldValue>
+            <valueName>PDC30</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Irrevocable LC at sight</controllingFieldValue>
+            <valueName>IRRELC</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Irrevocable LC 90 days</controllingFieldValue>
+            <valueName>IRRLC90</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Irrevocable LC 60 days</controllingFieldValue>
+            <valueName>IRRLC60</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Irrevocable LC 45 days</controllingFieldValue>
+            <valueName>IRRLC45</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Irrevocable LC 30 days</controllingFieldValue>
+            <valueName>IRRLC30</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>100% advance</controllingFieldValue>
+            <valueName>100%ADV</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>10% advance &amp; 90% BL 30 days</controllingFieldValue>
+            <valueName>10ADV-90BL</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>10% ADV &amp; 90% CACD</controllingFieldValue>
+            <valueName>10ADV-90CD</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>10 days from invoice</controllingFieldValue>
+            <valueName>INV10</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>BL 90 days</controllingFieldValue>
+            <valueName>BL90</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>BL 75 days</controllingFieldValue>
+            <valueName>BL75</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>BL 60 days</controllingFieldValue>
+            <valueName>BL60</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>BL 45 days</controllingFieldValue>
+            <valueName>BL45</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>BL 30 days</controllingFieldValue>
+            <valueName>BL30</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>BL 120 days</controllingFieldValue>
+            <valueName>BL120</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>90 days from invoice</controllingFieldValue>
+            <valueName>INV90</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>75 days from invoice</controllingFieldValue>
+            <valueName>INV75</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>70% advance &amp; 30% CACD</controllingFieldValue>
+            <valueName>70ADV-30CD</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>7 days from invoice</controllingFieldValue>
+            <valueName>INV07</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>60 days from LR</controllingFieldValue>
+            <valueName>LR60</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>60 days from invoice</controllingFieldValue>
+            <valueName>INV60</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>50% advance &amp; 50% PDC 45 days</controllingFieldValue>
+            <controllingFieldValue>50% advance &amp; 50% against inspection</controllingFieldValue>
+            <valueName>50ADV50PDC</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>50% advance &amp; 50% CACD</controllingFieldValue>
+            <controllingFieldValue>50% advance &amp; 50% against dispatch</controllingFieldValue>
+            <valueName>50ADV-50CD</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>50% advance &amp; 50% BL 60 days</controllingFieldValue>
+            <controllingFieldValue>50% advance &amp; 50% 60 days from invoice</controllingFieldValue>
+            <valueName>50AD-50BL</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>50% advance &amp; 50% BL 45 days</controllingFieldValue>
+            <controllingFieldValue>45 days from invoice</controllingFieldValue>
+            <valueName>50ADV-50BL</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>40% advance &amp; 60% before dispatch</controllingFieldValue>
+            <valueName>50ADV50INS</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>40 days from invoice</controllingFieldValue>
+            <valueName>INV40</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>30% advance &amp; 70% CACD</controllingFieldValue>
+            <valueName>30ADV-70CD</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>30% advance &amp; 70% before dispatch</controllingFieldValue>
+            <valueName>30ADV70DIS</valueName>
+        </valueSettings>
     </valueSet>
 </CustomField>

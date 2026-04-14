@@ -94,6 +94,10 @@
                 <behavior>Edit</behavior>
                 <field>DRC_NBC_Consignee_Bank_Address__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>DRC_NBC_Payment_Terms_Description__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

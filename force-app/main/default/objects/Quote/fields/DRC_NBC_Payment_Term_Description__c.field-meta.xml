@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Payment_Term_Description__c</fullName>
+    <label>Payment Term Description</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>PDC 90 days</fullName>
+                <default>false</default>
+                <label>PDC 90 days</label>
+            </value>
+            <value>
+                <fullName>PDC 60 days</fullName>
+                <default>false</default>
+                <label>PDC 60 days</label>
+            </value>
+            <value>
+                <fullName>PDC 45 days</fullName>
+                <default>false</default>
+                <label>PDC 45 days</label>
+            </value>
+            <value>
+                <fullName>PDC 30 days</fullName>
+                <default>false</default>
+                <label>PDC 30 days</label>
+            </value>
+            <value>
+                <fullName>Irrevocable LC at sight</fullName>
+                <default>false</default>
+                <label>Irrevocable LC at sight</label>
+            </value>
+            <value>
+                <fullName>Irrevocable LC 90 days</fullName>
+                <default>false</default>
+                <label>Irrevocable LC 90 days</label>
+            </value>
+            <value>
+                <fullName>Irrevocable LC 60 days</fullName>
+                <default>false</default>
+                <label>Irrevocable LC 60 days</label>
+            </value>
+            <value>
+                <fullName>Irrevocable LC 45 days</fullName>
+                <default>false</default>
+                <label>Irrevocable LC 45 days</label>
+            </value>
+            <value>
+                <fullName>Irrevocable LC 30 days</fullName>
+                <default>false</default>
+                <label>Irrevocable LC 30 days</label>
+            </value>
+            <value>
+                <fullName>Free sample</fullName>
+                <default>false</default>
+                <label>Free sample</label>
+            </value>
+            <value>
+                <fullName>DP AT SIGHT</fullName>
+                <default>false</default>
+                <label>DP AT SIGHT</label>
+            </value>
+            <value>
+                <fullName>DP 90 days</fullName>
+                <default>false</default>
+                <label>DP 90 days</label>
+            </value>
+            <value>
+                <fullName>DP 60 days</fullName>
+                <default>false</default>
+                <label>DP 60 days</label>
+            </value>
+            <value>
+                <fullName>DP 30 days</fullName>
+                <default>false</default>
+                <label>DP 30 days</label>
+            </value>
+            <value>
+                <fullName>DA 90 days</fullName>
+                <default>false</default>
+                <label>DA 90 days</label>
+            </value>
+            <value>
+                <fullName>DA 60 days</fullName>
+                <default>false</default>
+                <label>DA 60 days</label>
+            </value>
+            <value>
+                <fullName>DA 45 days</fullName>
+                <default>false</default>
+                <label>DA 45 days</label>
+            </value>
+            <value>
+                <fullName>DA 30 days</fullName>
+                <default>false</default>
+                <label>DA 30 days</label>
+            </value>
+            <value>
+                <fullName>Bond transfer</fullName>
+                <default>false</default>
+                <label>Bond transfer</label>
+            </value>
+            <value>
+                <fullName>BL 90 days</fullName>
+                <default>false</default>
+                <label>BL 90 days</label>
+            </value>
+            <value>
+                <fullName>BL 75 days</fullName>
+                <default>false</default>
+                <label>BL 75 days</label>
+            </value>
+            <value>
+                <fullName>BL 60 days</fullName>
+                <default>false</default>
+                <label>BL 60 days</label>
+            </value>
+            <value>
+                <fullName>BL 45 days</fullName>
+                <default>false</default>
+                <label>BL 45 days</label>
+            </value>
+            <value>
+                <fullName>BL 30 days</fullName>
+                <default>false</default>
+                <label>BL 30 days</label>
+            </value>
+            <value>
+                <fullName>BL 120 days</fullName>
+                <default>false</default>
+                <label>BL 120 days</label>
+            </value>
+            <value>
+                <fullName>90 days from invoice</fullName>
+                <default>false</default>
+                <label>90 days from invoice</label>
+            </value>
+            <value>
+                <fullName>75 days from invoice</fullName>
+                <default>false</default>
+                <label>75 days from invoice</label>
+            </value>
+            <value>
+                <fullName>70% advance &amp; 30% CACD</fullName>
+                <default>false</default>
+                <label>70% advance &amp; 30% CACD</label>
+            </value>
+            <value>
+                <fullName>7 days from invoice</fullName>
+                <default>false</default>
+                <label>7 days from invoice</label>
+            </value>
+            <value>
+                <fullName>60 days from LR</fullName>
+                <default>false</default>
+                <label>60 days from LR</label>
+            </value>
+            <value>
+                <fullName>60 days from invoice</fullName>
+                <default>false</default>
+                <label>60 days from invoice</label>
+            </value>
+            <value>
+                <fullName>50% advance &amp; 50% PDC 45 days</fullName>
+                <default>false</default>
+                <label>50% advance &amp; 50% PDC 45 days</label>
+            </value>
+            <value>
+                <fullName>50% advance &amp; 50% CACD</fullName>
+                <default>false</default>
+                <label>50% advance &amp; 50% CACD</label>
+            </value>
+            <value>
+                <fullName>50% advance &amp; 50% BL 60 days</fullName>
+                <default>false</default>
+                <label>50% advance &amp; 50% BL 60 days</label>
+            </value>
+            <value>
+                <fullName>50% advance &amp; 50% BL 45 days</fullName>
+                <default>false</default>
+                <label>50% advance &amp; 50% BL 45 days</label>
+            </value>
+            <value>
+                <fullName>50% advance &amp; 50% against inspection</fullName>
+                <default>false</default>
+                <label>50% advance &amp; 50% against inspection</label>
+            </value>
+            <value>
+                <fullName>50% advance &amp; 50% against dispatch</fullName>
+                <default>false</default>
+                <label>50% advance &amp; 50% against dispatch</label>
+            </value>
+            <value>
+                <fullName>50% advance &amp; 50% 60 days from invoice</fullName>
+                <default>false</default>
+                <label>50% advance &amp; 50% 60 days from invoice</label>
+            </value>
+            <value>
+                <fullName>45 days from invoice</fullName>
+                <default>false</default>
+                <label>45 days from invoice</label>
+            </value>
+            <value>
+                <fullName>40% advance &amp; 60% before dispatch</fullName>
+                <default>false</default>
+                <label>40% advance &amp; 60% before dispatch</label>
+            </value>
+            <value>
+                <fullName>40 days from invoice</fullName>
+                <default>false</default>
+                <label>40 days from invoice</label>
+            </value>
+            <value>
+                <fullName>30% advance &amp; 70% CACD</fullName>
+                <default>false</default>
+                <label>30% advance &amp; 70% CACD</label>
+            </value>
+            <value>
+                <fullName>30% advance &amp; 70% before dispatch</fullName>
+                <default>false</default>
+                <label>30% advance &amp; 70% before dispatch</label>
+            </value>
+            <value>
+                <fullName>30 days from invoice</fullName>
+                <default>false</default>
+                <label>30 days from invoice</label>
+            </value>
+            <value>
+                <fullName>30 days from goods arrival</fullName>
+                <default>false</default>
+                <label>30 days from goods arrival</label>
+            </value>
+            <value>
+                <fullName>25% advance &amp; 75% LC at sight</fullName>
+                <default>false</default>
+                <label>25% advance &amp; 75% LC at sight</label>
+            </value>
+            <value>
+                <fullName>25% advance &amp; 75% CACD</fullName>
+                <default>false</default>
+                <label>25% advance &amp; 75% CACD</label>
+            </value>
+            <value>
+                <fullName>25% advance &amp; 75% BL 60 days</fullName>
+                <default>false</default>
+                <label>25% advance &amp; 75% BL 60 days</label>
+            </value>
+            <value>
+                <fullName>25% advance &amp; 75% before dispatch</fullName>
+                <default>false</default>
+                <label>25% advance &amp; 75% before dispatch</label>
+            </value>
+            <value>
+                <fullName>20% advance &amp; 80% CACD</fullName>
+                <default>false</default>
+                <label>20% advance &amp; 80% CACD</label>
+            </value>
+            <value>
+                <fullName>20% advance &amp; 80% before dispatch</fullName>
+                <default>false</default>
+                <label>20% advance &amp; 80% before dispatch</label>
+            </value>
+            <value>
+                <fullName>20% advance &amp; 80% 60 days from invoice</fullName>
+                <default>false</default>
+                <label>20% advance &amp; 80% 60 days from invoice</label>
+            </value>
+            <value>
+                <fullName>20 days from invoice</fullName>
+                <default>false</default>
+                <label>20 days from invoice</label>
+            </value>
+            <value>
+                <fullName>15 days from invoice</fullName>
+                <default>false</default>
+                <label>15 days from invoice</label>
+            </value>
+            <value>
+                <fullName>120 days from invoice</fullName>
+                <default>false</default>
+                <label>120 days from invoice</label>
+            </value>
+            <value>
+                <fullName>100% cash against copy documents</fullName>
+                <default>false</default>
+                <label>100% cash against copy documents</label>
+            </value>
+            <value>
+                <fullName>100% against delivery</fullName>
+                <default>false</default>
+                <label>100% against delivery</label>
+            </value>
+            <value>
+                <fullName>100% advance against proforma</fullName>
+                <default>false</default>
+                <label>100% advance against proforma</label>
+            </value>
+            <value>
+                <fullName>100% advance against BL copy</fullName>
+                <default>false</default>
+                <label>100% advance against BL copy</label>
+            </value>
+            <value>
+                <fullName>100% advance</fullName>
+                <default>false</default>
+                <label>100% advance</label>
+            </value>
+            <value>
+                <fullName>10% advance &amp; 90% BL 30 days</fullName>
+                <default>false</default>
+                <label>10% advance &amp; 90% BL 30 days</label>
+            </value>
+            <value>
+                <fullName>10% ADV &amp; 90% CACD</fullName>
+                <default>false</default>
+                <label>10% ADV &amp; 90% CACD</label>
+            </value>
+            <value>
+                <fullName>10 days from invoice</fullName>
+                <default>false</default>
+                <label>10 days from invoice</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

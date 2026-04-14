@@ -31,11 +31,8 @@ private class DRC_NBC_Account_BC_Callout_Test {
         // In @isTest the org is a Sandbox, therefore targetEnv = DRC_NBC_Sandbox label.
         // Using a try/catch so the test does not blow up if the label is missing.
         String targetEnvName;
-        try {
-            targetEnvName = System.Label.DRC_NBC_Sandbox;
-        } catch (Exception e) {
-            targetEnvName = 'Sandbox'; // fallback – change to match your label value
-        }
+        Boolean isSandbox = [SELECT IsSandbox FROM Organization LIMIT 1].IsSandbox;
+        targetEnvName = isSandbox ? System.Label.DRC_NBC_Sandbox : System.Label.DRC_NBC_Production;
         
         DRC_NBC_BC_Integration__c setting = new DRC_NBC_BC_Integration__c(
             Name__c                          = targetEnvName,
@@ -66,7 +63,7 @@ private class DRC_NBC_Account_BC_Callout_Test {
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
             DRC_NBC_Customer_Number__c = withCustomerNumber ? 'CUST123' : null,
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
             BillingCity = 'City',
@@ -446,7 +443,7 @@ System.assertEquals(jsonBody, req.getBody());
         acc = [SELECT Id, Name, DRC_NBC_PAN_No__c, DRC_NBC_Payment_Term_Code__c, 
                DRC_NBC_Customer_Number__c, CurrencyIsoCode, Phone, 
                DRC_NBC_Account_Email_Email__c, BillingCity, BillingCountry, 
-               BillingPostalCode, BillingState, BillingStateCode, 
+               BillingPostalCode, BillingState, BillingStateCode, BillingCountryCode, 
                BillingStreet, DRC_NBC_GST_Number__c 
                FROM Account WHERE Id = :acc.Id];
         
@@ -505,7 +502,7 @@ System.assertEquals(jsonBody, req.getBody());
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
          //   DRC_NBC_Customer_Number__c = withCustomerNumber ? 'CUST123' : null,
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
             BillingCity = 'City',

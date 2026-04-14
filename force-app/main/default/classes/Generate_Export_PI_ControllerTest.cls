@@ -32,7 +32,7 @@ private class Generate_Export_PI_ControllerTest {
             Phone                                    = '1234567890',
             DRC_NBC_PAN_No__c                        = 'AWVPY9594J',
             DRC_NBC_GST_Number__c                    = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c             = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c             = 'PDC90',
             DRC_NBC_Account_Email_Email__c           = 'test@example.com',
             BillingStreet                            = '123 Street',
             BillingCity                              = 'City',
@@ -126,7 +126,7 @@ private class Generate_Export_PI_ControllerTest {
                                     BillingPostalCode                           = '400064',
                                     BillingCountry                              = 'India',
                                     DRC_NBC_Type__c                             = 'Export',
-                                    DRC_NBC_Payment_Terms__c                    = '100',
+                                    DRC_NBC_Payment_Terms__c                    = 'PDC90',
                                     DRC_NBC_Port_Of_Loading__c                  = 'NHAVA SHEVA',
                                     DRC_NBC_Port_Of_Discharge__c                = 'DUBAI PORT',
                                     DRC_NBC_Final_Destination__c                = 'UAE',
@@ -187,7 +187,7 @@ private class Generate_Export_PI_ControllerTest {
             BillingPostalCode                           = '600001',
             BillingCountry                              = 'India',
             DRC_NBC_Type__c                             = 'Export',
-            DRC_NBC_Payment_Terms__c                    = '30',
+            DRC_NBC_Payment_Terms__c                    = 'PDC90',
             DRC_NBC_Select_Bank__c                      = null,
             DRC_NBC_Invoice_Export_Sequence_Number__c   = null,
             // Semicolon + newline delimiters — exercises the split + trim loop
@@ -261,7 +261,7 @@ private class Generate_Export_PI_ControllerTest {
                         BillingPostalCode                           = '10001',
                         BillingCountry                              = 'Australia',
                         DRC_NBC_Type__c                             = 'Export',
-                        DRC_NBC_Payment_Terms__c                    = '60',
+                        DRC_NBC_Payment_Terms__c                    = 'PDC90',
                         DRC_NBC_Select_Bank__c                      = null,
                         DRC_NBC_Invoice_Export_Sequence_Number__c   = null
                     );

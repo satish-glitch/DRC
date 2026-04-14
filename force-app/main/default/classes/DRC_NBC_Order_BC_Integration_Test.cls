@@ -25,11 +25,9 @@ DRC_NBC_Token_Generated_Time__c = System.now()
 insert customSetting;*/
         
         String targetEnvName;
-        try {
-            targetEnvName = System.Label.DRC_NBC_Sandbox;
-        } catch (Exception e) {
-            targetEnvName = 'Sandbox'; // fallback – change to match your label value
-        }
+        Boolean isSandbox = [SELECT IsSandbox FROM Organization LIMIT 1].IsSandbox;
+        targetEnvName = isSandbox ? System.Label.DRC_NBC_Sandbox : System.Label.DRC_NBC_Production;
+        
         
         DRC_NBC_BC_Integration__c customSetting = new DRC_NBC_BC_Integration__c(
             Name__c                          = targetEnvName,
@@ -54,7 +52,7 @@ insert customSetting;*/
             AccountNumber = 'A123',
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
             BillingCity = 'City',
@@ -130,7 +128,7 @@ insert customSetting;*/
             ShipToContactId = shipToContact.Id,
             PoNumber = 'PO12345',
             PoDate = Date.today(),
-            DRC_NBC_Payment_Terms__c = '10% - 90%',
+            DRC_NBC_Payment_Terms__c = 'PDC90',
             DRC_NBC_Inco_Terms__c = 'Cost Insurance & Freight (CIF)',
             DRC_NBC_Cust_Order_Number__c = 'ORD-001',
             ShippingStreet = '123 Test St',

@@ -204,7 +204,8 @@ public class DRC_NBC_QuoteEmailSenderControllerTest {
         Quote q2 = new Quote(
             Name = 'No Contact Quote', OpportunityId = opp2.Id,
             Pricebook2Id = standardPbId, Status = 'Draft',
-            CurrencyIsoCode = 'USD'
+            CurrencyIsoCode = 'USD',
+            DRC_NBC_Type__c = 'Domestic'
         );
         insert q2;
         

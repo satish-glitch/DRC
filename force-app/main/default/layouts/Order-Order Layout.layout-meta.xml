@@ -143,6 +143,10 @@
                 <behavior>Edit</behavior>
                 <field>DRC_NBC_Order_PartiallyShipped__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>DRC_NBC_Payment_Term_Description__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

@@ -17,18 +17,21 @@ public class DRC_NBC_GenerateSampleOrderTest {
     static void setupTestData() {
         
         Account acc = new Account(
-            Name                                     = 'Test Account',
-            BillingStreet                            = '123 Test St',
-            BillingCity                              = 'Mumbai',
-            BillingState                             = 'Maharashtra',
-            BillingPostalCode                        = '400001',
-            BillingCountry                           = 'India',
-            BillingCountryCode                       = 'IN',
-            DRC_NBC_Payment_Term_Code__c             = '100',
-            DRC_NBC_Consignee_Bank_Name__c           = 'Test Bank',
-            DRC_NBC_Consignee_Bank_Account_Number__c = 'ACC123456',
-            DRC_NBC_Consignee_Bank_IFSC_Code__c      = 'IFSC0001',
-            DRC_NBC_Consignee_Bank_Address__c        = '1 Bank St, Mumbai'
+            Name            = 'Test Account',
+            BillingStreet  = '123 Test Street',
+            BillingCity    = 'Mumbai',
+            BillingState   = 'Maharashtra',
+            BillingPostalCode = '400001',
+            BillingCountry = 'India',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
         );
         insert acc;
         
@@ -323,7 +326,21 @@ public class DRC_NBC_GenerateSampleOrderTest {
     @isTest
     static void testSearchProducts_WithoutRestriction() {
         // Account with no restricted products → allowedProductIds stays empty
-        Account accFree = new Account(Name = 'Free Account');
+        Account accFree = new Account(Name = 'Free Account',
+                                      BillingStreet  = '123 Test Street',
+                                      BillingCity    = 'Mumbai',
+                                      BillingState   = 'Maharashtra',
+                                      BillingPostalCode = '400001',
+                                      BillingCountry = 'India',
+                                      DRC_NBC_Volume__c = 70, 
+                                      DRC_NBC_Credit_Limit__c = 123456787,
+                                      DRC_NBC_Value__c = 900,
+                                      DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+                                      DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+                                      DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+                                      DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+                                      Industry = 'Chemicals Construction',
+                                      Type = 'Analyst');
         insert accFree;
         
         Opportunity oppFree = new Opportunity(
@@ -349,7 +366,21 @@ public class DRC_NBC_GenerateSampleOrderTest {
 */
     @isTest
     static void testSearchProducts_WithoutRestriction_MultipleProducts() {
-        Account accFree = new Account(Name = 'Free Account 2');
+        Account accFree = new Account(Name = 'Free Account 2',
+                                      BillingStreet  = '123 Test Street',
+                                      BillingCity    = 'Mumbai',
+                                      BillingState   = 'Maharashtra',
+                                      BillingPostalCode = '400001',
+                                      BillingCountry = 'India',
+                                      DRC_NBC_Volume__c = 70, 
+                                      DRC_NBC_Credit_Limit__c = 123456787,
+                                      DRC_NBC_Value__c = 900,
+                                      DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+                                      DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+                                      DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+                                      DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+                                      Industry = 'Chemicals Construction',
+                                      Type = 'Analyst');
         insert accFree;
         
         Opportunity oppFree = new Opportunity(
@@ -528,7 +559,7 @@ public class DRC_NBC_GenerateSampleOrderTest {
         Test.stopTest();
     }
     
-   
+    
     @isTest
     static void testCreateSampleOrder_FullSuccess_PricebookUpdate_ShippingUpdate() {
         Opportunity opp     = getOpp();
@@ -552,7 +583,7 @@ public class DRC_NBC_GenerateSampleOrderTest {
             opp.Id);
         Test.stopTest();
     }
-   
+    
     @isTest
     static void testCreateSampleOrder_NoPricebookUpdate_NullDefaults_NoShipping() {
         Opportunity opp = getOpp();

@@ -7,34 +7,23 @@
 
 public class DRC_NBC_BC_Callout_Utility {
     
-    /**
-* Returns the integration configuration (custom metadata).
-*/
-    /*public static DRC_NBC_BC_Integration__c getConfig() {
-if (isSandbox()) {
-return DRC_NBC_BC_Integration__c.getInstance(System.label.DRC_NBC_Sandbox);
-} else {
-return DRC_NBC_BC_Integration__c.getInstance(System.label.DRC_NBC_Production);
-}
-}*/
-    
     public static DRC_NBC_BC_Integration__c getConfig() {
         String targetEnv = isSandbox() ? System.label.DRC_NBC_Sandbox : System.label.DRC_NBC_Production;
         
         DRC_NBC_BC_Integration__c setting = [
             SELECT 
-            	Name__c, 
-            	DRC_NBC_Comapny_Name__c,
-                DRC_NBC_Endpoint__c,
-            	DRC_NBC_SendOrderEndpoint__c,
-                DRC_NBC_Shipping_Address_Endpoint__c,
-            	DRC_NBC_Token_Generated_Time__c,
-                DRC_NBC_SendOrderLineEndpoint__c,
-                DRC_NBC_SalesPerson_Code__c
+            Name__c, 
+            DRC_NBC_Comapny_Name__c,
+            DRC_NBC_Endpoint__c,
+            DRC_NBC_SendOrderEndpoint__c,
+            DRC_NBC_Shipping_Address_Endpoint__c,
+            DRC_NBC_Token_Generated_Time__c,
+            DRC_NBC_SendOrderLineEndpoint__c,
+            DRC_NBC_SalesPerson_Code__c
             FROM 
-            	DRC_NBC_BC_Integration__c
+            DRC_NBC_BC_Integration__c
             WHERE 
-            	Name__c = :targetEnv
+            Name__c = :targetEnv
             LIMIT 1
         ];
         
@@ -58,13 +47,13 @@ return DRC_NBC_BC_Integration__c.getInstance(System.label.DRC_NBC_Production);
         
     }
     
-     public static String getOrderProductFullEndpoint(String endpointPath) {
+    public static String getOrderProductFullEndpoint(String endpointPath) {
         DRC_NBC_BC_Integration__c config = getConfig();
-       /* String companyName = config.DRC_NBC_Comapny_Name__c;
-        
-        // Wrap company name in single quotes, then URL encode the whole thing
-        String quotedCompanyName = '\'' + companyName + '\'';
-        String encodedCompanyName = EncodingUtil.urlEncode(quotedCompanyName, 'UTF-8').replace('+', '%20');*/
+        /* String companyName = config.DRC_NBC_Comapny_Name__c;
+
+// Wrap company name in single quotes, then URL encode the whole thing
+String quotedCompanyName = '\'' + companyName + '\'';
+String encodedCompanyName = EncodingUtil.urlEncode(quotedCompanyName, 'UTF-8').replace('+', '%20');*/
         
         return 'callout:DRC_NBC_BC_Account_Integration/' + endpointPath;
         

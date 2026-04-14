@@ -12,7 +12,7 @@ private class DRC_NBC_Invoice_Sync_WebService_Test {
             AccountNumber = 'A123',
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
             BillingCity = 'City',

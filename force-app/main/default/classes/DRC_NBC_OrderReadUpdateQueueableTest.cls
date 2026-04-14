@@ -154,7 +154,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             AccountNumber = 'A123',
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
             BillingCity = 'City',
@@ -191,7 +191,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             PoNumber                     = 'TEST-PO-001',
             DRC_NBC_Cust_Order_Number__c = 'SODOM/2627/00031',
             DRC_NBC_Warehouse__c         = 'CFS - JNPT',
-            DRC_NBC_Payment_Terms__c     = '100%',
+            DRC_NBC_Payment_Terms__c     = 'PDC90',
             DRC_NBC_Inco_Terms__c        = 'Charges Collect (CC)',
             OwnerId                      = UserInfo.getUserId()
         );
@@ -363,7 +363,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             AccountNumber = 'A123',
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
             BillingCity = 'City',
@@ -402,7 +402,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             CurrencyIsoCode              = 'INR',
             DRC_NBC_Cust_Order_Number__c = 'SODOM/SAMPLE/00001',
             DRC_NBC_Warehouse__c         = 'CFS - JNPT',
-            DRC_NBC_Payment_Terms__c     = '100',
+            DRC_NBC_Payment_Terms__c     = 'PDC90',
             DRC_NBC_Inco_Terms__c        = 'Charges Collect (CC)',
             PoNumber                     = 'SAMPLE-PO-123',
             OwnerId                      = UserInfo.getUserId()
@@ -450,7 +450,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             AccountNumber = 'A123',
             DRC_NBC_PAN_No__c = 'AWVPY9594J',
             DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c = '10 DAYS',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
             DRC_NBC_Account_Email_Email__c = 'test@example.com',
             BillingStreet = '123 Street',
             BillingCity = 'City',
@@ -490,7 +490,7 @@ private class DRC_NBC_OrderReadUpdateQueueableTest {
             DRC_NBC_Cust_Order_Number__c = 'SODOM/SHIP/00001',
             DRC_NBC_Shipping_Address__c  = shipAddr.Id,
             DRC_NBC_Warehouse__c         = 'CFS - JNPT',
-            DRC_NBC_Payment_Terms__c     = '100',
+            DRC_NBC_Payment_Terms__c     = 'PDC90',
             DRC_NBC_Inco_Terms__c        = 'Charges Collect (CC)',
             PoNumber                     = 'SHIP-PO-456',
             OwnerId                      = UserInfo.getUserId()
