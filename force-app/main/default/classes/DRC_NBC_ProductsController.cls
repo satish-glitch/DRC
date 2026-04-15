@@ -249,7 +249,7 @@ public class DRC_NBC_ProductsController {
             LIMIT 1
         ];
         
-        if (quoteRecord.Pricebook2Id == null) {
+        /*if (quoteRecord.Pricebook2Id == null) {
             Pricebook2 defaultPricebook = [
                 SELECT Id 
                 FROM Pricebook2 
@@ -258,6 +258,17 @@ public class DRC_NBC_ProductsController {
                 LIMIT 1
             ];
             quoteRecord.Pricebook2Id = defaultPricebook.Id;
+            update quoteRecord;
+        }*/
+        Pricebook2 standardPricebook = [
+            SELECT Id
+            FROM Pricebook2
+            WHERE IsStandard = true
+            LIMIT 1
+        ];
+
+        if (quoteRecord.Pricebook2Id == null) {
+            quoteRecord.Pricebook2Id = standardPricebook.Id;
             update quoteRecord;
         }
         
