@@ -2,13 +2,14 @@
 * @File Name : DRC_NBC_UpdateOrderAndLineItems.cls
 * @Description : Handles Order and Line Items sync with Business Central using SOAP
 * @Author : Satish YADAV
-* @Last Modified On : February 06, 2026
+* @Last Modified On : April 17, 2026
 * * 1. Generate Ship-To Code (if missing)
-* 2. Update Order in BC
-* 3. UPDATE existing line items (matched products + existing taxes)
-* 4. CREATE new line items (new products only - tax lines never created here)
-* 5. DELETE unmatched PRODUCT line items ONLY
-* 6. DELETE tax lines ONLY if amounts changed from non-zero to zero
+* 2. Read Order from BC - check status, if Released → reopen to Open, re-read for fresh Key
+* 3. Update Order in BC
+* 4. UPDATE existing line items (matched products + existing taxes)
+* 5. CREATE new line items (new products only - tax lines never created here)
+* 6. DELETE unmatched PRODUCT line items ONLY
+* 7. DELETE tax lines ONLY if amounts changed from non-zero to zero
 **/
 public class DRC_NBC_UpdateOrderAndLineItems {
     
@@ -27,13 +28,26 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     private static final String BC_PASSWORD = bcSettings.DRC_NBC_Password__c;
     
     /**
+* Wrapper class to hold BC Order Read result (Key + Status)
+*/
+    public class BCOrderReadResult {
+        public String key;
+        public String status;
+        
+        public BCOrderReadResult(String key, String status) {
+            this.key = key;
+            this.status = status;
+        }
+    }
+    
+    /**
 * Wrapper class to hold BC Line Item details for intelligent matching
 */
     public class BCLineItem {
         public String key;
         public Integer lineNo;
-        public String lineType;      // "Item" or "G/L Account"
-        public String itemNo;         // FG Code for products
+        public String lineType;
+        public String itemNo;
         public Decimal quantity;
         public String description;
         
@@ -78,19 +92,13 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             // Step 2: Check if Ship-To Code generation is needed
             if (String.isBlank(ord.DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c)) {
                 System.debug('Ship-To Code is missing. Starting chained Queueable process...');
-                
-                // Chain TWO Queueables:
-                // 1. Generate Ship-To Code (DML only)
-                // 2. Execute Callouts (Shipping API + Order Sync)
                 System.enqueueJob(new ShipToCodeGeneratorQueueable(orderRecordId, accountId));
-                
                 resultMessage = 'QUEUED: Ship-To Code generation started. Shipping and Order sync will follow.';
                 System.debug(resultMessage);
                 return resultMessage;
                 
             } else {
                 System.debug('Ship-To Code already present. Proceeding with Order sync.');
-                // Process order sync directly
                 resultMessage = processOrderSync(ord, accountId);
             }
             
@@ -100,7 +108,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             System.debug('Exception Message: ' + ex.getMessage());
             System.debug('Stack Trace: ' + ex.getStackTraceString());
             System.debug('Line Number: ' + ex.getLineNumber());
-            
             resultMessage = 'ERROR: ' + ex.getMessage();
         }
         
@@ -108,8 +115,15 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         return resultMessage;
     }
     
+    // ========================================================================
+    // QUEUEABLE CHAIN: ShipToCode (DML) → Shipping Callout → Order Sync Callout
+    // Each Queueable runs in its own clean transaction to avoid
+    // "uncommitted work pending" errors when mixing DML and callouts.
+    // ========================================================================
+    
     /**
 * QUEUEABLE 1: Generate Ship-To Code (DML ONLY)
+* No callouts here. Chains to ShippingCalloutQueueable after DML commits.
 */
     public class ShipToCodeGeneratorQueueable implements Queueable {
         private Id orderRecordId;
@@ -122,14 +136,15 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         
         public void execute(QueueableContext context) {
             System.debug('*** ShipToCodeGeneratorQueueable Started ***');
-            
             try {
-                System.debug('Step 1: Generating Ship-To Code...');
+                System.debug('Step 1: Generating Ship-To Code (DML only)...');
                 DRC_NBC_ShipToCodeGenerator.assignShipToCodeSync(orderRecordId);
-                System.debug('Ship-To Code generated successfully');
+                System.debug('Ship-To Code generated and committed successfully');
                 
-                System.debug('Step 2: Chaining to CalloutQueueable...');
-                System.enqueueJob(new ShippingAndOrderCalloutQueueable(orderRecordId, accountId));
+                // DML is fully committed at this point.
+                // Safe to chain the next Queueable for callout work.
+                System.debug('Step 2: Chaining to ShippingCalloutQueueable...');
+                System.enqueueJob(new ShippingCalloutQueueable(orderRecordId, accountId));
                 
             } catch (Exception ex) {
                 System.debug('*** EXCEPTION in ShipToCodeGeneratorQueueable ***');
@@ -140,34 +155,69 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     }
     
     /**
-* QUEUEABLE 2: Execute Shipping Callout + Order Sync (CALLOUTS ONLY)
+* QUEUEABLE 2: Execute Shipping Address Callout ONLY
+* Runs in a clean transaction after Ship-To Code DML is committed.
+* Chains to OrderSyncQueueable after shipping callout completes.
 */
-    public class ShippingAndOrderCalloutQueueable implements Queueable, Database.AllowsCallouts {
+    public class ShippingCalloutQueueable implements Queueable, Database.AllowsCallouts {
         private Id orderRecordId;
         private Id accountId;
         
-        public ShippingAndOrderCalloutQueueable(Id orderRecordId, Id accountId) {
+        public ShippingCalloutQueueable(Id orderRecordId, Id accountId) {
             this.orderRecordId = orderRecordId;
             this.accountId = accountId;
         }
         
         public void execute(QueueableContext context) {
-            System.debug('*** ShippingAndOrderCalloutQueueable Started ***');
-            
+            System.debug('*** ShippingCalloutQueueable Started ***');
             try {
-                System.debug('Step 1: Executing Shipping Callout...');
+                System.debug('Step 1: Executing Shipping Address callout...');
                 String shippingResult = DRC_NBC_Shipping_BC_Callout.processShipping(accountId, orderRecordId);
                 System.debug('Shipping Callout Result: ' + shippingResult);
                 
-                System.debug('Step 2: Re-querying Order with updated Ship-To Code...');
-                Order ord = DRC_NBC_Order_BC_Callout.getOrderDetails(orderRecordId);
+                // Chain Order sync in a SEPARATE Queueable.
+                // Salesforce throws "uncommitted work pending" if enqueueJob
+                // is called after a callout in the same transaction.
+                System.debug('Step 2: Chaining to OrderSyncQueueable...');
+                System.enqueueJob(new OrderSyncQueueable(orderRecordId, accountId));
                 
-                System.debug('Step 3: Processing Order Sync...');
+            } catch (Exception ex) {
+                System.debug('*** EXCEPTION in ShippingCalloutQueueable ***');
+                System.debug('Exception Message: ' + ex.getMessage());
+                System.debug('Stack Trace: ' + ex.getStackTraceString());
+            }
+        }
+    }
+    
+    /**
+* QUEUEABLE 3: Execute Order Sync (Re-query + processOrderSync callouts)
+* Runs in a clean transaction after shipping callout is complete.
+* processOrderSync performs only callouts; any downstream DML
+* (e.g. DRC_NBC_OrderReadUpdateQueueable) is safely enqueued inside
+* processOrderSync after all callouts finish.
+*/
+    public class OrderSyncQueueable implements Queueable, Database.AllowsCallouts {
+        private Id orderRecordId;
+        private Id accountId;
+        
+        public OrderSyncQueueable(Id orderRecordId, Id accountId) {
+            this.orderRecordId = orderRecordId;
+            this.accountId = accountId;
+        }
+        
+        public void execute(QueueableContext context) {
+            System.debug('*** OrderSyncQueueable Started ***');
+            try {
+                System.debug('Step 1: Re-querying Order with committed Ship-To Code...');
+                Order ord = DRC_NBC_Order_BC_Callout.getOrderDetails(orderRecordId);
+                System.debug('Ship-To Code on Order: ' + ord.DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c);
+                
+                System.debug('Step 2: Processing Order Sync...');
                 String orderSyncResult = processOrderSync(ord, accountId);
                 System.debug('Order Sync Result: ' + orderSyncResult);
                 
             } catch (Exception ex) {
-                System.debug('*** EXCEPTION in ShippingAndOrderCalloutQueueable ***');
+                System.debug('*** EXCEPTION in OrderSyncQueueable ***');
                 System.debug('Exception Message: ' + ex.getMessage());
                 System.debug('Stack Trace: ' + ex.getStackTraceString());
             }
@@ -176,40 +226,75 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     /**
 * Process Order Sync - Main orchestration method
-* CORRECTED EXECUTION ORDER:
-* 1. Read Order from BC (get Key)
-* 2. Update Order in BC
-* 3. Intelligent Line Item Sync (UPDATE → CREATE → DELETE)
+*
+* EXECUTION ORDER:
+* 1. Read Order from BC (get Key + Status)
+* 2. If Status = "Released" → reopen to "Open" → re-read for fresh Key
+* 3. Update Order in BC
+* 4. Intelligent Line Item Sync (UPDATE → CREATE → DELETE)
 */
     public static String processOrderSync(Order ord, Id accountId) {
         String resultMessage = '';
         
         try {
-            // Step 1: Read Order from BC to get Key
+            // Step 1: Read Order from BC to get Key + Status
             System.debug('Step 1: Reading Order from BC...');
-            String bcKey = readOrderFromBC(ord);
+            BCOrderReadResult readResult = readOrderFromBC(ord);
             
-            if (String.isBlank(bcKey)) {
+            if (readResult == null || String.isBlank(readResult.key)) {
                 System.debug('ERROR: Could not retrieve BC Key');
                 resultMessage = 'ERROR: Order not found in BC.';
                 return resultMessage;
             }
             
-            System.debug('BC Key Retrieved: ' + bcKey);
+            System.debug('BC Key Retrieved: ' + readResult.key);
+            System.debug('BC Order Status: ' + readResult.status);
             
-            // Step 2: Update Order in BC
-            System.debug('Step 2: Updating Order in BC...');
+            String bcKey = readResult.key;
+            
+            // Step 2: If order is Released, reopen it to Open first, then re-read for fresh Key
+            if (readResult.status == 'Released') {
+                System.debug('Step 2: Order is Released. Reopening to Open status...');
+                
+                String reopenResult = reopenOrderInBC(bcKey, ord);
+                System.debug('Reopen Result: ' + reopenResult);
+                
+                if (!reopenResult.contains('SUCCESS')) {
+                    resultMessage = 'ERROR: Failed to reopen Released order. ' + reopenResult;
+                    System.debug(resultMessage);
+                    return resultMessage;
+                }
+                
+                // Re-read to get fresh Key after status change
+                System.debug('Step 2b: Re-reading Order from BC to get fresh Key...');
+                BCOrderReadResult freshReadResult = readOrderFromBC(ord);
+                
+                if (freshReadResult == null || String.isBlank(freshReadResult.key)) {
+                    resultMessage = 'ERROR: Could not retrieve fresh BC Key after reopening order.';
+                    System.debug(resultMessage);
+                    return resultMessage;
+                }
+                
+                bcKey = freshReadResult.key;
+                System.debug('Fresh BC Key Retrieved: ' + bcKey);
+                System.debug('Fresh BC Order Status: ' + freshReadResult.status);
+            } else {
+                System.debug('Step 2: Order status is Open. No reopen needed.');
+            }
+            
+            // Step 3: Update Order in BC
+            System.debug('Step 3: Updating Order in BC...');
             String orderResult = updateOrderInBC(bcKey, ord, false);
             System.debug('Order Update Result: ' + orderResult);
             
-            // Step 3: If order update successful, sync line items
+            // Step 4: If order update successful, sync line items
             if (orderResult.contains('SUCCESS')) {
-                System.debug('Step 3: Order updated - Syncing line items...');
+                System.debug('Step 4: Order updated - Syncing line items...');
                 String lineItemResult = intelligentLineItemSync(ord.DRC_NBC_Cust_Order_Number__c, ord.Id);
                 System.debug('Line Items Sync Result: ' + lineItemResult);
                 resultMessage = orderResult + ' | ' + lineItemResult;
             } else {
-                System.debug('Step 3: Order update failed - Skipping line items');
+                System.debug('Step 4: Order update failed - Skipping line items');
                 resultMessage = orderResult;
             }
             
@@ -224,8 +309,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     /**
 * Intelligent Line Item Sync
-* 
-* CORRECTED WORKFLOW:
+*
+* WORKFLOW:
 * 1. UPDATE: Update all matched line items (matched products + existing tax lines with non-zero amounts)
 * 2. CREATE: Create new product items at next available line number
 * 3. DELETE: Delete unmatched PRODUCT items ONLY (tax lines preserved)
@@ -262,14 +347,13 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             // Separate BC lines into products and taxes
             List<BCLineItem> bcProductLines = new List<BCLineItem>();
-            Map<String, BCLineItem> bcTaxLines = new Map<String, BCLineItem>(); // Key: "TCS" or "OTHER_TAX"
+            Map<String, BCLineItem> bcTaxLines = new Map<String, BCLineItem>();
             
             if (bcLineDetails != null) {
                 for (BCLineItem bcLine : bcLineDetails.values()) {
                     if (bcLine.lineType == 'Item') {
                         bcProductLines.add(bcLine);
                     } else {
-                        // Tax line
                         if (bcLine.description != null && bcLine.description.contains('TCS')) {
                             bcTaxLines.put('TCS', bcLine);
                         } else if (bcLine.description != null && bcLine.description.contains('Other Tax')) {
@@ -282,13 +366,12 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             System.debug('  BC Product Lines: ' + bcProductLines.size());
             System.debug('  BC Tax Lines: ' + bcTaxLines.size());
             
-            // Match SF items with BC product lines - MATCH BY FG CODE ONLY
+            // Match SF items with BC product lines by FG Code
             Map<Integer, String> linesToUpdate = new Map<Integer, String>();
             Set<Integer> matchedBCLineNos = new Set<Integer>();
             Set<String> matchedSFFGCodes = new Set<String>();
             List<OrderItem> itemsToCreate = new List<OrderItem>();
             
-            // Create a map of BC lines by FG Code for easier lookup
             Map<String, BCLineItem> bcLinesByFGCode = new Map<String, BCLineItem>();
             for (BCLineItem bcLine : bcProductLines) {
                 if (String.isNotBlank(bcLine.itemNo)) {
@@ -299,10 +382,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             for (OrderItem sfItem : orderItems) {
                 String sfFGCode = sfItem.Product2.DRC_NBC_FG_Code__c;
                 
-                // Try to match with BC product line BY FG CODE ONLY
                 if (bcLinesByFGCode.containsKey(sfFGCode)) {
                     BCLineItem bcLine = bcLinesByFGCode.get(sfFGCode);
-                    
                     if (!matchedBCLineNos.contains(bcLine.lineNo)) {
                         linesToUpdate.put(bcLine.lineNo, bcLine.key);
                         matchedBCLineNos.add(bcLine.lineNo);
@@ -310,13 +391,12 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         System.debug('  MATCHED for UPDATE: Line ' + bcLine.lineNo + ', FG Code: ' + sfFGCode);
                     }
                 } else {
-                    // No BC line with this FG Code - CREATE new item
                     itemsToCreate.add(sfItem);
                     System.debug('  NEW ITEM to CREATE: ' + sfFGCode);
                 }
             }
             
-            // Add tax lines to update list if they exist in BC AND have non-zero amounts in SF
+            // Add tax lines to update list
             if (bcTaxLines.containsKey('OTHER_TAX')) {
                 if (ord.DRC_NBC_Other_Tax_Amount__c != null && ord.DRC_NBC_Other_Tax_Amount__c != 0) {
                     BCLineItem taxLine = bcTaxLines.get('OTHER_TAX');
@@ -332,7 +412,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 }
             }
             
-            // Find unmatched BC PRODUCT lines to delete (EXCLUDE TAX LINES)
+            // Find unmatched BC PRODUCT lines to delete
             Map<Integer, String> linesToDelete = new Map<Integer, String>();
             for (BCLineItem bcLine : bcProductLines) {
                 if (!matchedBCLineNos.contains(bcLine.lineNo)) {
@@ -341,13 +421,12 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 }
             }
             
-            // CRITICAL: Tax lines are ONLY deleted if their amount changed to ZERO
-            // If tax exists in BC and SF still has non-zero amount, it stays (will be updated)
+            // Tax lines deleted ONLY if amount changed to zero
             if (bcTaxLines.containsKey('OTHER_TAX')) {
                 if (ord.DRC_NBC_Other_Tax_Amount__c == null || ord.DRC_NBC_Other_Tax_Amount__c == 0) {
                     BCLineItem taxLine = bcTaxLines.get('OTHER_TAX');
                     linesToDelete.put(taxLine.lineNo, taxLine.key);
-                    linesToUpdate.remove(taxLine.lineNo); // Remove from update list
+                    linesToUpdate.remove(taxLine.lineNo);
                     System.debug('  OTHER TAX line marked for DELETE (amount changed to zero)');
                 } else {
                     System.debug('  OTHER TAX line PRESERVED (amount: ' + ord.DRC_NBC_Other_Tax_Amount__c + ')');
@@ -358,7 +437,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 if (ord.DRC_NBC_TCS_Amount__c == null || ord.DRC_NBC_TCS_Amount__c == 0) {
                     BCLineItem taxLine = bcTaxLines.get('TCS');
                     linesToDelete.put(taxLine.lineNo, taxLine.key);
-                    linesToUpdate.remove(taxLine.lineNo); // Remove from update list
+                    linesToUpdate.remove(taxLine.lineNo);
                     System.debug('  TCS line marked for DELETE (amount changed to zero)');
                 } else {
                     System.debug('  TCS line PRESERVED (amount: ' + ord.DRC_NBC_TCS_Amount__c + ')');
@@ -366,26 +445,26 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             }
             
             String resultMessage = '';
+            String updateResult = 'NO_UPDATE';
+            String createResult = 'NO_CREATE';
+            String deleteResult = 'NO_DELETE';
             
-            // ====================================================================
-            // STEP 1: UPDATE existing matched lines (products + taxes)
-            // ====================================================================
-            String updateResult = '';
+            // STEP 1: UPDATE existing matched lines
             if (!linesToUpdate.isEmpty()) {
                 System.debug('  STEP 1: Updating ' + linesToUpdate.size() + ' existing lines...');
-                updateResult = updateMultipleLineItems(bcOrderNo, linesToUpdate, orderItems, ord, orderId, bcLineDetails);
-                System.debug('  Enqueuing DRC_NBC_OrderReadUpdateQueueable...');
-             //   System.enqueueJob(new DRC_NBC_OrderReadUpdateQueueable(orderId));
-               DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
+                updateResult = updateMultipleLineItems(
+                    bcOrderNo,
+                    linesToUpdate,
+                    orderItems,
+                    ord,
+                    orderId,
+                    bcLineDetails
+                );
                 System.debug('  Update Result: ' + updateResult);
             }
             
-            // ====================================================================
-            // STEP 2: CREATE new product items (at next available line number)
-            // ====================================================================
-            String createResult = '';
+            // STEP 2: CREATE new product items
             if (!itemsToCreate.isEmpty()) {
-                // Calculate next available line number
                 Integer maxLineNo = 0;
                 if (bcLineDetails != null && !bcLineDetails.isEmpty()) {
                     for (Integer lineNo : bcLineDetails.keySet()) {
@@ -395,27 +474,31 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     }
                 }
                 
-                // Next line starts at maxLineNo + 10000
                 Integer nextLineNo = maxLineNo + 10000;
                 System.debug('  STEP 2: Creating ' + itemsToCreate.size() + ' new items starting at line ' + nextLineNo);
                 
                 createResult = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
-                    bcOrderNo, itemsToCreate, ord, nextLineNo
+                    bcOrderNo,
+                    itemsToCreate,
+                    ord,
+                    nextLineNo
                 );
                 System.debug('  Create Result: ' + createResult);
             }
             
-            // ====================================================================
-            // STEP 3: DELETE unmatched lines (products + zeroed taxes)
-            // ====================================================================
-            String deleteResult = '';
+            // STEP 3: DELETE unmatched lines
             if (!linesToDelete.isEmpty()) {
                 System.debug('  STEP 3: Deleting ' + linesToDelete.size() + ' unmatched/zeroed lines...');
                 deleteResult = DRC_NBC_LineItemDeleter.deleteLineItems(linesToDelete);
                 System.debug('  Delete Result: ' + deleteResult);
             }
             
-            // Build result message
+            // STEP 4: DO DML ONLY AFTER ALL CALLOUTS FINISH
+            if (!linesToUpdate.isEmpty()) {
+                System.debug('  STEP 4: Updating Salesforce Order status after all callouts...');
+                DRC_NBC_OrderReadUpdateQueueable.execute(orderId);
+            }
+            
             resultMessage = 'UPDATE: ' + updateResult + ' | CREATE: ' + createResult + ' | DELETE: ' + deleteResult;
             return resultMessage;
             
@@ -428,9 +511,9 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     }
     
     /**
-* READ Operation - Get BC Key for Order
+* READ Operation - Get BC Key + Status for Order
 */
-    private static String readOrderFromBC(Order ord) {
+    private static BCOrderReadResult readOrderFromBC(Order ord) {
         System.debug('  *** READ Order Operation Started ***');
         
         try {
@@ -455,9 +538,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             System.debug('  Read Response Status Code: ' + response.getStatusCode());
             
             if (response.getStatusCode() == 200) {
-                String key = extractKeyFromReadResponse(response.getBody());
-                System.debug('  Key Extracted: ' + key);
-                return key;
+                BCOrderReadResult result = extractKeyAndStatusFromReadResponse(response.getBody());
+                System.debug('  Key Extracted: ' + (result != null ? result.key : 'NULL'));
+                System.debug('  Status Extracted: ' + (result != null ? result.status : 'NULL'));
+                return result;
             } else {
                 System.debug('  ERROR: Read failed with status: ' + response.getStatusCode());
                 return null;
@@ -466,6 +550,50 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         } catch (Exception ex) {
             System.debug('  *** READ Exception: ' + ex.getMessage());
             return null;
+        }
+    }
+    
+    /**
+* REOPEN Operation - Update BC Order status from Released → Open
+*/
+    private static String reopenOrderInBC(String bcKey, Order ord) {
+        System.debug('  *** REOPEN Order Operation Started ***');
+        System.debug('  BC Key: ' + bcKey);
+        
+        try {
+            String requestBody = buildReopenOrderSOAPRequest(bcKey, ord.DRC_NBC_Cust_Order_Number__c);
+            
+            HttpRequest req = new HttpRequest();
+            req.setEndpoint(BC_ORDER_ENDPOINT);
+            req.setMethod('POST');
+            req.setHeader('Content-Type', 'text/xml; charset=utf-8');
+            req.setHeader('SOAPAction', SOAP_ORDER_NAMESPACE + ':Update');
+            
+            Blob headerValue = Blob.valueOf(BC_USERNAME + ':' + BC_PASSWORD);
+            String authorizationHeader = 'Basic ' + EncodingUtil.base64Encode(headerValue);
+            req.setHeader('Authorization', authorizationHeader);
+            
+            req.setBody(requestBody);
+            req.setTimeout(120000);
+            
+            Http http = new Http();
+            HttpResponse response = http.send(req);
+            
+            System.debug('  Reopen Response Status Code: ' + response.getStatusCode());
+            System.debug('  Reopen Response Status: ' + response.getStatus());
+            System.debug('  Reopen Response Body: ' + response.getBody());
+            
+            if (response.getStatusCode() == 200) {
+                System.debug('  Order Reopened Successfully (Released → Open)');
+                return 'REOPEN_SUCCESS';
+            } else {
+                System.debug('  ERROR: Reopen failed - ' + response.getStatusCode());
+                return 'FAILURE: ' + response.getStatusCode() + ' | ' + response.getBody();
+            }
+            
+        } catch (Exception ex) {
+            System.debug('  *** REOPEN Exception: ' + ex.getMessage());
+            return 'ERROR: ' + ex.getMessage();
         }
     }
     
@@ -479,10 +607,9 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         try {
             DRC_NBC_Integration_Payload.OrderPayload payload = DRC_NBC_Order_BC_Callout.mapOrderToBCPayload(ord);
             
-            // Fetch Location_Code from metadata if not already set
             if (String.isNotBlank(ord.DRC_NBC_Warehouse__c)) {
                 String warehouseLabel = ord.DRC_NBC_Warehouse__c;
-                System.debug('Class DRC_NBC_UpdateOrderAndLineItems warehouseLabel>>>  '+ warehouseLabel);
+                System.debug('Class DRC_NBC_UpdateOrderAndLineItems warehouseLabel>>>  ' + warehouseLabel);
                 List<Warehouse_Location_Code__mdt> metaList = [
                     SELECT DRC_NBC_Code__c FROM Warehouse_Location_Code__mdt
                     WHERE MasterLabel = :warehouseLabel AND DRC_NBC_Type__c = 'Warehouse Location'
@@ -495,6 +622,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             }
             
             String requestBody = buildUpdateOrderSOAPRequest(bcKey, payload, ord);
+            System.debug('### ORDER No: ' + payload.No + ' | BC Key: ' + bcKey);
             
             System.debug('  Syncing Shipping Address in BC before Order update...');
             String shipSyncResult = DRC_NBC_UpdateShippingAddress.syncShippingAddress(ord.Id);
@@ -515,8 +643,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             Http http = new Http();
             HttpResponse response = http.send(req);
-            
+            System.debug('  Update Order BC_ORDER_ENDPOINT: ' + BC_ORDER_ENDPOINT);
             System.debug('  Update Response Status Code: ' + response.getStatusCode());
+            System.debug('  Update Response Status: ' + response.getStatus());
+            System.debug('  Update Response Body: ' + response.getBody());
             
             if (response.getStatusCode() == 200) {
                 System.debug('  Order Updated Successfully in BC');
@@ -578,9 +708,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     /**
 * UpdateMultiple - Update line items in BC
-* CORRECTED: Properly matches BC Keys with their corresponding items (products vs taxes)
 */
-    private static String updateMultipleLineItems(String bcOrderNo, Map<Integer, String> bcLineKeys, 
+    private static String updateMultipleLineItems(String bcOrderNo, Map<Integer, String> bcLineKeys,
                                                   List<OrderItem> orderItems, Order ord, Id orderId,
                                                   Map<Integer, BCLineItem> bcLineDetails) {
                                                       System.debug('    *** UpdateMultiple Started ***');
@@ -608,7 +737,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                           
                                                           if (response.getStatusCode() == 200) {
                                                               return 'SUCCESS';
-                                                              
                                                           } else {
                                                               System.debug('    Response Body: ' + response.getBody());
                                                               return 'FAILURE: ' + response.getStatusCode();
@@ -626,7 +754,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     // ========================================================================
     
     private static String buildReadSOAPRequest(String bcOrderNumber) {
-        return 
+        return
             '<?xml version="1.0" encoding="utf-8"?>' +
             '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
             '<soap:Body>' +
@@ -638,8 +766,25 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '</soap:Envelope>';
     }
     
+    private static String buildReopenOrderSOAPRequest(String bcKey, String bcOrderNo) {
+        return
+            '<?xml version="1.0" encoding="utf-8"?>' +
+            '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+            '<soap:Body>' +
+            '<Update xmlns="' + SOAP_ORDER_NAMESPACE + '">' +
+            '<SalesOrderSalesForce>' +
+            '<Key>' + escapeXml(bcKey) + '</Key>' +
+            '<Document_Type>Order</Document_Type>' +
+            '<No>' + escapeXml(bcOrderNo) + '</No>' +
+            '<Status>Open</Status>' +
+            '</SalesOrderSalesForce>' +
+            '</Update>' +
+            '</soap:Body>' +
+            '</soap:Envelope>';
+    }
+    
     private static String buildUpdateOrderSOAPRequest(String bcKey, DRC_NBC_Integration_Payload.OrderPayload payload, Order ord) {
-        return 
+        return
             '<?xml version="1.0" encoding="utf-8"?>' +
             '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
             '<soap:Body>' +
@@ -647,6 +792,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '<SalesOrderSalesForce>' +
             '<Key>' + escapeXml(bcKey) + '</Key>' +
             '<No>' + escapeXml(payload.No) + '</No>' +
+            '<Document_Type>' + escapeXml(payload.Document_Type) + '</Document_Type>' +
             '<Sell_to_Customer_No>' + escapeXml(payload.Sell_to_Customer_No) + '</Sell_to_Customer_No>' +
             '<Sell_to_Customer_Name>' + escapeXml(payload.Sell_to_Customer_Name) + '</Sell_to_Customer_Name>' +
             '<Sell_to_Address>' + escapeXml(payload.Sell_to_Address) + '</Sell_to_Address>' +
@@ -656,9 +802,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '<Order_Date>' + escapeXml(payload.Order_Date) + '</Order_Date>' +
             '<External_Document_No>' + escapeXml(payload.External_Document_No) + '</External_Document_No>' +
             '<Salesperson_Code>' + escapeXml(payload.Salesperson_Code) + '</Salesperson_Code>' +
-            '<Status>' + escapeXml(payload.Status) + '</Status>' +
+            '<Status>Open</Status>' +
             '<Location_Code>' + escapeXml(payload.Location_Code) + '</Location_Code>' +
-            //'<Location_Code>CFS</Location_Code>' +
             '<Payment_Terms_Code>' + escapeXml(payload.Payment_Terms_Code) + '</Payment_Terms_Code>' +
             '<Shipment_Method_Code>' + escapeXml(payload.Shipment_Method_Code) + '</Shipment_Method_Code>' +
             '<Sample_Sales>' + payload.Sample_Sales + '</Sample_Sales>' +
@@ -672,6 +817,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '<Ship_to_Country_Region_Code>' + escapeXml(payload.Ship_to_Country_Region_Code) + '</Ship_to_Country_Region_Code>' +
             '<Salesforce_Order_Amount>' + payload.Salesforce_Order_Amount + '</Salesforce_Order_Amount>' +
             '<Salesforce_Order_Created>' + payload.Salesforce_Order_Created + '</Salesforce_Order_Created>' +
+            '<Currency_Code>' + escapeXml(payload.Currency_Code) + '</Currency_Code>' +
             '</SalesOrderSalesForce>' +
             '</Update>' +
             '</soap:Body>' +
@@ -679,7 +825,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     }
     
     private static String buildReadMultipleSOAPRequest(String bcOrderNo) {
-        return 
+        return
             '<?xml version="1.0" encoding="utf-8"?>' +
             '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
             '<soap:Body>' +
@@ -694,27 +840,23 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '</soap:Envelope>';
     }
     
-    /**
-* Build UpdateMultiple SOAP Request
-* CORRECTED: Properly matches BC Keys with their corresponding items (products vs taxes)
-*/
-    private static String buildUpdateMultipleSOAPRequest(String bcOrderNo, Map<Integer, String> bcLineKeys, 
+    private static String buildUpdateMultipleSOAPRequest(String bcOrderNo, Map<Integer, String> bcLineKeys,
                                                          List<OrderItem> orderItems, Order ord,
                                                          Map<Integer, BCLineItem> bcLineDetails) {
                                                              System.debug('    *** buildUpdateMultipleSOAPRequest Started ***');
                                                              System.debug('    BC Line Keys to Update: ' + bcLineKeys.keySet());
                                                              
-                                                             String soapBody = 
+                                                             String soapBody =
                                                                  '<?xml version="1.0" encoding="utf-8"?>' +
                                                                  '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
                                                                  '<soap:Body>' +
                                                                  '<UpdateMultiple xmlns="' + SOAP_LINE_NAMESPACE + '">' +
                                                                  '<SalesOrderLineSalesForce_List>';
                                                              
-                                                             // Separate product keys from tax keys using bcLineDetails
+                                                             // Separate product keys from tax keys
                                                              Map<Integer, String> productKeys = new Map<Integer, String>();
-                                                             Map<String, String> taxKeys = new Map<String, String>(); // Map: "TCS" or "OTHER_TAX" -> bcKey
-                                                             Map<String, Integer> taxLineNos = new Map<String, Integer>(); // Map: "TCS" or "OTHER_TAX" -> lineNo
+                                                             Map<String, String> taxKeys = new Map<String, String>();
+                                                             Map<String, Integer> taxLineNos = new Map<String, Integer>();
                                                              
                                                              for (Integer lineNo : bcLineKeys.keySet()) {
                                                                  String bcKey = bcLineKeys.get(lineNo);
@@ -725,7 +867,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          productKeys.put(lineNo, bcKey);
                                                                          System.debug('    Product Key: Line ' + lineNo + ' -> ' + bcKey);
                                                                      } else {
-                                                                         // Tax line
                                                                          if (bcLine.description != null && bcLine.description.contains('TCS')) {
                                                                              taxKeys.put('TCS', bcKey);
                                                                              taxLineNos.put('TCS', lineNo);
@@ -739,14 +880,12 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                  }
                                                              }
                                                              
-                                                             // Sort product line numbers to maintain order
                                                              List<Integer> sortedProductLineNos = new List<Integer>(productKeys.keySet());
                                                              sortedProductLineNos.sort();
                                                              
                                                              System.debug('    Sorted Product Lines: ' + sortedProductLineNos);
                                                              System.debug('    Number of OrderItems: ' + orderItems.size());
                                                              
-                                                             // Update Product Items - Match by FG Code ONLY (not quantity)
                                                              Map<String, OrderItem> sfItemsByFGCode = new Map<String, OrderItem>();
                                                              for (OrderItem item : orderItems) {
                                                                  String fgCode = item.Product2.DRC_NBC_FG_Code__c;
@@ -763,7 +902,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                      continue;
                                                                  }
                                                                  
-                                                                 // Find matching SF item by FG Code ONLY
                                                                  String fgCode = bcLine.itemNo;
                                                                  OrderItem matchedItem = sfItemsByFGCode.get(fgCode);
                                                                  
@@ -780,7 +918,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          lineDiscountAmount = 0;
                                                                      }
                                                                      
-                                                                     soapBody += 
+                                                                     soapBody +=
                                                                          '<SalesOrderLineSalesForce>' +
                                                                          '<Key>' + escapeXml(bcKey) + '</Key>' +
                                                                          '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
@@ -806,17 +944,16 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                  }
                                                              }
                                                              
-                                                             // Update Other Tax Line (if exists and has non-zero amount)
-                                                             if (taxKeys.containsKey('OTHER_TAX') && 
-                                                                 ord.DRC_NBC_Other_Tax_Amount__c != null && 
+                                                             // Update Other Tax Line
+                                                             if (taxKeys.containsKey('OTHER_TAX') &&
+                                                                 ord.DRC_NBC_Other_Tax_Amount__c != null &&
                                                                  ord.DRC_NBC_Other_Tax_Amount__c != 0) {
                                                                      
                                                                      String otherTaxKey = taxKeys.get('OTHER_TAX');
                                                                      Integer otherTaxLineNo = taxLineNos.get('OTHER_TAX');
-                                                                     
                                                                      System.debug('    Updating Other Tax Line ' + otherTaxLineNo + ': ' + ord.DRC_NBC_Other_Tax_Amount__c);
                                                                      
-                                                                     soapBody += 
+                                                                     soapBody +=
                                                                          '<SalesOrderLineSalesForce>' +
                                                                          '<Key>' + escapeXml(otherTaxKey) + '</Key>' +
                                                                          '<Document_Type>Order</Document_Type>' +
@@ -839,17 +976,16 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          '</SalesOrderLineSalesForce>';
                                                                  }
                                                              
-                                                             // Update TCS Amount Line (if exists and has non-zero amount)
-                                                             if (taxKeys.containsKey('TCS') && 
-                                                                 ord.DRC_NBC_TCS_Amount__c != null && 
+                                                             // Update TCS Line
+                                                             if (taxKeys.containsKey('TCS') &&
+                                                                 ord.DRC_NBC_TCS_Amount__c != null &&
                                                                  ord.DRC_NBC_TCS_Amount__c != 0) {
                                                                      
                                                                      String tcsKey = taxKeys.get('TCS');
                                                                      Integer tcsLineNo = taxLineNos.get('TCS');
-                                                                     
                                                                      System.debug('    Updating TCS Line ' + tcsLineNo + ': ' + ord.DRC_NBC_TCS_Amount__c);
                                                                      
-                                                                     soapBody += 
+                                                                     soapBody +=
                                                                          '<SalesOrderLineSalesForce>' +
                                                                          '<Key>' + escapeXml(tcsKey) + '</Key>' +
                                                                          '<Document_Type>Order</Document_Type>' +
@@ -858,7 +994,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          '<Type>G/L Account</Type>' +
                                                                          '<No>70563200</No>' +
                                                                          '<Customer_item_no></Customer_item_no>' +
-                                                                         '<Description>Other Tax Amount</Description>' +
+                                                                         '<Description>TCS Amount</Description>' +
                                                                          '<Quantity>1</Quantity>' +
                                                                          '<Location_Code>' + ord.DRC_NBC_Location_Code__c + '</Location_Code>' +
                                                                          '<Unit_Price>' + ord.DRC_NBC_TCS_Amount__c + '</Unit_Price>' +
@@ -872,7 +1008,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          '</SalesOrderLineSalesForce>';
                                                                  }
                                                              
-                                                             soapBody += 
+                                                             soapBody +=
                                                                  '</SalesOrderLineSalesForce_List>' +
                                                                  '</UpdateMultiple>' +
                                                                  '</soap:Body>' +
@@ -886,11 +1022,14 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     // RESPONSE PARSERS
     // ========================================================================
     
-    private static String extractKeyFromReadResponse(String xmlResponse) {
+    private static BCOrderReadResult extractKeyAndStatusFromReadResponse(String xmlResponse) {
         try {
             Dom.Document doc = new Dom.Document();
             doc.load(xmlResponse);
             Dom.XmlNode root = doc.getRootElement();
+            
+            String key = null;
+            String status = null;
             
             for (Dom.XmlNode bodyNode : root.getChildElements()) {
                 if (bodyNode.getName().contains('Body')) {
@@ -900,7 +1039,9 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                 if (salesOrderNode.getName().contains('SalesOrderSalesForce')) {
                                     for (Dom.XmlNode fieldNode : salesOrderNode.getChildElements()) {
                                         if (fieldNode.getName() == 'Key') {
-                                            return fieldNode.getText();
+                                            key = fieldNode.getText();
+                                        } else if (fieldNode.getName() == 'Status') {
+                                            status = fieldNode.getText();
                                         }
                                     }
                                 }
@@ -909,9 +1050,16 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     }
                 }
             }
+            
+            System.debug('  Parsed Key: ' + key + ' | Status: ' + status);
+            
+            if (key != null) {
+                return new BCOrderReadResult(key, status);
+            }
             return null;
+            
         } catch (Exception ex) {
-            System.debug('Exception extracting Key: ' + ex.getMessage());
+            System.debug('Exception extracting Key and Status: ' + ex.getMessage());
             return null;
         }
     }
@@ -941,7 +1089,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                             
                                             for (Dom.XmlNode fieldNode : lineNode.getChildElements()) {
                                                 String fieldName = fieldNode.getName();
-                                                
                                                 if (fieldName == 'Key') {
                                                     key = fieldNode.getText();
                                                 } else if (fieldName == 'Line_No') {

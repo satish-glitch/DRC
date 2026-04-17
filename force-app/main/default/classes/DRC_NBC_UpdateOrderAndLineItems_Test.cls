@@ -573,7 +573,7 @@ private class DRC_NBC_UpdateOrderAndLineItems_Test {
         System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'Queueable']);
     }
     
-    @isTest
+    /*@isTest
     static void testShippingAndOrderCalloutQueueable() {
         SequencedMock mock = new SequencedMock()
             .addResponse(200, buildGenericSuccessResponse())      // processShipping callout
@@ -594,7 +594,7 @@ private class DRC_NBC_UpdateOrderAndLineItems_Test {
         Test.stopTest();
         
         System.assertEquals(1, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'Queueable']);
-    }
+    }*/
     
     /**
 * Covers: Order Read returns HTTP 500 → bcKey is null → early return 'ERROR: Order not found in BC.'

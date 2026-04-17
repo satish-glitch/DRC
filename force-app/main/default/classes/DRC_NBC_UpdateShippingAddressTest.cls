@@ -13,7 +13,7 @@ private class DRC_NBC_UpdateShippingAddressTest {
         DRC_NBC_BC_Integration__c settings = new DRC_NBC_BC_Integration__c(
             SetupOwnerId                    = UserInfo.getOrganizationId(),
             DRC_NBC_BC_ShipTo_Endpoint__c   = shipToEndpoint,
-            DRC_NBC_SOAP_Order_Namespace__c  = 'urn:microsoft-dynamics-schemas/page/customershiptoaddresssalesforce',
+            Soap_Address_NameSpace__c  = 'urn:microsoft-dynamics-schemas/page/customershiptoaddresssalesforce',
             DRC_NBC_Username__c             = 'testuser',
             DRC_NBC_Password__c             = 'testpass'
         );

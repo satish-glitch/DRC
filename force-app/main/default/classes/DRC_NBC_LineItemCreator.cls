@@ -161,6 +161,8 @@ public class DRC_NBC_LineItemCreator {
                 '<GST_Credit>' + GST_CREDIT_VALUE + '</GST_Credit>' +
                 '<GST_Group_Code>' + escapeXml(item.Product2.DRC_NBC_GST_Group_Code__c) + '</GST_Group_Code>' +
                 '<HSN_SAC_Code>' + escapeXml(item.Product2.DRC_NBC_HSN_SAC_Code__c) + '</HSN_SAC_Code>' +
+                '<No_of_Pkg_for_Qty>' + (item.DRC_NBC_Packing_Quantity__c != null ? String.valueOf(item.DRC_NBC_Packing_Quantity__c) :'0') + '</No_of_Pkg_for_Qty>' +
+                '<Packing_Details>' + escapeXml(item.DRC_NBC_Packing_Size__c != null ? item.DRC_NBC_Packing_Size__c : '') + '</Packing_Details>' +
                 '</SalesOrderLineSalesForce>';
             
             currentLineNo += 10000; // Increment by 10000 for next item

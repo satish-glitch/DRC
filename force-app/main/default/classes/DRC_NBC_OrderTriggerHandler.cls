@@ -33,13 +33,12 @@ public class DRC_NBC_OrderTriggerHandler {
                     Order oldO = oldMap.get(o.Id);
                     
                     Boolean whChanged = (o.DRC_NBC_Warehouse__c != oldO.DRC_NBC_Warehouse__c);
-                    if (whChanged && o.DRC_NBC_Warehouse__c != null) {
+                    Boolean incoChanged = (o.DRC_NBC_Inco_Terms__c != oldO.DRC_NBC_Inco_Terms__c);
+                    
+                    if ((whChanged || incoChanged) && o.DRC_NBC_Shipping_Address__c != null) {
                         toProcess.add(o);
                     }
                     
-                    // -------------------------
-                    // NEW: Status change emails
-                    // -------------------------
                     String oldStatus = oldO.Status;
                     String newStatus = o.Status;
                     
@@ -49,18 +48,18 @@ public class DRC_NBC_OrderTriggerHandler {
                         statusTransitions.put(o.Id, 'R2A');
                     }
                 }
+                
+                // Run existing warehouse -> address updates
+                if (!toProcess.isEmpty()) {
+                    updateRelatedAddresses(toProcess);
+                }
+                
+                // Send emails for status transitions
+                if (!statusTransitions.isEmpty()) {
+                    sendStatusChangeEmails(statusTransitions);
+                }
+                
             }
-            
-            // Run existing warehouse -> address updates
-            if (!toProcess.isEmpty()) {
-                updateRelatedAddresses(toProcess);
-            }
-            
-            // Send emails for status transitions
-            if (!statusTransitions.isEmpty()) {
-                sendStatusChangeEmails(statusTransitions);
-            }
-            
         } finally {
             isRunning = false;
         }
@@ -82,7 +81,7 @@ public class DRC_NBC_OrderTriggerHandler {
         
         List<DRC_NBC_Addresses__c> addrToUpdate = new List<DRC_NBC_Addresses__c>();
         for (DRC_NBC_Addresses__c a : [
-            SELECT Id, DRC_NBC_Warehouse__c
+            SELECT Id, DRC_NBC_Warehouse__c, DRC_Inco_Term__c
             FROM DRC_NBC_Addresses__c
             WHERE Id IN :addressIds
         ]) {
@@ -90,6 +89,7 @@ public class DRC_NBC_OrderTriggerHandler {
             Order o = orderMap.get(orderId);
             
             a.DRC_NBC_Warehouse__c = o.DRC_NBC_Warehouse__c;
+            a.DRC_Inco_Term__c = o.DRC_NBC_Inco_Terms__c;
             addrToUpdate.add(a);
         }
         

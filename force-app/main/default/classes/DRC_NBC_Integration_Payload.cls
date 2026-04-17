@@ -74,6 +74,7 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Post_Code;
         public String P_A_N_No;
         public String GST_Registration_No;
+        public String GST_Customer_Type ;
         public String Phone_No;
         public String Mobile_Phone_No;
         public String E_Mail;
@@ -99,6 +100,7 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String ShippingGSTRegistrationNo;
         public String Shipment_Method_Code;
         public String Location_Code;
+        public String Ship_to_GST_Customer_Type;
     }
     
     public class OrderPayload {
@@ -119,8 +121,8 @@ global with sharing class DRC_NBC_Integration_Payload {
         public Boolean Sample_Sales;
         public String Salesforce_So_No;
         public String External_Document_No;
-      /*  public String Ship_to_GST_Customer_Type;
-        public String Ship_to_GST_Reg_No;*/
+        public String Ship_to_GST_Customer_Type;
+        public String Ship_to_GST_Reg_No;
         public String Ship_to_Code;
         public String Ship_to_Country_Region_Code;
         public String Ship_to_Name;
@@ -128,10 +130,10 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Ship_to_Address;
         public String Ship_to_Address_2;
         public String Ship_to_Post_Code;
-        public String Ship_to_City;
         Public Decimal Salesforce_Order_Amount;
         Public Boolean Salesforce_Order_Created;
         Public String Currency_Code;
+        Public Boolean Export_Document; 
         
         
     }

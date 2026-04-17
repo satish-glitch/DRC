@@ -21,9 +21,9 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
     }
     
     /**
-     * Static method to process shipping callout
-     * Can be called from Queueable or directly
-     */
+* Static method to process shipping callout
+* Can be called from Queueable or directly
+*/
     public static String processShipping(Id accountId, Id orderId) {
         try {
             DRC_NBC_Integration_Payload.ShipToPayload payload = 
@@ -42,12 +42,12 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
             HttpResponse response = integration.executeAndReturnResponse();
             
             if (response != null && (response.getStatusCode() == 200 || 
-                response.getStatusCode() == 201)) {
-                return 'SUCCESS: HTTP ' + response.getStatusCode();
-            } else {
-                return 'FAILURE: HTTP ' + (response != null ? 
-                    String.valueOf(response.getStatusCode()) : 'NO_RESPONSE');
-            }
+                                     response.getStatusCode() == 201)) {
+                                         return 'SUCCESS: HTTP ' + response.getStatusCode();
+                                     } else {
+                                         return 'FAILURE: HTTP ' + (response != null ? 
+                                                                    String.valueOf(response.getStatusCode()) : 'NO_RESPONSE');
+                                     }
             
         } catch (Exception e) {
             DRC_NBC_API_Log_Handler.createApiLog(
@@ -61,9 +61,9 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
     }
     
     /**
-     * Get shipping payload for callout
-     * Public static so it can be called from Order BC Callout
-     */
+* Get shipping payload for callout
+* Public static so it can be called from Order BC Callout
+*/
     public static DRC_NBC_Integration_Payload.ShipToPayload getShippingPayload(
         Id accountId, Id orderId
     ) {
@@ -73,17 +73,17 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
             WHERE Id = :orderId
             LIMIT 1
         ];
-
+        
         DRC_NBC_Integration_Payload.ShipToPayload payload = null;
         
         List<Account> accounts = [
             SELECT Id, Name, Phone, DRC_NBC_Customer_Number__c,
             (
                 SELECT Id, DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s,
-                    DRC_NBC_Address__CountryCode__s, DRC_NBC_Address__PostalCode__s,
-                    DRC_NBC_GST_Number__c, DRC_NBC_Address__StateCode__s, 
-                    DRC_NBC_Warehouse__c, DRC_NBC_Type__c, DRC_NBC_Ship_To_Code__c, 
-                    DRC_NBC_Order__c
+                DRC_NBC_Address__CountryCode__s, DRC_NBC_Address__PostalCode__s,
+                DRC_NBC_GST_Number__c, DRC_NBC_Address__StateCode__s, DRC_Inco_Term__c,
+                DRC_NBC_Warehouse__c, DRC_NBC_Type__c, DRC_NBC_Ship_To_Code__c, DRC_Shipping_Gst_Customer_Type__c,
+                DRC_NBC_Order__c
                 FROM Address__r
                 WHERE DRC_NBC_Type__c = 'Shipping'
                 AND Id = :ord.DRC_NBC_Shipping_Address__c
@@ -97,10 +97,10 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
         
         if (accounts.isEmpty() || accounts[0].Address__r == null || 
             accounts[0].Address__r.isEmpty()) {
-            System.debug('No shipping address found for Account: ' + accountId + 
-                ', Order: ' + orderId);
-            return null;
-        }
+                System.debug('No shipping address found for Account: ' + accountId + 
+                             ', Order: ' + orderId);
+                return null;
+            }
         
         Account acc = accounts[0];
         DRC_NBC_Addresses__c addr = acc.Address__r[0];
@@ -108,6 +108,21 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
         payload = new DRC_NBC_Integration_Payload.ShipToPayload();
         payload.CustomerNo = acc.DRC_NBC_Customer_Number__c;
         payload.ShiptoCode = addr.DRC_NBC_Ship_To_Code__c;
+        If (payload.ShiptoCode == null) {
+            AggregateResult result = [
+                SELECT MAX(DRC_NBC_Ship_To_Code__c) maxSeq
+                FROM DRC_NBC_Addresses__c
+                WHERE DRC_NBC_Type__c = 'Shipping'
+            ];
+            
+            Decimal maxDecimal = (Decimal) result.get('maxSeq');
+            Integer currentMax = (maxDecimal != null) ? maxDecimal.intValue() : 0;
+            currentMax++;
+            payload.ShiptoCode = string.valueOf(currentMax);
+            System.debug('Shipto code >>> '+  currentMax);
+            
+        }
+        System.debug('Shipto code >>> '+  payload.ShiptoCode);
         payload.Name = acc.Name;
         
         // Address split (100 char limit per field)
@@ -132,7 +147,7 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
         payload.ShippingCountry = 'IND';
         payload.ShippingPhoneNo = acc.Phone;
         payload.ShippingGSTRegistrationNo = addr.DRC_NBC_GST_Number__c;
-        payload.Shipment_Method_Code = '';
+        payload.Ship_to_GST_Customer_Type  = addr.DRC_Shipping_Gst_Customer_Type__c;
         
         // Warehouse metadata lookup
         String warehouseLabel = addr.DRC_NBC_Warehouse__c;
@@ -153,6 +168,26 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
             payload.Location_Code = null;
         }
         
+        // Fetch Inco Terms Metadata
+        Warehouse_Location_Code__mdt incoTermsMeta;
+        String incoTermsLabel = addr.DRC_Inco_Term__c;
+        String termType = 'Inco Terms';
+        
+        List<Warehouse_Location_Code__mdt> incoTermsList = [
+            SELECT MasterLabel, DRC_NBC_Code__c, DRC_NBC_Type__c 
+            FROM Warehouse_Location_Code__mdt
+            WHERE MasterLabel = :incoTermsLabel 
+            AND DRC_NBC_Type__c = :termType
+            LIMIT 1
+        ];
+        
+        if (!incoTermsList.isEmpty()) {
+            incoTermsMeta = incoTermsList[0];
+            System.debug('Fetched Inco Terms Metadata Code: ' + incoTermsMeta.DRC_NBC_Code__c);
+        } else {
+            System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
+        }
+        payload.Shipment_Method_Code = incoTermsMeta.DRC_NBC_Code__c;
         return payload;
     }
     

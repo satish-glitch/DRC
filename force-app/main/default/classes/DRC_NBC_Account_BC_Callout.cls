@@ -28,10 +28,10 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         return [
             SELECT Id, Name, DRC_NBC_PAN_No__c, DRC_NBC_Payment_Term_Code__c, DRC_NBC_Customer_Number__c,DRC_NBC_BC_Approval_Status__c,
             CurrencyIsoCode, Phone, AccountNumber, DRC_NBC_Account_Email_Email__c,
-            BillingCity, BillingCountry, BillingCountryCode, BillingPostalCode,
+            BillingCity, BillingCountry, BillingCountryCode, BillingPostalCode, DRC_Inco_Term__c, DRC_Gst_Customer_Type__c,
             BillingState, BillingStateCode, BillingStreet, DRC_NBC_GST_Number__c,
             (SELECT Id, DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s,
-             DRC_NBC_Address__StateCode__s, DRC_NBC_Address__PostalCode__s,
+             DRC_NBC_Address__StateCode__s, DRC_NBC_Address__PostalCode__s, DRC_Inco_Term__c, DRC_Shipping_Gst_Customer_Type__c,
              DRC_NBC_Address__CountryCode__s, DRC_NBC_GST_Number__c, DRC_NBC_Type__c
              FROM Address__r)
             FROM Account
@@ -42,12 +42,39 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
     
     // Make this public so Queueable can access it
     public static DRC_NBC_Integration_Payload.CustomerPayload mapAccountToPayload(Account acc) {
+         
+        // Fetch Inco Terms Metadata
+        Warehouse_Location_Code__mdt incoTermsMeta;
+        String incoTermsLabel = acc.DRC_Inco_Term__c;
+        String termType = 'Inco Terms';
+        
+        List<Warehouse_Location_Code__mdt> incoTermsList = [
+            SELECT MasterLabel, DRC_NBC_Code__c, DRC_NBC_Type__c 
+            FROM Warehouse_Location_Code__mdt
+            WHERE MasterLabel = :incoTermsLabel 
+            AND DRC_NBC_Type__c = :termType
+            LIMIT 1
+        ];
+        
+        if (!incoTermsList.isEmpty()) {
+            incoTermsMeta = incoTermsList[0];
+            System.debug('Fetched Inco Terms Metadata Code: ' + incoTermsMeta.DRC_NBC_Code__c);
+        } else {
+            System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
+        }
+        
         DRC_NBC_Integration_Payload.CustomerPayload payload = new DRC_NBC_Integration_Payload.CustomerPayload();
         payload.No = acc.DRC_NBC_Customer_Number__c;
         payload.Name = acc.Name;
-        payload.Currency_Code = acc.CurrencyIsoCode;
+        If(acc.CurrencyIsoCode == 'INR') {
+            payload.Currency_Code = '';
+        }
+        else{
+            payload.Currency_Code = acc.CurrencyIsoCode;
+        }
         payload.P_A_N_No = acc.DRC_NBC_PAN_No__c;
         payload.GST_Registration_No = acc.DRC_NBC_GST_Number__c;
+        payload.GST_Customer_Type = acc.DRC_Gst_Customer_Type__c;
         payload.Phone_No = acc.Phone;
         payload.Mobile_Phone_No = '';
         payload.E_Mail = acc.DRC_NBC_Account_Email_Email__c;
@@ -62,7 +89,9 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         } else {
             payload.Country_Region_Code = acc.BillingCountryCode;
         }
-        payload.Shipment_Method_Code = '';
+        payload.Shipment_Method_Code = (incoTermsMeta != null && 
+                                        String.isNotBlank(incoTermsMeta.DRC_NBC_Code__c)) ? 
+            incoTermsMeta.DRC_NBC_Code__c : '';
         payload.Approval_Status = 'Open';
         return payload;
     }

@@ -87,6 +87,7 @@ this.orderId = orderId;
                 Account.DRC_NBC_BC_Approval_Status__c,
                 Account.BillingCity, 
                 CurrencyIsoCode,
+                DRC_NBC_Type__c,
                 DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
                 DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c
             FROM
@@ -144,22 +145,17 @@ this.orderId = orderId;
         
         DRC_NBC_Integration_Payload.OrderPayload payload = new DRC_NBC_Integration_Payload.OrderPayload();
         payload.Document_Type = 'Order';
-        payload.No = String.isNotBlank(ord.DRC_NBC_Cust_Order_Number__c) ? 
-            ord.DRC_NBC_Cust_Order_Number__c : '';
+        payload.No = String.isNotBlank(ord.DRC_NBC_Cust_Order_Number__c) ? ord.DRC_NBC_Cust_Order_Number__c : '';
         payload.Sell_to_Customer_No = ord.Account.DRC_NBC_Customer_Number__c;
         payload.Sell_to_Customer_Name = ord.Account.Name;
         payload.Sell_to_Address = String.isNotBlank(ord.Account.BillingStreet) ? ord.Account.BillingStreet : '';
         payload.Sell_to_Address_2 = '';
-        payload.Sell_to_Post_Code = String.isNotBlank(ord.Account.BillingPostalCode) ? 
-            ord.Account.BillingPostalCode : '';
+        payload.Sell_to_Post_Code = String.isNotBlank(ord.Account.BillingPostalCode) ? ord.Account.BillingPostalCode : '';
         payload.Sell_to_City = String.isNotBlank(ord.Account.BillingCity) ? ord.Account.BillingCity : '';
         payload.Order_Date = ord.EffectiveDate != null ? String.valueOf(ord.EffectiveDate) : '';
         payload.Status = 'Open';
         payload.Sample_Sales = sampleSales;
-        payload.Payment_Terms_Code = String.isNotBlank(ord.DRC_NBC_Payment_Terms__c) ? 
-            ord.DRC_NBC_Payment_Terms__c : '';
-        /*   payload.Ship_to_GST_Customer_Type = '';
-payload.Ship_to_GST_Reg_No = '';*/
+        payload.Payment_Terms_Code = String.isNotBlank(ord.DRC_NBC_Payment_Terms__c) ? ord.DRC_NBC_Payment_Terms__c : '';
         payload.Shipment_Method_Code = (incoTermsMeta != null && 
                                         String.isNotBlank(incoTermsMeta.DRC_NBC_Code__c)) ? 
             incoTermsMeta.DRC_NBC_Code__c : '';
@@ -175,7 +171,7 @@ payload.Ship_to_GST_Reg_No = '';*/
             : 0.00;
         payload.Salesforce_Order_Created = SalesforceOrderCreated;
         payload.Currency_Code = Ord.CurrencyIsoCode;
-        
+        payload.Export_Document = 'Export'.equalsIgnoreCase(ord.DRC_NBC_Type__c);        
         
         // Initialize shipping fields
         payload.Ship_to_Code = '';
@@ -191,8 +187,8 @@ payload.Ship_to_GST_Reg_No = '';*/
             List<DRC_NBC_Addresses__c> addresses = [
                 SELECT DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s, 
                 DRC_NBC_Address__PostalCode__s, DRC_NBC_Address__CountryCode__s, 
-                DRC_NBC_Address__StateCode__s, DRC_NBC_GST_Number__c, 
-                DRC_NBC_Ship_To_Code__c, Name
+                DRC_NBC_Address__StateCode__s, DRC_NBC_GST_Number__c, DRC_Shipping_Gst_Customer_Type__c,
+                DRC_NBC_Ship_To_Code__c, Name, DRC_Inco_Term__c
                 FROM DRC_NBC_Addresses__c
                 WHERE Id = :ord.DRC_NBC_Shipping_Address__c
                 AND DRC_NBC_Order__c = :ord.Id
@@ -202,12 +198,13 @@ payload.Ship_to_GST_Reg_No = '';*/
             
             if (!addresses.isEmpty()) {
                 DRC_NBC_Addresses__c address = addresses[0];
-                
                 payload.Ship_to_Code = String.isNotBlank(address.DRC_NBC_Ship_To_Code__c) ? 
                     address.DRC_NBC_Ship_To_Code__c : '';
                 payload.Ship_to_Name = ord.Account != null && String.isNotBlank(ord.Account.Name) ? 
                     ord.Account.Name : '';
                 payload.Ship_to_Name_2 = '';
+                payload.Ship_to_GST_Customer_Type = String.isBlank(address.DRC_Shipping_Gst_Customer_Type__c) ? '' : address.DRC_Shipping_Gst_Customer_Type__c;
+                payload.Ship_to_GST_Reg_No = String.isBlank(address.DRC_NBC_GST_Number__c) ? '' : address.DRC_NBC_GST_Number__c;
                 
                 // Compose full address
                 String fullAddress = '';
