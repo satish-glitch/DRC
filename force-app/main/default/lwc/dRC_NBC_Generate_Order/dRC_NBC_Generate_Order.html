@@ -571,15 +571,17 @@
                                     </div>
 
                                     <!-- TCS Amount -->
-                                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                        <lightning-input
-                                            label="TCS Amount"
-                                            type="number"
-                                            value={samplingRec.DRC_NBC_TCS_Amount__c}
-                                            data-field="DRC_NBC_TCS_Amount__c"
-                                            onchange={handleInputFieldChange}>
-                                        </lightning-input>
-                                    </div>
+                                    <template if:true={showDomesticSection}>
+                                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                            <lightning-input
+                                                label="TCS Amount"
+                                                type="number"
+                                                value={samplingRec.DRC_NBC_TCS_Amount__c}
+                                                data-field="DRC_NBC_TCS_Amount__c"
+                                                onchange={handleInputFieldChange}>
+                                            </lightning-input>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </div>
