@@ -1,51 +1,53 @@
 import { LightningElement, api, track } from 'lwc';
-import getOpportunityContacts from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getOpportunityContacts';
-import getQuoteMdtDetails from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getQuoteMdtDetails';
-import searchProducts from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.searchProducts';
-import getAccountBillingAddress from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getAccountBillingAddress';
-import getAccountAddresses from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getAccountAddresses';
-import createQuoteWithLines from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines';
-import getExistingOLIs from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getExistingOLIs';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getOpportunityContacts    from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getOpportunityContacts';
+import getQuoteMdtDetails        from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getQuoteMdtDetails';
+import searchProducts            from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.searchProducts';
+import getAccountBillingAddress  from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getAccountBillingAddress';
+import getAccountAddresses       from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getAccountAddresses';
+import createQuoteWithLines      from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.createQuoteWithLines';
+import getExistingOLIs           from '@salesforce/apex/DRC_NBC_GenerateQuotes_Controller.getExistingOLIs';
+import { ShowToastEvent }        from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
-import { NavigationMixin } from 'lightning/navigation';
-import { loadStyle } from 'lightning/platformResourceLoader';
-import DRC_NBC_Order_Button_CSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
+import { NavigationMixin }       from 'lightning/navigation';
+import { loadStyle }             from 'lightning/platformResourceLoader';
+import DRC_NBC_Order_Button_CSS  from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
 
 export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningElement) {
     @api recordId;
     @api objectApiName;
-    @track showModal = true; 
-    @track isLoading = false;
-    @track quoteRec = {};
-    @track contactOptions = [];
-    @track allContacts = [];
+    @track showModal   = true;
+    @track isLoading   = false;
+    @track quoteRec    = {};
+    @track contactOptions       = [];
+    @track allContacts          = [];
     @track selectedContactId;
-    @track selectedContactName = '';
+    @track selectedContactName  = '';
     @track selectedContactEmail = '';
     @track selectedContactPhone = '';
-    @track selectedContactFax = '';
+    @track selectedContactFax   = '';
     @track billingAddressDisplay = '';
     @track shippingAddressOptions = [];
-    @track addrDetails = [];
+    @track addrDetails            = [];
     @track selectedShippingId;
     @track currencyCode;
     @track showContactSuggestions = false;
-    @track filteredContacts = [];
+    @track filteredContacts       = [];
     oppCurrency;
     accountSpecialInstruction;
+    accountId;
 
-    // Product table data
-    @track filteredData = [];
-    @track showFilterData = false;
+    // Product table
+    @track filteredData    = [];
+    @track showFilterData  = false;
     @track showAddProducts = true;
     @track productsMasterList = [];
 
+    // Section open/close
     @track isFinancialOpen = true;
     @track isBasicInfoOpen = true;
-    @track isPreparedOpen = true;
-    @track isAddressOpen = true;
-    @track isProductOpen = true;
+    @track isPreparedOpen  = true;
+    @track isAddressOpen   = true;
+    @track isProductOpen   = true;
 
     toggleBasicInfo()   { this.isBasicInfoOpen = !this.isBasicInfoOpen; }
     togglePrepared()    { this.isPreparedOpen  = !this.isPreparedOpen;  }
@@ -64,31 +66,29 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
     get getProductIcon()     { return this.isProductOpen    ? 'utility:chevrondown' : 'utility:chevronright'; }
     get getFinancialIcon()   { return this.isFinancialOpen  ? 'utility:chevrondown' : 'utility:chevronright'; }
     get isDomestic()         { return this.quoteRec?.DRC_NBC_Type__c === 'Domestic'; }
-    get isExport()           { return this.quoteRec?.DRC_NBC_Type__c === 'Export'; }
+    get isExport()           { return this.quoteRec?.DRC_NBC_Type__c === 'Export';   }
 
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
     connectedCallback() {
         this.extractRecordIdFromUrl();
-        console.log('Component connected with recordId:', this.recordId);
         if (!this.recordId) {
-            console.error('No recordId available');
             this.showToast('Error', 'No Opportunity ID found. Please try again.', 'error');
             this.isLoading = false;
             return;
         }
-        if (!this.currencyCode) {
-            this.currencyCode = 'INR';
-            this.quoteRec.CurrencyIsoCode = 'INR';
-        }
-        this.quoteRec.Status = 'Draft';
+        // Default currency before data loads
+        this.currencyCode             = 'INR';
+        this.quoteRec.CurrencyIsoCode = 'INR';
+        this.quoteRec.Status          = 'Draft';
         this.isLoading = true;
         this.initializeComponent();
         this.loadCustomStyles();
     }
 
     extractRecordIdFromUrl() {
-        const url = window.location.href;
+        const url           = window.location.href;
         const recordIdMatch = url.match(/([a-zA-Z0-9]{18})/);
-        this.recordId = recordIdMatch ? recordIdMatch[1] : null;
+        this.recordId       = recordIdMatch ? recordIdMatch[1] : null;
     }
 
     loadCustomStyles() {
@@ -97,6 +97,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             .catch(error => console.error('Error loading styles:', error));
     }
 
+    // ─── Initialise ───────────────────────────────────────────────────────────
     async initializeComponent() {
         try {
             if (!this.recordId) throw new Error('Opportunity ID is missing');
@@ -106,22 +107,23 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 getAccountBillingAddress({ oppId: this.recordId }),
                 getAccountAddresses({ oppId: this.recordId }),
                 getQuoteMdtDetails({ oppId: this.recordId }),
-                getExistingOLIs({ oppId: this.recordId })   // ← load existing OLIs
+                getExistingOLIs({ oppId: this.recordId })
             ]);
 
-            // ── Quote / account meta ──────────────────────────────────────────
-            this.oppCurrency             = quoteWrapper.oppCurrency || 'INR';
-            this.currencyCode            = quoteWrapper.oppCurrency || 'INR';
-            this.quoteRec.CurrencyIsoCode = this.currencyCode;
-            this.accountSpecialInstruction = quoteWrapper.accountSpecialInstruction || '';
-            this.accountId               = quoteWrapper.accountId;
+            // ── Currency: ALWAYS driven by Opportunity ────────────────────────
+            this.oppCurrency              = quoteWrapper.oppCurrency || 'INR';
+            this.currencyCode             = this.oppCurrency;
+            this.quoteRec.CurrencyIsoCode = this.oppCurrency;
 
+            // ── Account meta ──────────────────────────────────────────────────
+            this.accountSpecialInstruction = quoteWrapper.accountSpecialInstruction || '';
+            this.accountId                 = quoteWrapper.accountId;
             if (quoteWrapper.accountSpecialInstruction) {
                 this.quoteRec.DRC_NBC_Special_Requirements__c = quoteWrapper.accountSpecialInstruction;
             }
 
-            // ── Contacts ─────────────────────────────────────────────────────
-            this.allContacts  = contacts || [];
+            // ── Contacts ──────────────────────────────────────────────────────
+            this.allContacts    = contacts || [];
             this.contactOptions = this.allContacts.map(c => ({
                 label: c.Name, value: c.Id,
                 email: c.Email, phone: c.Phone, fax: c.Fax
@@ -147,7 +149,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                     billingAddress.street, billingAddress.city, billingAddress.state,
                     billingAddress.postalCode, billingAddress.country
                 ].filter(Boolean);
-                this.billingAddressDisplay   = parts.join(', ') || 'No billing address found';
+                this.billingAddressDisplay       = parts.join(', ') || 'No billing address found';
                 this.quoteRec.BillingStreet      = billingAddress.street      || '';
                 this.quoteRec.BillingCity        = billingAddress.city        || '';
                 this.quoteRec.BillingState       = billingAddress.state       || '';
@@ -157,10 +159,10 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             }
 
             // ── Shipping addresses ────────────────────────────────────────────
-            this.addrDetails = shippingAddresses || [];
+            this.addrDetails          = shippingAddresses || [];
             this.shippingAddressOptions = [];
             (shippingAddresses || []).forEach(addr => {
-                const d = addr.DRC_NBC_Address__c;
+                const d     = addr.DRC_NBC_Address__c;
                 const parts = [d?.street, d?.city, d?.postalCode, d?.country, d?.state].filter(Boolean);
                 this.shippingAddressOptions.push({
                     label: parts.join(', ') || 'Unknown Address',
@@ -172,13 +174,12 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 this.updateShippingAddress(this.selectedShippingId);
             }
 
-            // ── Existing OLIs → pre-populate product table ────────────────────
+            // ── Pre-populate from existing OLIs ───────────────────────────────
             if (oliData && oliData.olis && oliData.olis.length > 0) {
                 this._buildRowsFromOLIs(oliData.olis, oliData.packingDetailsMap || {});
                 this.showFilterData  = true;
                 this.showAddProducts = false;
             } else {
-                // No existing products — show "Add Products" button
                 this.filteredData    = [];
                 this.showFilterData  = false;
                 this.showAddProducts = true;
@@ -199,13 +200,23 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             const product2Id       = item.Product2Id || '';
             const packingDetails   = packingDetailsMap[product2Id] || [];
             const packingSizeOpts  = this._buildPackingSizeOptions(packingDetails);
-            const savedPackingSize = item.DRC_NBC_Packing_Size__c     || '';
-            const savedPackingQty  = item.DRC_NBC_Packing_Qauntity__c || '';
+            const savedPackingSize = item.DRC_NBC_Packing_Size__c || '';
+            const quantity         = item.Quantity || 1;
+
+            // rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from the matched packing detail record
             let rawPackingQuantity = '';
             if (savedPackingSize) {
-                const matched = packingDetails.find(pd => pd.packingSize === savedPackingSize);
+                const matched      = packingDetails.find(pd => pd.packingSize === savedPackingSize);
                 rawPackingQuantity = matched ? (matched.packingQuantity || '') : '';
             }
+
+            // packingQuantity displayed in column = directly the DB value (rawPackingQuantity)
+            // NOT a calculation — it is DRC_NBC_Packing_Qauntity__c as-is
+            const packingQuantity = rawPackingQuantity;
+
+            // Validate quantity: must be a multiple of rawPackingQuantity
+            const quantityError = this._getQuantityError(quantity, rawPackingQuantity);
+
             const unitPrice = item.UnitPrice || 0;
             return {
                 id: item.Id || String(Date.now() + Math.random()),
@@ -218,19 +229,20 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                     PricebookEntryId:               item.PricebookEntryId        || '',
                     Description:                    item.Description             || '',
                     Discount:                       item.Discount                || 0,
-                    Quantity:                       item.Quantity                || 1,
+                    Quantity:                       quantity,
                     UnitPrice:                      unitPrice,
                     OriginalUnitPrice:              unitPrice,
                     modifiedPrice:                  unitPrice,
                     DRC_NBC_FG_Code__c:             prod.DRC_NBC_FG_Code__c      || '-',
                     DRC_NBC_HSN_SAC_Code__c:        prod.DRC_NBC_HSN_SAC_Code__c || '-',
                     DRC_NBC_Unit_Of_Measurement__c: prod.QuantityUnitOfMeasure   || '-',
-                    showSearch:                     false,    // show name, not search box
+                    showSearch:                     false,
                     packingDetails,
                     packingSizeOptions:             packingSizeOpts,
                     selectedPackingSize:            savedPackingSize,
                     rawPackingQuantity,
-                    packingQuantity:                savedPackingQty
+                    packingQuantity,                // = DRC_NBC_Packing_Qauntity__c directly
+                    quantityError
                 }
             };
         });
@@ -241,18 +253,15 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         return packingDetails.map(pd => ({ label: pd.packingSize || '', value: pd.packingSize || '' }));
     }
 
-    // ─── "Add Products" button — first row when no OLIs exist ─────────────────
+    // ─── "Add Products" — first row ───────────────────────────────────────────
     handleAddFirstRow() {
-        const newRow = this.getBaseRecordData();
-        this.filteredData    = [{ id: String(Date.now()), recordData: newRow }];
+        this.filteredData    = [{ id: String(Date.now()), recordData: this.getBaseRecordData() }];
         this.showFilterData  = true;
         this.showAddProducts = false;
     }
 
-    // ─── Add additional row ───────────────────────────────────────────────────
     handleAddRow() {
-        const newRow = this.getBaseRecordData();
-        this.filteredData = [...this.filteredData, { id: String(Date.now()), recordData: newRow }];
+        this.filteredData = [...this.filteredData, { id: String(Date.now()), recordData: this.getBaseRecordData() }];
     }
 
     handleRemoveRow(event) {
@@ -268,32 +277,31 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
 
     handleClearProduct(event) {
         const index = parseInt(event.currentTarget.dataset.index);
-        const clearedRow = this.getBaseRecordData();
-        this.filteredData[index].recordData = clearedRow;
+        this.filteredData[index].recordData = this.getBaseRecordData();
         this.filteredData = [...this.filteredData];
     }
 
     // ─── Contact search ───────────────────────────────────────────────────────
     handleContactInputFocus() {
-        this.filteredContacts = this.contactOptions;
+        this.filteredContacts       = this.contactOptions;
         this.showContactSuggestions = true;
     }
     handleContactInputBlur() {
         setTimeout(() => { this.showContactSuggestions = false; }, 200);
     }
     handleContactInputChange(event) {
-        const searchKey = event.target.value;
+        const searchKey          = event.target.value;
         this.selectedContactName = searchKey;
         if (!searchKey) {
-            this.selectedContactId = null;
+            this.selectedContactId    = null;
             this.selectedContactEmail = '';
             this.selectedContactPhone = '';
             this.selectedContactFax   = '';
-            this.quoteRec.ContactId = null;
+            this.quoteRec.ContactId   = null;
             this.quoteRec.Email = '';
             this.quoteRec.Phone = '';
             this.quoteRec.Fax   = '';
-            this.filteredContacts = [];
+            this.filteredContacts       = [];
             this.showContactSuggestions = true;
             return;
         }
@@ -303,8 +311,8 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         this.showContactSuggestions = true;
     }
     handleContactSelect(event) {
-        const selectedId   = event.currentTarget.dataset.id;
-        const selectedName = event.currentTarget.dataset.name;
+        const selectedId         = event.currentTarget.dataset.id;
+        const selectedName       = event.currentTarget.dataset.name;
         this.selectedContactId   = selectedId;
         this.selectedContactName = selectedName;
         const c = this.contactOptions.find(x => x.value === selectedId);
@@ -345,14 +353,16 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             const value     = event.detail?.value    || event.target.value;
             if (fieldName) {
                 this.quoteRec[fieldName] = value;
-                if (fieldName === 'CurrencyIsoCode') this.currencyCode = value;
+                // NOTE: CurrencyIsoCode is no longer editable by the user;
+                // it is always set from the Opportunity. This handler is kept
+                // for other fields (ExpirationDate, Type, etc.).
             }
         } catch (error) {
             console.error('Error in handleFieldChange:', error);
         }
     }
 
-    // ─── Product search — unchanged from original ─────────────────────────────
+    // ─── Product name search ──────────────────────────────────────────────────
     handleValueChange(event) {
         const index = parseInt(event.target.dataset.index);
         const field = event.target.name;
@@ -361,10 +371,6 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         this.filteredData[index].recordData[field] = value;
 
         if (field === 'ProductName' && value.length >= 2) {
-            if (!this.currencyCode) {
-                this.showToast('Warning', 'Please select a currency first', 'warning');
-                return;
-            }
             searchProducts({
                 keyword:         value,
                 currencyIsoCode: this.currencyCode,
@@ -411,8 +417,8 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 Description:                    '',
                 UnitPrice:                      unitPrice,
                 OriginalUnitPrice:              unitPrice,
-                DRC_NBC_HSN_SAC_Code__c:        selected.HSNCode             || '-',
-                DRC_NBC_FG_Code__c:             selected.FGCode              || '-',
+                DRC_NBC_HSN_SAC_Code__c:        selected.HSNCode              || '-',
+                DRC_NBC_FG_Code__c:             selected.FGCode               || '-',
                 PricebookEntryId:               selected.PricebookEntryId,
                 DRC_NBC_Unit_Of_Measurement__c: selected.QuantityUnitOfMeasure || '-',
                 modifiedPrice:                  unitPrice,
@@ -422,41 +428,70 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 packingQuantity:                '',
                 rawPackingQuantity:             '',
                 searchResults:                  [],
-                noResultsFound:                 false
+                noResultsFound:                 false,
+                quantityError:                  ''
             };
             this.filteredData = [...this.filteredData];
         }
     }
 
-    _recalcPackingQuantity(rowData) {
-        const qty       = parseFloat(rowData.Quantity)           || 0;
-        const rawPkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
-        return (rawPkgQty > 0 && qty > 0) ? String(Math.ceil(qty / rawPkgQty)) : '';
-    }
-
+    // ─── Packing Size change ──────────────────────────────────────────────────
     handlePackingSizeChange(event) {
-        const index       = parseInt(event.target.dataset.index);
+        const index        = parseInt(event.target.dataset.index);
         const selectedSize = event.detail.value;
-        this.filteredData[index].recordData.selectedPackingSize = selectedSize;
-        const packingDetails = this.filteredData[index].recordData.packingDetails || [];
+        const row          = this.filteredData[index].recordData;
+
+        row.selectedPackingSize = selectedSize;
+
+        const packingDetails = row.packingDetails || [];
         const matched        = packingDetails.find(pd => pd.packingSize === selectedSize);
-        this.filteredData[index].recordData.rawPackingQuantity =
-            (matched?.packingQuantity != null && matched.packingQuantity !== '')
-                ? String(matched.packingQuantity) : '';
-        this.filteredData[index].recordData.packingQuantity =
-            this._recalcPackingQuantity(this.filteredData[index].recordData);
+
+        // rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from the matched record
+        row.rawPackingQuantity = (matched?.packingQuantity != null && matched.packingQuantity !== '')
+            ? String(matched.packingQuantity) : '';
+
+        // packingQuantity displayed in column = directly the DB value, NOT a calculation
+        row.packingQuantity = row.rawPackingQuantity;
+
+        // Validate quantity against the new packing size
+        row.quantityError = this._getQuantityError(row.Quantity, row.rawPackingQuantity);
+
         this.filteredData = [...this.filteredData];
     }
 
+    // ─── Quantity change ──────────────────────────────────────────────────────
     handleQuantityChange(event) {
         const index    = parseInt(event.target.dataset.index);
         const quantity = parseFloat(event.target.value) || 0;
-        this.filteredData[index].recordData.Quantity = quantity;
-        if (this.filteredData[index].recordData.selectedPackingSize) {
-            this.filteredData[index].recordData.packingQuantity =
-                this._recalcPackingQuantity(this.filteredData[index].recordData);
-        }
+        const row      = this.filteredData[index].recordData;
+
+        row.Quantity      = quantity;
+        row.quantityError = this._getQuantityError(quantity, row.rawPackingQuantity);
+        // packingQuantity column does NOT change when quantity changes —
+        // it always shows DRC_NBC_Packing_Qauntity__c from the DB record
+
         this.filteredData = [...this.filteredData];
+    }
+
+    /**
+     * Returns an error message string if qty is invalid, or '' if valid.
+     * A quantity is valid when:
+     *  - no packing size has been selected (rawPackingQty is blank), OR
+     *  - qty > 0 AND qty is an exact multiple of rawPackingQty
+     */
+    _getQuantityError(qty, rawPackingQty) {
+        const packQty = parseFloat(rawPackingQty);
+        if (!rawPackingQty || isNaN(packQty) || packQty <= 0) return '';
+        if (!qty || qty <= 0) return 'Quantity must be greater than 0.';
+        if (qty % packQty !== 0) {
+            return `Quantity must be a multiple of ${packQty} (e.g. ${packQty}, ${packQty * 2}, ${packQty * 3}…).`;
+        }
+        return '';
+    }
+
+    // packingQuantity column always = rawPackingQuantity (DB value directly)
+    _recalcPackingQuantity(rowData) {
+        return rowData.rawPackingQuantity || '';
     }
 
     handleModifiedPriceChange(event) {
@@ -490,7 +525,8 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             rawPackingQuantity:             '',
             showSearch:                     true,
             searchResults:                  [],
-            noResultsFound:                 false
+            noResultsFound:                 false,
+            quantityError:                  ''
         };
     }
 
@@ -504,24 +540,34 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         }
         const expirationDate = new Date(this.quoteRec.ExpirationDate + 'T00:00:00');
         const today          = new Date();
-        const todayDate      = new Date(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}T00:00:00`);
+        const todayDate      = new Date(
+            `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}T00:00:00`
+        );
         if (expirationDate <= todayDate) {
             this.showToast('Error', 'Expiration Date must be greater than today.', 'error'); return false;
         }
-        if (!this.selectedContactId)    { this.showToast('Error', 'Please select a contact.', 'error');                           return false; }
-        if (!this.selectedContactEmail) { this.showToast('Error', 'Selected contact must have an email address.', 'error');        return false; }
-        if (!this.selectedContactPhone) { this.showToast('Error', 'Selected contact must have a phone number.', 'error');          return false; }
-        if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) { this.showToast('Error', 'Payment Term Code is required.', 'error');          return false; } 
-        if (!this.quoteRec.DRC_NBC_Payment_Term_Description__c) { this.showToast('Error', 'Payment Term Descrption is required.', 'error');          return false; }  
-        if (!this.quoteRec.DRC_NBC_Inco_terms__c)   { this.showToast('Error', 'Inco Term is required.', 'error');                 return false; }
-        if (!this.quoteRec.DRC_NBC_Type__c)         { this.showToast('Error', 'Type is required.', 'error');                     return false; }
-        if (!this.quoteRec.CurrencyIsoCode)         { this.showToast('Error', 'Currency is required.', 'error');                 return false; }
-        if (!this.selectedShippingId)               { this.showToast('Error', 'Please select Shipping Address.', 'error');       return false; }
-        if (this.filteredData.length === 0)         { this.showToast('Error', 'Please add at least one product.', 'error');      return false; }
+        if (!this.selectedContactId)    { this.showToast('Error', 'Please select a contact.', 'error');                     return false; }
+        if (!this.selectedContactEmail) { this.showToast('Error', 'Selected contact must have an email address.', 'error'); return false; }
+        if (!this.selectedContactPhone) { this.showToast('Error', 'Selected contact must have a phone number.', 'error');   return false; }
+        if (!this.quoteRec.DRC_NBC_Payemnt_Term__c)             { this.showToast('Error', 'Payment Term Code is required.', 'error');        return false; }
+        if (!this.quoteRec.DRC_NBC_Payment_Term_Description__c) { this.showToast('Error', 'Payment Term Description is required.', 'error'); return false; }
+        if (!this.quoteRec.DRC_NBC_Inco_terms__c)               { this.showToast('Error', 'Inco Term is required.', 'error');                return false; }
+        if (!this.quoteRec.DRC_NBC_Type__c)                     { this.showToast('Error', 'Type is required.', 'error');                     return false; }
+        if (!this.quoteRec.CurrencyIsoCode)                     { this.showToast('Error', 'Currency is required.', 'error');                 return false; }
+        if (!this.selectedShippingId)                           { this.showToast('Error', 'Please select Shipping Address.', 'error');        return false; }
+        if (this.filteredData.length === 0)                     { this.showToast('Error', 'Please add at least one product.', 'error');      return false; }
+
         for (let i = 0; i < this.filteredData.length; i++) {
             const row = this.filteredData[i].recordData;
-            if (!row.Product2Id)            { this.showToast('Error', `Please select a product for row ${i+1}.`, 'error');       return false; }
-            if (!row.Quantity || row.Quantity <= 0) { this.showToast('Error', `Enter valid quantity for row ${i+1}.`, 'error');  return false; }
+            if (!row.Product2Id) {
+                this.showToast('Error', `Please select a product for row ${i + 1}.`, 'error'); return false;
+            }
+            if (!row.Quantity || row.Quantity <= 0) {
+                this.showToast('Error', `Enter valid quantity for row ${i + 1}.`, 'error'); return false;
+            }
+            if (row.quantityError) {
+                this.showToast('Error', `Row ${i + 1}: ${row.quantityError}`, 'error'); return false;
+            }
         }
         return true;
     }
@@ -535,22 +581,22 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             const lineItems = this.filteredData.map(item => {
                 const row = item.recordData;
                 return {
-                    Product2Id:             row.Product2Id,
-                    PricebookEntryId:       row.PricebookEntryId,
-                    Quantity:               row.Quantity || 1,
-                    UnitPrice:              row.modifiedPrice || row.UnitPrice || 0,
-                    Description:            row.Description || '',
-                    CurrencyIsoCode:        this.currencyCode || 'INR',
-                    QuantityUnitOfMeasure:  row.DRC_NBC_Unit_Of_Measurement__c || '',
-                    PackingSize:            row.selectedPackingSize || '',
-                    PackingQuantity:        row.packingQuantity || ''
+                    Product2Id:            row.Product2Id,
+                    PricebookEntryId:      row.PricebookEntryId,
+                    Quantity:              row.Quantity              || 1,
+                    UnitPrice:             row.modifiedPrice         || row.UnitPrice || 0,
+                    Description:          row.Description            || '',
+                    CurrencyIsoCode:      this.currencyCode          || 'INR',
+                    QuantityUnitOfMeasure: row.DRC_NBC_Unit_Of_Measurement__c || '',
+                    PackingSize:           row.selectedPackingSize   || '',
+                    PackingQuantity:       row.packingQuantity       || ''
                 };
             });
 
             const result = await createQuoteWithLines({
                 oppId:     this.recordId,
                 quoteData: this.quoteRec,
-                lineItems: lineItems
+                lineItems
             });
 
             const parsed = JSON.parse(result);

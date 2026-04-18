@@ -23,6 +23,9 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     filteredProductList = [];
     qliIdsToDelete = [];
 
+    @track isDomestic = false;
+    @track isExport = false;
+
     @track isProductOpen = true;
     @track showAddProducts = false;
     @track contactOptions = [];
@@ -40,9 +43,8 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     @track showContactSuggestions = false;
     @track filteredContacts  = [];
     @track selectedContactName = '';
-    
+
     // Packing details map: Product2Id → List of { packingSize, packingQuantity }
-    // Populated from the child object DRC_NBC_Packing_Details__c via Apex
     packingDetailsMap = {};
 
     @track showInternalHeader = true;
@@ -64,8 +66,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 this.recordId = state.recordId;
                 this.showInternalHeader = false;
                 this.isCalledFromAura = false;
-            } 
-            else if (state.inContextOfRef) {
+            } else if (state.inContextOfRef) {
                 try {
                     let context = JSON.parse(window.atob(state.inContextOfRef));
                     this.recordId = context.attributes.recordId;
@@ -88,9 +89,8 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
 
     connectedCallback() {
         this.addCustomCss();
-        
         const isInModal = this.template.host.closest('.slds-modal__content') !== null ||
-                         this.template.host.closest('div[role="dialog"]') !== null;
+                          this.template.host.closest('div[role="dialog"]') !== null;
         if (isInModal) {
             this.showInternalHeader = false;
         }
@@ -133,12 +133,8 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         return parts.length > 0 ? parts.join(', ') : 'No billing address found';
     }
 
-    // ─── Packing helpers ────────────────────────────────────────────────────────
+    // ─── Packing helpers ──────────────────────────────────────────────────────
 
-    /**
-     * Builds combobox options from the packing details list for a product.
-     * packingDetailsList = [{ packingSize, packingQuantity }, ...]
-     */
     buildPackingSizeOptions(packingDetailsList) {
         if (!packingDetailsList || packingDetailsList.length === 0) return [];
         return packingDetailsList.map(pd => ({
@@ -147,43 +143,48 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         }));
     }
 
-    /**
-     * Returns packing detail records for a given Product2Id from the cached map.
-     */
     getPackingDetailsForProduct(product2Id) {
         if (!product2Id || !this.packingDetailsMap) return [];
         return this.packingDetailsMap[product2Id] || [];
     }
 
     /**
-     * Calculates displayed packing quantity = ceil(Quantity / rawPackingQuantity)
-     * rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from the child record (divisor/bag size)
+     * Packing quantity column = DRC_NBC_Packing_Qauntity__c directly from DB.
+     * NOT a calculation — just return rawPackingQuantity as-is.
      */
     _recalcPackingQuantity(rowData) {
-        const qty       = parseFloat(rowData.Quantity)          || 0;
-        const rawPkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
-        if (rawPkgQty > 0 && qty > 0) {
-            return String(Math.ceil(qty / rawPkgQty));
+        return rowData.rawPackingQuantity || '';
+    }
+
+    /**
+     * Returns error message if qty is not a valid multiple of rawPackingQty.
+     * Returns '' if valid or no packing size selected.
+     */
+    _getQuantityError(qty, rawPackingQty) {
+        const packQty = parseFloat(rawPackingQty);
+        if (!rawPackingQty || isNaN(packQty) || packQty <= 0) return '';
+        if (!qty || qty <= 0) return 'Quantity must be greater than 0.';
+        if (qty % packQty !== 0) {
+            return `Quantity must be a multiple of ${packQty} (e.g. ${packQty}, ${packQty * 2}, ${packQty * 3}…).`;
         }
         return '';
     }
 
-    // ─── Contact handlers ────────────────────────────────────────────────────────
+    // ─── Contact handlers ─────────────────────────────────────────────────────
 
     handleClearProduct(event) {
         const index = parseInt(event.currentTarget.dataset.index);
         let clearedRow = this.getBaseRecordData().qlis;
-        clearedRow.ProductName = '';
+        clearedRow.ProductName   = '';
         clearedRow.searchResults = [];
-        clearedRow.showSearch = true;
+        clearedRow.showSearch    = true;
         clearedRow.noResultsFound = false;
         this.filteredData[index].recordData = clearedRow;
         this.filteredData = [...this.filteredData];
-        console.log('Product cleared for row:', index);
     }
 
     handleContactInputFocus() {
-        this.filteredContacts = this.contactOptions;
+        this.filteredContacts       = this.contactOptions;
         this.showContactSuggestions = true;
     }
 
@@ -200,11 +201,11 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             this.selectedContactEmail = '';
             this.selectedContactPhone = '';
             this.selectedContactMobile = '';
-            this.quoteRec.ContactId = null;
-            this.quoteRec.Email = '';
-            this.quoteRec.Phone = '';
-            this.quoteRec.Fax   = '';
-            this.filteredContacts = [];
+            this.quoteRec.ContactId   = null;
+            this.quoteRec.Email       = '';
+            this.quoteRec.Phone       = '';
+            this.quoteRec.Fax         = '';
+            this.filteredContacts       = [];
             this.showContactSuggestions = false;
             return;
         }
@@ -230,26 +231,28 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         }
 
         this.quoteRec.ContactId = selectedId;
-        this.quoteRec.Email = this.selectedContactEmail;
-        this.quoteRec.Phone = this.selectedContactPhone;
-        this.quoteRec.Fax   = this.selectedContactFax;
+        this.quoteRec.Email     = this.selectedContactEmail;
+        this.quoteRec.Phone     = this.selectedContactPhone;
+        this.quoteRec.Fax       = this.selectedContactFax;
 
         this.showContactSuggestions = false;
     }
 
-    // ─── Data fetching ────────────────────────────────────────────────────────────
+    // ─── Data fetching ────────────────────────────────────────────────────────
 
     fetchQuoteDetails() {
         getQuoteRecord({ quoteId: this.recordId })
             .then(result => {
-                this.quoteRec = { ...result };
-                this.selectedContactId    = result.ContactId || '';
-                this.selectedContactEmail = result.Email     || '';
-                this.selectedContactPhone = result.Phone     || '';
-                this.selectedContactFax   = result.Fax       || '';
+                this.quoteRec                             = { ...result };
+                this.isDomestic = result?.DRC_NBC_Type__c === 'Domestic';
+                this.isExport = result?.DRC_NBC_Type__c === 'Export';
+                this.selectedContactId                    = result.ContactId || '';
+                this.selectedContactEmail                 = result.Email     || '';
+                this.selectedContactPhone                 = result.Phone     || '';
+                this.selectedContactFax                   = result.Fax       || '';
                 this.quoteRec.DRC_NBC_Other_Tax_Amount__c = result.DRC_NBC_Other_Tax_Amount__c || 0;
                 this.quoteRec.DRC_NBC_TCS_Amount__c       = result.DRC_NBC_TCS_Amount__c       || 0;
-                this.selectedShippingId = result.DRC_NBC_Shipping_Address_Id__c || '';
+                this.selectedShippingId                   = result.DRC_NBC_Shipping_Address_Id__c || '';
 
                 if (result.Opportunity?.AccountId || result.AccountId) {
                     const accountId = result.Opportunity?.AccountId || result.AccountId;
@@ -266,9 +269,9 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         getAccountAddresses({ accountId: accountId })
             .then(addressResult => {
                 this.shippingAddressOptions = addressResult.shippingAddresses || [];
-                
+
                 if (addressResult.billingAddresses && addressResult.billingAddresses.length > 0) {
-                    const billingAddr = addressResult.billingAddresses[0];
+                    const billingAddr  = addressResult.billingAddresses[0];
                     const addressParts = billingAddr.label.split(', ');
                     this.accountBillingStreet     = addressParts[0] || '';
                     this.accountBillingCity       = addressParts[1] || '';
@@ -294,7 +297,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 }));
 
                 if (this.selectedContactId) {
-                    const selected = this.contactOptions.find(c => c.value === this.selectedContactId);
+                    const selected       = this.contactOptions.find(c => c.value === this.selectedContactId);
                     this.selectedContactName = selected ? selected.label : '';
                 }
             })
@@ -328,7 +331,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
 
     handleFieldChange(event) {
         const fieldName = event.target.fieldName || event.target.name || event.target.dataset.field;
-        const value = event.detail?.value || event.target.value;
+        const value     = event.detail?.value    || event.target.value;
         if (fieldName) {
             this.quoteRec[fieldName] = value;
             if (fieldName === 'CurrencyIsoCode') {
@@ -343,15 +346,15 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 this.productsMasterList  = data.productsList;
                 this.filteredProductList = [...data.productsList];
 
-                // Cache the packing details map from Apex (Product2Id → [{packingSize, packingQuantity}])
+                // Cache the packing details map from Apex
                 this.packingDetailsMap = data.packingDetailsMap || {};
-                
+
                 if (data.qlis.length > 0) {
                     this.result = data;
                     this.getOrganizedData();
                 } else {
-                    let newRow = this.getBaseRecordData().qlis;
-                    newRow.QuoteId = this.recordId;
+                    let newRow      = this.getBaseRecordData().qlis;
+                    newRow.QuoteId  = this.recordId;
                     newRow.showSearch = true;
                     this.filteredData = [{ recordData: newRow }];
                 }
@@ -366,48 +369,55 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         const data = this.result.qlis;
         for (let item of data) {
             let record = this.getBaseRecordData().qlis;
-            
+
             const originalUnitPrice  = item.UnitPrice || 0;
             const savedModifiedPrice = item.DRC_NBC_update_Sales_price__c || originalUnitPrice;
             const calculatedModifier = savedModifiedPrice - originalUnitPrice;
 
-            // Get packing details from the cached map for this product
-            const packingDetails    = this.getPackingDetailsForProduct(item.Product2Id);
+            // Get packing details from the cached map (child object)
+            const packingDetails     = this.getPackingDetailsForProduct(item.Product2Id);
             const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
 
-            // For existing QLIs: restore rawPackingQuantity from the saved packing size
-            // so that _recalcPackingQuantity works correctly if user edits quantity later
             const savedPackingSize = item.DRC_NBC_Packing_Size__c || '';
-            const savedPackingQty  = item.DRC_NBC_Packing_Qauntity__c || '';
+
+            // ✅ rawPackingQuantity ALWAYS from packing details map (child object DRC_NBC_Packing_Details__c)
+            // NOT from item.DRC_NBC_Packing_Qauntity__c (the saved QLI field)
             let rawPackingQuantity = '';
             if (savedPackingSize) {
                 const matchedDetail = packingDetails.find(pd => pd.packingSize === savedPackingSize);
                 rawPackingQuantity  = matchedDetail ? (matchedDetail.packingQuantity || '') : '';
             }
 
+            // ✅ Packing quantity column = DB value directly (rawPackingQuantity), NOT a calculation
+            const packingQuantity = rawPackingQuantity;
+
+            const quantity      = item.Quantity || 1;
+            // ✅ Validate on load — qty must be a multiple of rawPackingQuantity
+            const quantityError = this._getQuantityError(quantity, rawPackingQuantity);
+
             Object.assign(record, {
-                Id: item.Id,
-                Name: item.Product2?.Name || '',
-                PricebookEntryId: item.PricebookEntryId,
-                Description: item.Description || '',
-                Discount: item.Discount || 0,
-                ListPrice: item.ListPrice || 0,
-                Product2Id: item.Product2Id,
-                Quantity: item.Quantity || 1,
-                UnitPrice: originalUnitPrice,
-                OriginalUnitPrice: originalUnitPrice,
-                DRC_NBC_FG_Code__c: item.Product2?.DRC_NBC_FG_Code__c || '-',
-                DRC_NBC_HSN_SAC_Code__c: item.Product2?.DRC_NBC_HSN_SAC_Code__c || '-',              
+                Id:                             item.Id,
+                Name:                           item.Product2?.Name || '',
+                PricebookEntryId:               item.PricebookEntryId,
+                Description:                    item.Description || '',
+                Discount:                       item.Discount || 0,
+                ListPrice:                      item.ListPrice || 0,
+                Product2Id:                     item.Product2Id,
+                Quantity:                       quantity,
+                UnitPrice:                      originalUnitPrice,
+                OriginalUnitPrice:              originalUnitPrice,
+                DRC_NBC_FG_Code__c:             item.Product2?.DRC_NBC_FG_Code__c || '-',
+                DRC_NBC_HSN_SAC_Code__c:        item.Product2?.DRC_NBC_HSN_SAC_Code__c || '-',
                 DRC_NBC_Unit_Of_Measurement__c: item.Product2?.QuantityUnitOfMeasure || '-',
-                showSearch: false,
-                modifier: calculatedModifier.toFixed(2),
-                modifiedPrice: savedModifiedPrice,
-                packingDetails: packingDetails,
-                packingSizeOptions: packingSizeOptions,
-                selectedPackingSize: savedPackingSize,
-                rawPackingQuantity: rawPackingQuantity,
-                // Display value = saved packingQty (already ceil(qty/rawPkgQty) from when it was saved)
-                packingQuantity: savedPackingQty
+                showSearch:                     false,
+                modifier:                       calculatedModifier.toFixed(2),
+                modifiedPrice:                  savedModifiedPrice,
+                packingDetails,
+                packingSizeOptions,
+                selectedPackingSize:            savedPackingSize,
+                rawPackingQuantity,             // from child object
+                packingQuantity,               // = rawPackingQuantity (DB value directly)
+                quantityError                  // validated on load
             });
             this.allData.push({ recordData: record });
         }
@@ -415,15 +425,15 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     }
 
     handleAddRow() {
-        let newRow = this.getBaseRecordData().qlis;
-        newRow.Id = null;
+        let newRow        = this.getBaseRecordData().qlis;
+        newRow.Id         = null;
         newRow.showSearch = true;
-        newRow.searchResults = null;
+        newRow.searchResults  = null;
         newRow.noResultsFound = false;
-        newRow.searchKey = '';
+        newRow.searchKey      = '';
         this.filteredData.push({ recordData: newRow });
-        this.filteredData = [...this.filteredData];
-        this.showAddProducts = false;
+        this.filteredData     = [...this.filteredData];
+        this.showAddProducts  = false;
     }
 
     handleRemoveRow(event) {
@@ -442,7 +452,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
 
     handleSave() {
         this.showLoading = true;
-        let isValid = true;
+        let isValid  = true;
         let rowCount = 0;
 
         for (let record of this.filteredData) {
@@ -454,6 +464,11 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             }
             if (!row.Quantity) {
                 this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error');
+                isValid = false;
+            }
+            // ✅ Packing multiple validation
+            if (row.quantityError) {
+                this.showToastEvent("Error", `Row ${rowCount}: ${row.quantityError}`, 'error');
                 isValid = false;
             }
         }
@@ -468,10 +483,10 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         }
 
         const expirationDate = new Date(this.quoteRec.ExpirationDate + 'T00:00:00');
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
+        const today  = new Date();
+        const yyyy   = today.getFullYear();
+        const mm     = String(today.getMonth() + 1).padStart(2, '0');
+        const dd     = String(today.getDate()).padStart(2, '0');
         const todayDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
 
         if (expirationDate <= todayDate) {
@@ -500,7 +515,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             this.showToastEvent("Error", "Payment Term Description is required.", "error");
             isValid = false;
         }
-         if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) {
+        if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) {
             this.showToastEvent("Error", "Payment Term Code is required.", "error");
             isValid = false;
         }
@@ -529,54 +544,54 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             const recordsToSave = this.filteredData.map(row => {
                 const r = row.recordData;
                 return {
-                    Id: r.Id || null,
-                    Product2Id: r.Product2Id,
-                    Quantity: r.Quantity,
-                    UnitPrice: parseFloat(r.modifiedPrice) || parseFloat(r.UnitPrice) || 0,
-                    Discount: r.Discount,
-                    QuoteId: this.recordId,
-                    PricebookEntryId: r.PricebookEntryId,
-                    Description: r.Description,
+                    Id:                             r.Id || null,
+                    Product2Id:                     r.Product2Id,
+                    Quantity:                       r.Quantity,
+                    UnitPrice:                      parseFloat(r.modifiedPrice) || parseFloat(r.UnitPrice) || 0,
+                    Discount:                       r.Discount,
+                    QuoteId:                        this.recordId,
+                    PricebookEntryId:               r.PricebookEntryId,
+                    Description:                    r.Description,
                     DRC_NBC_Unit_Of_Measurement__c: r.DRC_NBC_Unit_Of_Measurement__c,
-                    DRC_NBC_Packing_Size__c: r.selectedPackingSize || '',
-                    // Saves the calculated value: ceil(Quantity / rawPackingQuantity)
-                    DRC_NBC_Packing_Qauntity__c: r.packingQuantity || ''
+                    DRC_NBC_Packing_Size__c:        r.selectedPackingSize || '',
+                    // ✅ Save DRC_NBC_Packing_Qauntity__c = rawPackingQuantity (DB value from child object)
+                    DRC_NBC_Packing_Qauntity__c:    r.packingQuantity || ''
                 };
             });
 
             const updatedQuote = {
-                Id: this.recordId,
-                Name: this.quoteRec.Name,
-                ExpirationDate: this.quoteRec.ExpirationDate,
-                DRC_NBC_Lead_Time__c: this.quoteRec.DRC_NBC_Lead_Time__c
+                Id:                                  this.recordId,
+                Name:                                this.quoteRec.Name,
+                ExpirationDate:                      this.quoteRec.ExpirationDate,
+                DRC_NBC_Lead_Time__c:                this.quoteRec.DRC_NBC_Lead_Time__c
                     ? new Date(this.quoteRec.DRC_NBC_Lead_Time__c).toISOString().split('T')[0]
                     : null,
-                Description: this.quoteRec.Description,
-                CurrencyIsoCode: this.quoteRec.CurrencyIsoCode,
-                Status: this.quoteRec.Status,
-                DRC_NBC_Type__c: this.quoteRec.DRC_NBC_Type__c,
-                DRC_NBC_Payemnt_Term__c: this.quoteRec.DRC_NBC_Payemnt_Term__c,
+                Description:                         this.quoteRec.Description,
+                CurrencyIsoCode:                     this.quoteRec.CurrencyIsoCode,
+                Status:                              this.quoteRec.Status,
+                DRC_NBC_Type__c:                     this.quoteRec.DRC_NBC_Type__c,
+                DRC_NBC_Payemnt_Term__c:             this.quoteRec.DRC_NBC_Payemnt_Term__c,
                 DRC_NBC_Payment_Term_Description__c: this.quoteRec.DRC_NBC_Payment_Term_Description__c,
-                DRC_NBC_Inco_terms__c: this.quoteRec.DRC_NBC_Inco_terms__c,
-                DRC_NBC_Special_Requirements__c: this.quoteRec.DRC_NBC_Special_Requirements__c,
-                DRC_NBC_Other_Tax_Amount__c: this.quoteRec.DRC_NBC_Other_Tax_Amount__c || 0,
-                DRC_NBC_TCS_Amount__c: this.quoteRec.DRC_NBC_TCS_Amount__c || 0,
-                DRC_NBC_Shipping_Address_Id__c: this.selectedShippingId,
-                ContactId: this.selectedContactId,
-                Email: this.selectedContactEmail,
-                Phone: this.selectedContactPhone,
-                Fax: this.selectedContactFax,
-                BillingStreet: this.accountBillingStreet,
-                BillingCity: this.accountBillingCity,
-                BillingState: this.accountBillingState,
-                BillingPostalCode: this.accountBillingPostalCode,
-                BillingCountry: this.accountBillingCountry
+                DRC_NBC_Inco_terms__c:               this.quoteRec.DRC_NBC_Inco_terms__c,
+                DRC_NBC_Special_Requirements__c:     this.quoteRec.DRC_NBC_Special_Requirements__c,
+                DRC_NBC_Other_Tax_Amount__c:         this.quoteRec.DRC_NBC_Other_Tax_Amount__c || 0,
+                DRC_NBC_TCS_Amount__c:               this.quoteRec.DRC_NBC_TCS_Amount__c || 0,
+                DRC_NBC_Shipping_Address_Id__c:      this.selectedShippingId,
+                ContactId:                           this.selectedContactId,
+                Email:                               this.selectedContactEmail,
+                Phone:                               this.selectedContactPhone,
+                Fax:                                 this.selectedContactFax,
+                BillingStreet:                       this.accountBillingStreet,
+                BillingCity:                         this.accountBillingCity,
+                BillingState:                        this.accountBillingState,
+                BillingPostalCode:                   this.accountBillingPostalCode,
+                BillingCountry:                      this.accountBillingCountry
             };
 
             saveQLIData({
-                qliList: recordsToSave,
+                qliList:        recordsToSave,
                 qliIdsToDelete: this.qliIdsToDelete,
-                quoteData: updatedQuote
+                quoteData:      updatedQuote
             })
                 .then(() => {
                     this.showToastEvent("Success", "Quote and Line Items saved successfully", "success");
@@ -594,6 +609,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         }
     }
 
+    // ─── Product search by name pattern only (not currency filtered) ──────────
     handleValueChange(event) {
         const index = event.target.dataset.index;
         const field = event.target.name;
@@ -601,6 +617,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         this.filteredData[index].recordData[field] = value;
 
         if (field === 'ProductName' && value.length >= 2) {
+            // ✅ Search by name pattern only — currency already on productsMasterList from Quote
             const matches = this.productsMasterList.filter(product =>
                 product.Product2.Name.toLowerCase().includes(value.toLowerCase())
             );
@@ -610,53 +627,49 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             this.filteredData[index].recordData.searchResults  = [];
             this.filteredData[index].recordData.noResultsFound = false;
         }
-        
+
         if (['Quantity', 'Discount'].includes(field)) {
             this.updateTotal(index);
         }
     }
 
-    // Handle packing size selection:
-    // - stores the raw packing qty from child record as the divisor (rawPackingQuantity)
-    // - displays ceil(Quantity / rawPackingQty) in the UI
+    // ─── Packing Size change ──────────────────────────────────────────────────
     handlePackingSizeChange(event) {
-        const index       = parseInt(event.target.dataset.index);
+        const index        = parseInt(event.target.dataset.index);
         const selectedSize = event.detail.value;
+        const row          = this.filteredData[index].recordData;
 
-        this.filteredData[index].recordData.selectedPackingSize = selectedSize;
+        row.selectedPackingSize = selectedSize;
 
-        // Find the matching detail record to get the raw divisor
-        const packingDetails = this.filteredData[index].recordData.packingDetails || [];
+        const packingDetails = row.packingDetails || [];
         const matchedDetail  = packingDetails.find(pd => pd.packingSize === selectedSize);
 
-        if (matchedDetail && matchedDetail.packingQuantity != null && matchedDetail.packingQuantity !== '') {
-            this.filteredData[index].recordData.rawPackingQuantity = String(matchedDetail.packingQuantity);
-        } else {
-            this.filteredData[index].recordData.rawPackingQuantity = '';
-        }
+        // ✅ rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from child record
+        row.rawPackingQuantity = (matchedDetail?.packingQuantity != null && matchedDetail.packingQuantity !== '')
+            ? String(matchedDetail.packingQuantity) : '';
 
-        // Displayed value = ceil(entered Quantity / rawPackingQuantity)
-        this.filteredData[index].recordData.packingQuantity = this._recalcPackingQuantity(
-            this.filteredData[index].recordData
-        );
+        // ✅ Packing quantity column = DB value directly, NOT a calculation
+        row.packingQuantity = row.rawPackingQuantity;
+
+        // ✅ Validate current quantity against new packing size
+        row.quantityError = this._getQuantityError(row.Quantity, row.rawPackingQuantity);
 
         this.filteredData = [...this.filteredData];
     }
 
-    // When the user changes quantity, recalculate displayed packing quantity
-    // if a packing size is already selected
+    // ─── Quantity change ──────────────────────────────────────────────────────
     handleQuantityChange(event) {
         const index    = parseInt(event.target.dataset.index);
         const quantity = parseFloat(event.target.value) || 0;
+        const row      = this.filteredData[index].recordData;
 
-        this.filteredData[index].recordData.Quantity = quantity;
+        row.Quantity = quantity;
 
-        // Recalculate displayed packing quantity: ceil(Quantity / rawPackingQuantity)
-        if (this.filteredData[index].recordData.selectedPackingSize) {
-            this.filteredData[index].recordData.packingQuantity = this._recalcPackingQuantity(
-                this.filteredData[index].recordData
-            );
-        }
+        // ✅ Validate: quantity must be a multiple of rawPackingQuantity
+        row.quantityError = this._getQuantityError(quantity, row.rawPackingQuantity);
+
+        // packingQuantity column does NOT change when quantity changes —
+        // it always shows DRC_NBC_Packing_Qauntity__c from the DB record
 
         this.updateTotal(index);
         this.filteredData = [...this.filteredData];
@@ -668,46 +681,47 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         let record   = this.filteredData[index].recordData;
 
         record.modifiedPrice = value;
-        const basePrice = parseFloat(record.OriginalUnitPrice) || 0;
-        record.modifier = (value - basePrice).toFixed(2);
+        const basePrice      = parseFloat(record.OriginalUnitPrice) || 0;
+        record.modifier      = (value - basePrice).toFixed(2);
 
         this.updateTotal(index);
         this.filteredData = [...this.filteredData];
     }
 
     handleProductSelect(event) {
-        const index      = parseInt(event.target.dataset.index);
-        const selectedId = event.target.dataset.id;
+        const index       = parseInt(event.target.dataset.index);
+        const selectedId  = event.target.dataset.id;
         const selectedProduct = this.productsMasterList.find(p => p.Id === selectedId);
 
         if (selectedProduct) {
             const unitPrice = selectedProduct.UnitPrice || 0;
 
-            // Fetch packing details from the cached map for the selected product
-            const packingDetails    = this.getPackingDetailsForProduct(selectedProduct.Product2Id);
+            // ✅ Fetch packing details from cached map for selected product
+            const packingDetails     = this.getPackingDetailsForProduct(selectedProduct.Product2Id);
             const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
 
             this.filteredData[index].recordData = {
                 ...this.filteredData[index].recordData,
-                showSearch: false,
-                Name: selectedProduct.Product2.Name,
-                Product2Id: selectedProduct.Product2.Id,
-                Description: selectedProduct.Product2.Description,
-                UnitPrice: unitPrice,
-                OriginalUnitPrice: unitPrice,
-                DRC_NBC_FG_Code__c: selectedProduct.Product2.DRC_NBC_FG_Code__c,
-                DRC_NBC_HSN_SAC_Code__c: selectedProduct.Product2.DRC_NBC_HSN_SAC_Code__c,
-                PricebookEntryId: selectedProduct.Id,
+                showSearch:                     false,
+                Name:                           selectedProduct.Product2.Name,
+                Product2Id:                     selectedProduct.Product2.Id,
+                Description:                    selectedProduct.Product2.Description,
+                UnitPrice:                      unitPrice,
+                OriginalUnitPrice:              unitPrice,
+                DRC_NBC_FG_Code__c:             selectedProduct.Product2.DRC_NBC_FG_Code__c,
+                DRC_NBC_HSN_SAC_Code__c:        selectedProduct.Product2.DRC_NBC_HSN_SAC_Code__c,
+                PricebookEntryId:               selectedProduct.Id,
                 DRC_NBC_Unit_Of_Measurement__c: selectedProduct.Product2.QuantityUnitOfMeasure,
-                modifier: 0,
-                modifiedPrice: unitPrice,
-                searchResults: [],
-                noResultsFound: false,
-                packingDetails: packingDetails,
-                packingSizeOptions: packingSizeOptions,
-                selectedPackingSize: '',
-                rawPackingQuantity: '',   // divisor from child record
-                packingQuantity: ''       // displayed: ceil(Quantity / rawPackingQuantity)
+                modifier:                       0,
+                modifiedPrice:                  unitPrice,
+                searchResults:                  [],
+                noResultsFound:                 false,
+                packingDetails,
+                packingSizeOptions,
+                selectedPackingSize:            '',
+                rawPackingQuantity:             '',
+                packingQuantity:                '',   // blank until packing size selected
+                quantityError:                  ''
             };
             this.updateTotal(index);
             this.filteredData = [...this.filteredData];
@@ -724,37 +738,38 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     getBaseRecordData() {
         return {
             qlis: {
-                Id: '',
-                Name: '',
-                PricebookEntryId: '',
-                Description: '',
-                Discount: 0,
-                ListPrice: 0,
-                Product2Id: '',
-                Quantity: 1,
-                UnitPrice: 0,
-                OriginalUnitPrice: 0,
-                ProductName: '',
-                DRC_NBC_FG_Code__c: '',
-                DRC_NBC_HSN_SAC_Code__c: '',
-                QuantityUnitOfMeasure: '',
-                modifier: 0,
-                modifiedPrice: 0,
-                totalAmount: 0,
-                showSearch: true,
-                searchResults: [],
-                noResultsFound: false,
-                packingDetails: [],
-                packingSizeOptions: [],
-                selectedPackingSize: '',
-                rawPackingQuantity: '',   // divisor from child record DRC_NBC_Packing_Qauntity__c
-                packingQuantity: ''       // displayed: ceil(Quantity / rawPackingQuantity)
+                Id:                             '',
+                Name:                           '',
+                PricebookEntryId:               '',
+                Description:                    '',
+                Discount:                       0,
+                ListPrice:                      0,
+                Product2Id:                     '',
+                Quantity:                       1,
+                UnitPrice:                      0,
+                OriginalUnitPrice:              0,
+                ProductName:                    '',
+                DRC_NBC_FG_Code__c:             '',
+                DRC_NBC_HSN_SAC_Code__c:        '',
+                QuantityUnitOfMeasure:          '',
+                modifier:                       0,
+                modifiedPrice:                  0,
+                totalAmount:                    0,
+                showSearch:                     true,
+                searchResults:                  [],
+                noResultsFound:                 false,
+                packingDetails:                 [],
+                packingSizeOptions:             [],
+                selectedPackingSize:            '',
+                rawPackingQuantity:             '',
+                packingQuantity:                '',
+                quantityError:                  ''
             }
         };
     }
 
     updateTotal(index) {
-        let record = this.filteredData[index].recordData;
+        let record      = this.filteredData[index].recordData;
         const modifiedPrice = parseFloat(record.modifiedPrice) || 0;
         const quantity      = parseFloat(record.Quantity)      || 0;
         const discount      = parseFloat(record.Discount)      || 0;

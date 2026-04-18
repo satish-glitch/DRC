@@ -17,10 +17,11 @@
 
         <!-- Modal Body -->
         <div class="slds-modal__content slds-p-around_medium" style="max-height: 60vh; overflow-y: auto;">
+
             <!-- Basic Info Section -->
             <div class={getBasicInfoClass}>
                 <h3 class="slds-section__title slds-theme_shade">
-                    <button class="slds-button slds-button_reset slds-section__title-action" 
+                    <button class="slds-button slds-button_reset slds-section__title-action"
                             onclick={toggleBasicInfo}
                             aria-expanded={isBasicInfoOpen}
                             aria-controls="basic-info-content">
@@ -35,19 +36,11 @@
                                 <lightning-input-field field-name="Name" onchange={handleFieldChange}></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field 
-                                    field-name="ExpirationDate" 
-                                    onchange={handleFieldChange}
-                                    required>
-                                </lightning-input-field>
+                                <lightning-input-field field-name="ExpirationDate" onchange={handleFieldChange} required></lightning-input-field>
                             </div>
-                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field 
-                                    field-name="DRC_NBC_Lead_Time__c" 
-                                    onchange={handleFieldChange}
-                                    required>
-                                </lightning-input-field>
-                            </div> 
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-input-field field-name="DRC_NBC_Lead_Time__c" onchange={handleFieldChange} required></lightning-input-field>
+                            </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="Status" onchange={handleFieldChange} disabled></lightning-input-field>
                             </div>
@@ -63,17 +56,20 @@
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="DRC_NBC_Inco_terms__c" onchange={handleFieldChange} required></lightning-input-field>
                             </div>
-                            <template if:true={isExport}>
-                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                    <lightning-input-field field-name="CurrencyIsoCode" value={oppCurrency} disabled></lightning-input-field>
-                                </div>
-                            </template>
+                            <!-- Currency is read-only — always driven by the Opportunity -->
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-input
+                                    label="Currency"
+                                    value={oppCurrency}
+                                    disabled>
+                                </lightning-input>
+                            </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="Description" onchange={handleFieldChange}></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field 
-                                    label="Special Requirements" 
+                                <lightning-input-field
+                                    label="Special Requirements"
                                     value={quoteRec.DRC_NBC_Special_Requirements__c}>
                                 </lightning-input-field>
                             </div>
@@ -85,7 +81,7 @@
             <!-- Prepared For Section -->
             <div class={getPreparedClass}>
                 <h3 class="slds-section__title slds-theme_shade">
-                    <button class="slds-button slds-button_reset slds-section__title-action" 
+                    <button class="slds-button slds-button_reset slds-section__title-action"
                             onclick={togglePrepared}
                             aria-expanded={isPreparedOpen}
                             aria-controls="prepared-for-content">
@@ -103,7 +99,7 @@
                                     Contact
                                 </label>
                                 <div class="slds-form-element__control search-container">
-                                    <lightning-input 
+                                    <lightning-input
                                         type="search"
                                         variant="label-hidden"
                                         name="contactSearch"
@@ -114,7 +110,6 @@
                                         onblur={handleContactInputBlur}
                                         class="search-input">
                                     </lightning-input>
-
                                     <template if:true={showContactSuggestions}>
                                         <div class="slds-dropdown slds-dropdown_fluid suggestions-box">
                                             <ul class="slds-listbox slds-listbox_vertical" role="presentation">
@@ -122,9 +117,9 @@
                                                     <template for:each={filteredContacts} for:item="opt">
                                                         <li key={opt.value} class="slds-listbox__item" role="presentation">
                                                             <div class="slds-listbox__option slds-listbox__option_plain"
-                                                                data-id={opt.value}
-                                                                data-name={opt.label}
-                                                                onclick={handleContactSelect}>
+                                                                 data-id={opt.value}
+                                                                 data-name={opt.label}
+                                                                 onclick={handleContactSelect}>
                                                                 <span>{opt.label}</span>
                                                             </div>
                                                         </li>
@@ -144,42 +139,28 @@
                             </div>
                         </div>
 
-                        <!-- Email (Read-only) -->
+                        <!-- Email -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input
-                                label="Email"
-                                value={selectedContactEmail}
-                                required
-                                disabled>
-                            </lightning-input>
+                            <lightning-input label="Email"  value={selectedContactEmail} required disabled></lightning-input>
                         </div>
 
-                        <!-- Phone (Read-only) -->
+                        <!-- Phone -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input
-                                label="Phone"
-                                value={selectedContactPhone}
-                                required
-                                disabled>
-                            </lightning-input>
+                            <lightning-input label="Phone"  value={selectedContactPhone} required disabled></lightning-input>
                         </div>
 
-                        <!-- Mobile (Read-only) -->
+                        <!-- Fax -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input
-                                label="Fax"
-                                value={selectedContactFax}
-                                disabled>                              
-                            </lightning-input>
+                            <lightning-input label="Fax"    value={selectedContactFax}   disabled></lightning-input>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Address Selection Section -->
+            <!-- Address Section -->
             <div class={getAddressClass}>
                 <h3 class="slds-section__title slds-theme_shade">
-                    <button class="slds-button slds-button_reset slds-section__title-action" 
+                    <button class="slds-button slds-button_reset slds-section__title-action"
                             onclick={toggleAddressInfo}
                             aria-expanded={isAddressOpen}
                             aria-controls="address-info-content">
@@ -189,17 +170,9 @@
                 </h3>
                 <div id="address-info-content" class="slds-section__content">
                     <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
-                        <!-- Billing Address (Read-Only from Account) -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input
-                                type="text"
-                                label="Billing Address"
-                                value={billingAddressDisplay}
-                                disabled>
-                            </lightning-input>
+                            <lightning-input type="text" label="Billing Address" value={billingAddressDisplay} disabled></lightning-input>
                         </div>
-
-                        <!-- Shipping Address (Selectable from custom object) -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                             <lightning-combobox
                                 name="shipping"
@@ -217,7 +190,7 @@
             <!-- Financial Details Section -->
             <div class={getFinancialClass}>
                 <h3 class="slds-section__title slds-theme_shade">
-                    <button class="slds-button slds-button_reset slds-section__title-action" 
+                    <button class="slds-button slds-button_reset slds-section__title-action"
                             onclick={toggleFinancial}
                             aria-expanded={isFinancialOpen}
                             aria-controls="financial-content">
@@ -228,20 +201,12 @@
                 <div id="financial-content" class="slds-section__content">
                     <lightning-record-edit-form object-api-name="Quote">
                         <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
-                            <!-- Other Tax -->
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field 
-                                    field-name="DRC_NBC_Other_Tax_Amount__c" 
-                                    onchange={handleFieldChange}>
-                                </lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Other_Tax_Amount__c" onchange={handleFieldChange}></lightning-input-field>
                             </div>
-                            <!-- TCS Amount -->
                             <template if:true={isDomestic}>
                                 <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                    <lightning-input-field 
-                                        field-name="DRC_NBC_TCS_Amount__c" 
-                                        onchange={handleFieldChange}>
-                                    </lightning-input-field>
+                                    <lightning-input-field field-name="DRC_NBC_TCS_Amount__c" onchange={handleFieldChange}></lightning-input-field>
                                 </div>
                             </template>
                         </div>
@@ -256,17 +221,15 @@
                             onclick={toggleProduct}
                             aria-expanded={isProductOpen}
                             aria-controls="product-content">
-                        <lightning-icon icon-name={getProductIcon} size="small"
-                                        class="slds-section__title-icon"></lightning-icon>
+                        <lightning-icon icon-name={getProductIcon} size="small" class="slds-section__title-icon"></lightning-icon>
                         <span class="slds-truncate slds-p-horizontal_small">Product Information</span>
                     </button>
                 </h3>
-
                 <div id="product-content" class="slds-section__content">
                     <template if:true={showAddProducts}>
                         <div class="slds-grid slds-grid_align-spread slds-p-horizontal_small slds-m-bottom_small" style="padding-top:1rem">
                             <div class="slds-text-heading_small" style="flex: 1; text-align: right;">
-                                <lightning-button 
+                                <lightning-button
                                     label="Add Products"
                                     icon-name="utility:add"
                                     icon-position="left"
@@ -293,14 +256,15 @@
                                                 <th style="padding-right: 2.5rem;">Packing Size</th>
                                                 <th style="text-align: center;">Packing Quantity</th>
                                                 <th style="padding-right: 2.5rem;">Sales Price</th>
-                                                <th style="padding-right: 2.5rem;">Description</th>                              
+                                                <th style="padding-right: 2.5rem;">Description</th>
                                                 <th style="text-align: center;">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <template for:each={filteredData} for:item="data" for:index="index">
                                                 <tr key={data.id}>
-                                                    <!-- Product Name Column -->
+
+                                                    <!-- Product Name -->
                                                     <template if:true={data.recordData.showSearch}>
                                                         <td style="position: relative;">
                                                             <lightning-input
@@ -316,21 +280,20 @@
                                                                     <div class="slds-box slds-m-top_xx-small custom-dropdown">
                                                                         <template for:each={data.recordData.searchResults} for:item="product">
                                                                             <div key={product.PricebookEntryId}
-                                                                                class="slds-p-around_x-small"
-                                                                                style="cursor: pointer;"
-                                                                                data-id={product.PricebookEntryId}
-                                                                                data-index={index}
-                                                                                onclick={handleProductSelect}>
+                                                                                 class="slds-p-around_x-small"
+                                                                                 style="cursor: pointer;"
+                                                                                 data-id={product.PricebookEntryId}
+                                                                                 data-index={index}
+                                                                                 onclick={handleProductSelect}>
                                                                                 {product.Name}
                                                                             </div>
                                                                         </template>
                                                                     </div>
                                                                 </template>
                                                             </template>
-
                                                             <template if:true={data.recordData.noResultsFound}>
                                                                 <div class="slds-box slds-m-top_xx-small"
-                                                                    style="position: absolute; z-index: 10; background: white; width: 200px; padding: 8px; color: grey; font-style: italic;">
+                                                                     style="position: absolute; z-index: 10; background: white; width: 200px; padding: 8px; color: grey; font-style: italic;">
                                                                     No results found
                                                                 </div>
                                                             </template>
@@ -356,26 +319,34 @@
 
                                                     <!-- FG Code -->
                                                     <td style="text-align: center;">{data.recordData.DRC_NBC_FG_Code__c}</td>
-                                                    
+
                                                     <!-- HSN Code -->
                                                     <td style="text-align: center;">{data.recordData.DRC_NBC_HSN_SAC_Code__c}</td>
-                                                    
-                                                    <!-- Quantity Column -->
+
+                                                    <!-- Quantity — with inline error message -->
                                                     <td class="input-cell">
-                                                        <lightning-input
-                                                            type="number"
-                                                            style="width: 70px;"
-                                                            value={data.recordData.Quantity}
-                                                            name="Quantity"
-                                                            data-index={index}
-                                                            onchange={handleQuantityChange}>
-                                                        </lightning-input>
+                                                        <div>
+                                                            <lightning-input
+                                                                type="number"
+                                                                style="width: 90px;"
+                                                                value={data.recordData.Quantity}
+                                                                name="Quantity"
+                                                                data-index={index}
+                                                                onchange={handleQuantityChange}>
+                                                            </lightning-input>
+                                                            <!-- Inline error shown below the field -->
+                                                            <template if:true={data.recordData.quantityError}>
+                                                                <p style="color: #c23934; font-size: 0.75rem; margin-top: 2px; white-space: normal; max-width: 200px;">
+                                                                    {data.recordData.quantityError}
+                                                                </p>
+                                                            </template>
+                                                        </div>
                                                     </td>
 
                                                     <!-- UOM -->
                                                     <td style="text-align: center; vertical-align: middle;">{data.recordData.DRC_NBC_Unit_Of_Measurement__c}</td>
 
-                                                    <!-- Packing Size Column (NEW) -->
+                                                    <!-- Packing Size -->
                                                     <td class="input-cell">
                                                         <template if:true={data.recordData.packingSizeOptions.length}>
                                                             <lightning-combobox
@@ -393,6 +364,7 @@
                                                         </template>
                                                     </td>
 
+                                                    <!-- Packing Quantity (calculated, read-only) -->
                                                     <td style="text-align: center; vertical-align: middle;">
                                                         <template if:true={data.recordData.packingQuantity}>
                                                             {data.recordData.packingQuantity}
@@ -401,7 +373,8 @@
                                                             <span style="color: #999;">-</span>
                                                         </template>
                                                     </td>
-                                                    <!-- Sales Price Column -->
+
+                                                    <!-- Sales Price -->
                                                     <td class="input-cell">
                                                         <lightning-input
                                                             type="number"
@@ -414,7 +387,7 @@
                                                         </lightning-input>
                                                     </td>
 
-                                                    <!-- Description Column -->
+                                                    <!-- Description -->
                                                     <td class="input-cell">
                                                         <lightning-input
                                                             style="width: 240px;"
@@ -425,7 +398,7 @@
                                                         </lightning-input>
                                                     </td>
 
-                                                    <!-- Action Column -->
+                                                    <!-- Actions -->
                                                     <td style="text-align: center;">
                                                         <lightning-icon
                                                             class="slds-p-top_medium"
@@ -436,7 +409,6 @@
                                                             label="Add Row"
                                                             onclick={handleAddRow}>
                                                         </lightning-icon>
-
                                                         <lightning-icon
                                                             data-index={index}
                                                             icon-name="action:delete"
@@ -456,7 +428,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Footer -->
         <footer class="slds-modal__footer">
             <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
