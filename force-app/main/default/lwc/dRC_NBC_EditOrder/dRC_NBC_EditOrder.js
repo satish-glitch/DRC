@@ -86,7 +86,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     @track selectedShipToAddressId = '';
 
     // Packing details map: Product2Id → List of { packingSize, packingQuantity }
-    // Populated from DRC_NBC_Packing_Details__c child object via Apex
+    // packingQuantity = raw DRC_NBC_Packing_Qauntity__c value (used for display & validation)
     packingDetailsMap = {};
 
     @wire(CurrentPageReference)
@@ -121,15 +121,15 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     handleDocumentClick(event) {
-        const billToInput    = this.template.querySelector('#billToContact');
-        const shipToInput    = this.template.querySelector('#shipToContact');
+        const billToInput      = this.template.querySelector('#billToContact');
+        const shipToInput      = this.template.querySelector('#shipToContact');
         const opportunityInput = this.template.querySelector('#opportunitySearch');
-        const quoteInput     = this.template.querySelector('#quoteSearch');
+        const quoteInput       = this.template.querySelector('#quoteSearch');
 
-        if (billToInput    && !billToInput.contains(event.target))    this.showBillToContactDropdown = false;
-        if (shipToInput    && !shipToInput.contains(event.target))    this.showShipToContactDropdown = false;
-        if (opportunityInput && !opportunityInput.contains(event.target)) this.showOpportunityDropdown = false;
-        if (quoteInput     && !quoteInput.contains(event.target))     this.showQuoteDropdown = false;
+        if (billToInput      && !billToInput.contains(event.target))      this.showBillToContactDropdown = false;
+        if (shipToInput      && !shipToInput.contains(event.target))      this.showShipToContactDropdown = false;
+        if (opportunityInput && !opportunityInput.contains(event.target)) this.showOpportunityDropdown   = false;
+        if (quoteInput       && !quoteInput.contains(event.target))       this.showQuoteDropdown         = false;
     }
 
     addCustomCss() { loadStyle(this, AddProductCSS); }
@@ -166,7 +166,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     get getProductIcon()        { return this.isProductOpen       ? 'utility:chevrondown' : 'utility:chevronright'; }
     get hasProducts()           { return this.filteredData && this.filteredData.length > 0; }
 
-    // ─── Packing helpers (identical pattern to Quote modules) ────────────────────
+    // ─── Packing helpers ─────────────────────────────────────────────────────────
 
     /**
      * Builds combobox options from the packing details list for a product.
@@ -188,16 +188,23 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     /**
-     * Calculates displayed packing quantity = ceil(Quantity / rawPackingQuantity)
-     * rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from the child record (bag/pack size)
+     * Validates that the entered quantity is a positive multiple of rawPackingQuantity.
+     * Returns null if valid (or no packing size selected), or an error message string.
+     *
+     * Examples (rawPackingQuantity = 100):
+     *   100 → valid
+     *   200 → valid
+     *   150 → invalid  ("Quantity must be a multiple of 100")
      */
-    _recalcPackingQuantity(rowData) {
-        const qty       = parseFloat(rowData.Quantity)           || 0;
+    _validateQuantityMultiple(rowData) {
         const rawPkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
-        if (rawPkgQty > 0 && qty > 0) {
-            return String(Math.ceil(qty / rawPkgQty));
+        if (rawPkgQty <= 0 || !rowData.selectedPackingSize) return null; // no validation needed
+        const qty = parseFloat(rowData.Quantity) || 0;
+        if (qty <= 0) return null; // let required-field validation catch zero/empty
+        if (qty % rawPkgQty !== 0) {
+            return `Quantity must be a multiple of ${rawPkgQty} (packing quantity). Allowed values: ${rawPkgQty}, ${rawPkgQty * 2}, ${rawPkgQty * 3}, …`;
         }
-        return '';
+        return null;
     }
 
     // ─── Order data fetching ─────────────────────────────────────────────────────
@@ -232,24 +239,32 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 this.shipToAccountId   = result.ShipToContact?.AccountId || '';
                 this.shipToAccountName = result.ShipToContact?.Account?.Name || '';
 
-                this.accountOptions = [{ label: this.billToAccountName, value: this.billToAccountId }];
+                this.accountOptions  = [{ label: this.billToAccountName, value: this.billToAccountId }];
                 this.opportunityName = result.Opportunity?.Name || '';
                 this.quoteName       = result.Quote?.Name       || '';
+
+                // ── Auto-set order currency from linked Opportunity (v1.3) ──────────
+                // If the order already has a linked opportunity, adopt its currency so
+                // the order currency stays in sync without the user having to set it
+                // manually.  The user can still override it via the CurrencyIsoCode field.
+                if (result.Opportunity?.CurrencyIsoCode && !this.orderRec.CurrencyIsoCode) {
+                    this.orderRec.CurrencyIsoCode = result.Opportunity.CurrencyIsoCode;
+                }
 
                 this.fetchContacts(this.billToAccountId);
 
                 this.billToAddressFormatted = this.formatAddress({
-                    street: result.BillingStreet,
-                    city: result.BillingCity,
-                    state: result.BillingState,
+                    street:     result.BillingStreet,
+                    city:       result.BillingCity,
+                    state:      result.BillingState,
                     postalCode: result.BillingPostalCode,
-                    country: result.BillingCountry
+                    country:    result.BillingCountry
                 });
 
                 this.selectedShipToAddressId = result.DRC_NBC_Shipping_Address__c || '';
 
-                if (this.shipToAccountId) this.fetchShipToAddresses();
-                if (this.billToAccountId) this.fetchOpportunities(this.billToAccountId);
+                if (this.shipToAccountId)  this.fetchShipToAddresses();
+                if (this.billToAccountId)  this.fetchOpportunities(this.billToAccountId);
 
                 this.updateRejectionVisibility();
             })
@@ -259,7 +274,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     updateRejectionVisibility() {
-        this.showRejectionReason  = this.orderRec.Status === 'Rejected';
+        this.showRejectionReason    = this.orderRec.Status === 'Rejected';
         this.showOtherRejectionText = this.showRejectionReason &&
                                       this.orderRec.DRC_NBC_Reject_Reason_Text__c === 'Other';
     }
@@ -280,8 +295,8 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         if (!accountId) return;
         getContactsByAccount({ accountId })
             .then(result => {
-                this.allBillToContacts  = result.map(c => ({ label: c.Name, value: c.Id }));
-                this.allShipToContacts  = [...this.allBillToContacts];
+                this.allBillToContacts      = result.map(c => ({ label: c.Name, value: c.Id }));
+                this.allShipToContacts      = [...this.allBillToContacts];
                 this.filteredBillToContacts = [...this.allBillToContacts];
                 this.filteredShipToContacts = [...this.allShipToContacts];
                 this.billToContactOptions   = [...this.allBillToContacts];
@@ -297,8 +312,6 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 this.filteredProductList = [...data.productsList];
 
                 // Build the packing details map from the list returned by Apex.
-                // Apex returns List<ProductPackingWrapper> (not Map) because Apex Map<Id,...>
-                // does not serialize correctly to LWC.
                 this.packingDetailsMap = {};
                 const packingList = data.packingDetailsList || [];
                 packingList.forEach(item => {
@@ -311,8 +324,8 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                     this.result = data;
                     this.getOrganizedData();
                 } else {
-                    let newRow = this.getBaseRecordData().olis;
-                    newRow.OrderId  = this.recordId;
+                    let newRow    = this.getBaseRecordData().olis;
+                    newRow.OrderId   = this.recordId;
                     newRow.showSearch = true;
                     this.filteredData = [{ recordData: newRow }];
                 }
@@ -335,9 +348,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             const packingDetails     = this.getPackingDetailsForProduct(item.Product2Id);
             const packingSizeOptions  = this.buildPackingSizeOptions(packingDetails);
 
-            // For existing OLIs: restore rawPackingQuantity from saved packing size
-            // so that _recalcPackingQuantity works correctly if user edits quantity later
-            const savedPackingSize = item.DRC_NBC_Packing_Size__c   || '';
+            // Restore rawPackingQuantity (= DRC_NBC_Packing_Qauntity__c) for the saved packing size.
+            // This is the raw divisor value that is ALSO shown in the Packing Quantity column.
+            const savedPackingSize = item.DRC_NBC_Packing_Size__c    || '';
             const savedPackingQty  = item.DRC_NBC_Packing_Quantity__c || '';
             let rawPackingQuantity = '';
             if (savedPackingSize) {
@@ -346,25 +359,26 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             }
 
             Object.assign(record, {
-                Id: item.Id,
-                Name: item.Product2?.Name || '',
-                PricebookEntryId: item.PricebookEntryId,
-                Description: item.Description || '',
-                Product2Id: item.Product2Id,
-                Quantity: item.Quantity || 1,
-                UnitPrice: originalUnitPrice,
-                OriginalUnitPrice: originalUnitPrice,
-                DRC_NBC_FG_Code__c: item.Product2?.DRC_NBC_FG_Code__c || '-',
-                DRC_NBC_HSN_SAC_Code__c: item.Product2?.DRC_NBC_HSN_SAC_Code__c || '-',
-                UOM: item.Product2?.QuantityUnitOfMeasure || '-',
-                showSearch: false,
-                modifiedPrice: savedModifiedPrice,
-                packingDetails: packingDetails,
-                packingSizeOptions: packingSizeOptions,
-                selectedPackingSize: savedPackingSize,
-                rawPackingQuantity: rawPackingQuantity,   // divisor from child record
-                // Display value = saved packingQty (already ceil(qty/rawPkgQty) from when saved)
-                packingQuantity: savedPackingQty
+                Id:                     item.Id,
+                Name:                   item.Product2?.Name || '',
+                PricebookEntryId:       item.PricebookEntryId,
+                Description:            item.Description || '',
+                Product2Id:             item.Product2Id,
+                Quantity:               item.Quantity || 1,
+                UnitPrice:              originalUnitPrice,
+                OriginalUnitPrice:      originalUnitPrice,
+                DRC_NBC_FG_Code__c:     item.Product2?.DRC_NBC_FG_Code__c     || '-',
+                DRC_NBC_HSN_SAC_Code__c:item.Product2?.DRC_NBC_HSN_SAC_Code__c || '-',
+                UOM:                    item.Product2?.QuantityUnitOfMeasure   || '-',
+                showSearch:             false,
+                modifiedPrice:          savedModifiedPrice,
+                packingDetails:         packingDetails,
+                packingSizeOptions:     packingSizeOptions,
+                selectedPackingSize:    savedPackingSize,
+                rawPackingQuantity:     rawPackingQuantity,  // raw DRC_NBC_Packing_Qauntity__c
+                // Packing Quantity column shows the raw value, not a ceil() calculation
+                packingQuantity:        rawPackingQuantity || savedPackingQty,
+                quantityError:          ''
             });
             this.allData.push({ recordData: record });
         }
@@ -375,7 +389,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
 
     handleBillToContactFocus(event) {
         event.stopPropagation();
-        this.filteredBillToContacts = [...this.allBillToContacts];
+        this.filteredBillToContacts    = [...this.allBillToContacts];
         this.showBillToContactDropdown = true;
         this.showShipToContactDropdown = false;
     }
@@ -399,7 +413,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
 
     handleShipToContactFocus(event) {
         event.stopPropagation();
-        this.filteredShipToContacts = [...this.allShipToContacts];
+        this.filteredShipToContacts    = [...this.allShipToContacts];
         this.showShipToContactDropdown = true;
         this.showBillToContactDropdown = false;
     }
@@ -428,13 +442,19 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     fetchOpportunities(accountId) {
         getOpportunitiesByAccount({ accountId })
             .then(result => {
-                this.allOpportunities     = result.map(opp => ({ label: opp.Name, value: opp.Id }));
+                this.allOpportunities      = result.map(opp => ({ label: opp.Name, value: opp.Id, currencyIsoCode: opp.CurrencyIsoCode }));
                 this.filteredOpportunities = [...this.allOpportunities];
-                this.opportunityOptions   = [...this.allOpportunities];
+                this.opportunityOptions    = [...this.allOpportunities];
 
                 if (this.orderRec.OpportunityId) {
                     const selectedOpp = this.allOpportunities.find(o => o.value === this.orderRec.OpportunityId);
-                    if (selectedOpp) this.opportunityName = selectedOpp.label;
+                    if (selectedOpp) {
+                        this.opportunityName = selectedOpp.label;
+                        // ── Set currency from already-linked opportunity (v1.3) ───────
+                        if (selectedOpp.currencyIsoCode) {
+                            this.orderRec = { ...this.orderRec, CurrencyIsoCode: selectedOpp.currencyIsoCode };
+                        }
+                    }
                     this.fetchQuotes(this.orderRec.OpportunityId);
                 }
             })
@@ -444,9 +464,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     fetchQuotes(opportunityId) {
         getQuotesByOpportunity({ opportunityId })
             .then(result => {
-                this.allQuotes      = result.map(quote => ({ label: quote.Name, value: quote.Id }));
-                this.filteredQuotes = [...this.allQuotes];
-                this.quoteOptions   = [...this.allQuotes];
+                this.allQuotes       = result.map(quote => ({ label: quote.Name, value: quote.Id }));
+                this.filteredQuotes  = [...this.allQuotes];
+                this.quoteOptions    = [...this.allQuotes];
                 this.isQuoteDisabled = false;
 
                 if (this.orderRec.QuoteId) {
@@ -467,7 +487,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     handleOpportunitySearch(event) {
-        const searchTerm = event.target.value.toLowerCase();
+        const searchTerm     = event.target.value.toLowerCase();
         this.opportunityName = event.target.value;
         this.filteredOpportunities = searchTerm.length === 0
             ? [...this.allOpportunities]
@@ -480,9 +500,15 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         const selectedId   = event.currentTarget.dataset.id;
         const selectedName = event.currentTarget.dataset.name;
 
-        this.orderRec.OpportunityId = selectedId;
-        this.opportunityName        = selectedName;
+        this.orderRec.OpportunityId  = selectedId;
+        this.opportunityName         = selectedName;
         this.showOpportunityDropdown = false;
+
+        // ── Auto-set order currency from selected opportunity (v1.3) ─────────────
+        const selectedOpp = this.allOpportunities.find(o => o.value === selectedId);
+        if (selectedOpp && selectedOpp.currencyIsoCode) {
+            this.orderRec = { ...this.orderRec, CurrencyIsoCode: selectedOpp.currencyIsoCode };
+        }
 
         this.orderRec.QuoteId = '';
         this.quoteName        = '';
@@ -507,7 +533,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
 
     handleQuoteSearch(event) {
         const searchTerm = event.target.value.toLowerCase();
-        this.quoteName = event.target.value;
+        this.quoteName   = event.target.value;
         this.filteredQuotes = searchTerm.length === 0
             ? [...this.allQuotes]
             : this.allQuotes.filter(q => q.label.toLowerCase().includes(searchTerm));
@@ -555,6 +581,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         const value = event.target.value;
         this.filteredData[index].recordData[field] = value;
 
+        // ── Product search is now by name only — NOT filtered by currency (v1.3) ──
         if (field === 'ProductName' && value.length >= 2) {
             const matches = this.productsMasterList.filter(product =>
                 product.Product2.Name.toLowerCase().includes(value.toLowerCase())
@@ -571,9 +598,12 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         }
     }
 
-    // Handle packing size selection:
-    // - stores the raw packing qty from child record as the divisor (rawPackingQuantity)
-    // - displays ceil(Quantity / rawPackingQty) in the UI
+    /**
+     * Handle packing size selection:
+     * - stores the raw packing qty (DRC_NBC_Packing_Qauntity__c) as rawPackingQuantity
+     * - displays that raw value directly in the Packing Quantity column
+     * - clears any existing quantity error (user may need to re-enter qty)
+     */
     handlePackingSizeChange(event) {
         const index        = parseInt(event.target.dataset.index);
         const selectedSize = event.detail.value;
@@ -585,33 +615,38 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         const matchedDetail  = packingDetails.find(pd => pd.packingSize === selectedSize);
 
         if (matchedDetail && matchedDetail.packingQuantity != null && matchedDetail.packingQuantity !== '') {
+            // Store raw value — used both for display and quantity validation
             this.filteredData[index].recordData.rawPackingQuantity = String(matchedDetail.packingQuantity);
+            // Packing Quantity column = raw DRC_NBC_Packing_Qauntity__c value
+            this.filteredData[index].recordData.packingQuantity    = String(matchedDetail.packingQuantity);
         } else {
             this.filteredData[index].recordData.rawPackingQuantity = '';
+            this.filteredData[index].recordData.packingQuantity    = '';
         }
 
-        // Displayed value = ceil(entered Quantity / rawPackingQuantity)
-        this.filteredData[index].recordData.packingQuantity = this._recalcPackingQuantity(
-            this.filteredData[index].recordData
-        );
+        // Re-validate quantity with the new packing size
+        const qtyError = this._validateQuantityMultiple(this.filteredData[index].recordData);
+        this.filteredData[index].recordData.quantityError = qtyError || '';
 
         this.filteredData = [...this.filteredData];
     }
 
-    // When the user changes quantity, recalculate displayed packing quantity
-    // if a packing size is already selected
+    /**
+     * When the user changes quantity:
+     * - validate that it is a multiple of rawPackingQuantity (if a packing size is selected)
+     * - show inline error if not; clear error if valid
+     * The Packing Quantity column always shows the raw DRC_NBC_Packing_Qauntity__c value,
+     * not a calculated value, so no recalculation is needed here.
+     */
     handleQuantityChange(event) {
         const index    = parseInt(event.target.dataset.index);
         const quantity = parseFloat(event.target.value) || 0;
 
         this.filteredData[index].recordData.Quantity = quantity;
 
-        // Recalculate displayed packing quantity: ceil(Quantity / rawPackingQuantity)
-        if (this.filteredData[index].recordData.selectedPackingSize) {
-            this.filteredData[index].recordData.packingQuantity = this._recalcPackingQuantity(
-                this.filteredData[index].recordData
-            );
-        }
+        // Validate quantity is a multiple of rawPackingQuantity
+        const qtyError = this._validateQuantityMultiple(this.filteredData[index].recordData);
+        this.filteredData[index].recordData.quantityError = qtyError || '';
 
         this.updateTotal(index);
         this.filteredData = [...this.filteredData];
@@ -619,9 +654,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
 
     handleAddRow() {
         let newRow = this.getBaseRecordData().olis;
-        newRow.Id = null;
-        newRow.showSearch = true;
-        newRow.searchResults = [];
+        newRow.Id             = null;
+        newRow.showSearch     = true;
+        newRow.searchResults  = [];
         newRow.noResultsFound = false;
         this.filteredData = [...this.filteredData, { recordData: newRow }];
         this.showAddProducts = false;
@@ -641,9 +676,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     handleModifiedPriceChange(event) {
-        const index  = parseInt(event.target.dataset.index);
-        const value  = parseFloat(event.target.value) || 0;
-        let record   = this.filteredData[index].recordData;
+        const index = parseInt(event.target.dataset.index);
+        const value = parseFloat(event.target.value) || 0;
+        let record  = this.filteredData[index].recordData;
         record.modifiedPrice = value;
         this.updateTotal(index);
         this.filteredData = [...this.filteredData];
@@ -657,32 +692,31 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         if (selectedProduct) {
             const unitPrice = selectedProduct.UnitPrice || 0;
 
-            // Use Product2Id (direct field on PricebookEntry) for the packing map lookup
-            // Falls back to Product2.Id in case LWC serialization differs
-            const product2Id        = selectedProduct.Product2Id || selectedProduct.Product2?.Id;
-            const packingDetails    = this.getPackingDetailsForProduct(product2Id);
-            const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
+            const product2Id         = selectedProduct.Product2Id || selectedProduct.Product2?.Id;
+            const packingDetails     = this.getPackingDetailsForProduct(product2Id);
+            const packingSizeOptions  = this.buildPackingSizeOptions(packingDetails);
 
             this.filteredData[index].recordData = {
                 ...this.filteredData[index].recordData,
-                showSearch: false,
-                Name: selectedProduct.Product2.Name,
-                Product2Id: product2Id,
-                Description: selectedProduct.Product2.Description,
-                UnitPrice: unitPrice,
-                OriginalUnitPrice: unitPrice,
+                showSearch:          false,
+                Name:                selectedProduct.Product2.Name,
+                Product2Id:          product2Id,
+                Description:         selectedProduct.Product2.Description,
+                UnitPrice:           unitPrice,
+                OriginalUnitPrice:   unitPrice,
                 DRC_NBC_HSN_SAC_Code__c: selectedProduct.Product2.DRC_NBC_HSN_SAC_Code__c,
-                DRC_NBC_FG_Code__c: selectedProduct.Product2.DRC_NBC_FG_Code__c,
-                PricebookEntryId: selectedProduct.Id,
-                UOM: selectedProduct.Product2.QuantityUnitOfMeasure,
-                modifiedPrice: unitPrice,
-                packingDetails: packingDetails,
-                packingSizeOptions: packingSizeOptions,
+                DRC_NBC_FG_Code__c:      selectedProduct.Product2.DRC_NBC_FG_Code__c,
+                PricebookEntryId:    selectedProduct.Id,
+                UOM:                 selectedProduct.Product2.QuantityUnitOfMeasure,
+                modifiedPrice:       unitPrice,
+                packingDetails:      packingDetails,
+                packingSizeOptions:  packingSizeOptions,
                 selectedPackingSize: '',
-                rawPackingQuantity: '',
-                packingQuantity: '',
-                searchResults: [],
-                noResultsFound: false
+                rawPackingQuantity:  '',
+                packingQuantity:     '',
+                quantityError:       '',
+                searchResults:       [],
+                noResultsFound:      false
             };
             this.updateTotal(index);
             this.filteredData = [...this.filteredData];
@@ -697,12 +731,20 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         for (let record of this.filteredData) {
             rowCount++;
             const row = record.recordData;
+
             if (!row.ProductName && !row.Product2Id) {
                 this.showToastEvent("Error", `Product Name is required for row ${rowCount}`, 'error');
                 isValid = false;
             }
             if (!row.Quantity) {
                 this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error');
+                isValid = false;
+            }
+
+            // ── Quantity-multiple validation (v1.3) ───────────────────────────────
+            const qtyError = this._validateQuantityMultiple(row);
+            if (qtyError) {
+                this.showToastEvent("Error", `Row ${rowCount}: ${qtyError}`, 'error');
                 isValid = false;
             }
         }
@@ -741,9 +783,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             }
         }
 
-        if (!this.billToContactId)       { this.showToastEvent("Error", "Bill To Contact is required",  "error"); isValid = false; }
-        if (!this.shipToContactId)       { this.showToastEvent("Error", "Ship To Contact is required",  "error"); isValid = false; }
-        if (!this.selectedShipToAddressId){ this.showToastEvent("Error", "Ship To Address is required", "error"); isValid = false; }
+        if (!this.billToContactId)        { this.showToastEvent("Error", "Bill To Contact is required",  "error"); isValid = false; }
+        if (!this.shipToContactId)        { this.showToastEvent("Error", "Ship To Contact is required",  "error"); isValid = false; }
+        if (!this.selectedShipToAddressId){ this.showToastEvent("Error", "Ship To Address is required",  "error"); isValid = false; }
 
         if (this.orderRec.DRC_NBC_Expected_Delivery_Date__c && this.orderRec.EndDate) {
             if (new Date(this.orderRec.DRC_NBC_Expected_Delivery_Date__c) > new Date(this.orderRec.EndDate)) {
@@ -776,50 +818,51 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         const recordsToSave = this.filteredData.map(row => {
             const r = row.recordData;
             return {
-                Id: r.Id || null,
-                Product2Id: r.Product2Id,
-                Quantity: r.Quantity,
-                UnitPrice: parseFloat(r.modifiedPrice) || parseFloat(r.UnitPrice) || 0,
-                OrderId: this.recordId,
+                Id:               r.Id || null,
+                Product2Id:       r.Product2Id,
+                Quantity:         r.Quantity,
+                UnitPrice:        parseFloat(r.modifiedPrice) || parseFloat(r.UnitPrice) || 0,
+                OrderId:          this.recordId,
                 PricebookEntryId: r.PricebookEntryId,
-                Description: r.Description,
-                DRC_NBC_Packing_Size__c: r.selectedPackingSize || '',
-                // Saves the calculated value: ceil(Quantity / rawPackingQuantity)
-                DRC_NBC_Packing_Quantity__c: r.packingQuantity || ''
+                Description:      r.Description,
+                // Save selected packing size
+                DRC_NBC_Packing_Size__c:     r.selectedPackingSize || '',
+                // Save raw DRC_NBC_Packing_Qauntity__c value (not a calculated value)
+                DRC_NBC_Packing_Quantity__c: r.rawPackingQuantity  || ''
             };
         });
 
         const updatedOrder = {
-            Id: this.recordId,
-            Name: this.orderRec.Name,
-            EffectiveDate: this.orderRec.EffectiveDate,
-            EndDate: this.orderRec.EndDate,
-            Description: this.orderRec.Description,
-            CurrencyIsoCode: this.orderRec.CurrencyIsoCode,
-            Status: this.orderRec.Status,
-            Type: this.orderRec.Type,
-            DRC_NBC_Type__c: this.orderRec.DRC_NBC_Type__c,
-            DRC_NBC_Payment_Terms__c: this.orderRec.DRC_NBC_Payment_Terms__c,
-            DRC_NBC_Payment_Term_Description__c: this.orderRec.DRC_NBC_Payment_Term_Description__c,
-            DRC_NBC_Reject_Reason_Text__c: this.orderRec.DRC_NBC_Reject_Reason_Text__c,
-            DRC_NBC_Other_Rejection_Reason__c: this.orderRec.DRC_NBC_Other_Rejection_Reason__c,
-            DRC_NBC_Inco_Terms__c: this.orderRec.DRC_NBC_Inco_Terms__c,
-            DRC_NBC_Warehouse__c: this.orderRec.DRC_NBC_Warehouse__c,
-            DRC_NBC_Select_Bank__c: this.orderRec.DRC_NBC_Select_Bank__c,
-            DRC_NBC_Terms_and_Conditions__c: this.orderRec.DRC_NBC_Terms_and_Conditions__c,
-            PoNumber: this.orderRec.PoNumber,
-            DRC_NBC_Other_Tax_Amount__c: this.orderRec.DRC_NBC_Other_Tax_Amount__c,
-            DRC_NBC_Consignee_Bank_Name__c: this.orderRec.DRC_NBC_Consignee_Bank_Name__c,
+            Id:               this.recordId,
+            Name:             this.orderRec.Name,
+            EffectiveDate:    this.orderRec.EffectiveDate,
+            EndDate:          this.orderRec.EndDate,
+            Description:      this.orderRec.Description,
+            CurrencyIsoCode:  this.orderRec.CurrencyIsoCode,
+            Status:           this.orderRec.Status,
+            Type:             this.orderRec.Type,
+            DRC_NBC_Type__c:  this.orderRec.DRC_NBC_Type__c,
+            DRC_NBC_Payment_Terms__c:             this.orderRec.DRC_NBC_Payment_Terms__c,
+            DRC_NBC_Payment_Term_Description__c:  this.orderRec.DRC_NBC_Payment_Term_Description__c,
+            DRC_NBC_Reject_Reason_Text__c:        this.orderRec.DRC_NBC_Reject_Reason_Text__c,
+            DRC_NBC_Other_Rejection_Reason__c:    this.orderRec.DRC_NBC_Other_Rejection_Reason__c,
+            DRC_NBC_Inco_Terms__c:                this.orderRec.DRC_NBC_Inco_Terms__c,
+            DRC_NBC_Warehouse__c:                 this.orderRec.DRC_NBC_Warehouse__c,
+            DRC_NBC_Select_Bank__c:               this.orderRec.DRC_NBC_Select_Bank__c,
+            DRC_NBC_Terms_and_Conditions__c:      this.orderRec.DRC_NBC_Terms_and_Conditions__c,
+            PoNumber:                             this.orderRec.PoNumber,
+            DRC_NBC_Other_Tax_Amount__c:          this.orderRec.DRC_NBC_Other_Tax_Amount__c,
+            DRC_NBC_Consignee_Bank_Name__c:           this.orderRec.DRC_NBC_Consignee_Bank_Name__c,
             DRC_NBC_Consignee_Bank_Account_Number__c: this.orderRec.DRC_NBC_Consignee_Bank_Account_Number__c,
-            DRC_NBC_Consignee_Bank_IFSC_Code__c: this.orderRec.DRC_NBC_Consignee_Bank_IFSC_Code__c,
-            DRC_NBC_Consignee_Bank_Address__c: this.orderRec.DRC_NBC_Consignee_Bank_Address__c,
-            DRC_NBC_TCS_Amount__c: this.orderRec.DRC_NBC_TCS_Amount__c,
-            PoDate: this.orderRec.PoDate,
-            DRC_NBC_Special_Instructions__c: this.orderRec.DRC_NBC_Special_Instructions__c,
-            OpportunityId: this.orderRec.OpportunityId,
-            QuoteId: this.orderRec.QuoteId,
-            BillToContactId: this.billToContactId,
-            ShipToContactId: this.shipToContactId,
+            DRC_NBC_Consignee_Bank_IFSC_Code__c:      this.orderRec.DRC_NBC_Consignee_Bank_IFSC_Code__c,
+            DRC_NBC_Consignee_Bank_Address__c:        this.orderRec.DRC_NBC_Consignee_Bank_Address__c,
+            DRC_NBC_TCS_Amount__c:                this.orderRec.DRC_NBC_TCS_Amount__c,
+            PoDate:                               this.orderRec.PoDate,
+            DRC_NBC_Special_Instructions__c:      this.orderRec.DRC_NBC_Special_Instructions__c,
+            OpportunityId:    this.orderRec.OpportunityId,
+            QuoteId:          this.orderRec.QuoteId,
+            BillToContactId:  this.billToContactId,
+            ShipToContactId:  this.shipToContactId,
             DRC_NBC_Shipping_Address__c: this.selectedShipToAddressId
         };
 
@@ -864,9 +907,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         }
 
         saveOrderLineItems({
-            oliList: recordsToSave,
-            oliIdsToDelete: this.oliIdsToDelete,
-            orderData: updatedOrder
+            oliList:          recordsToSave,
+            oliIdsToDelete:   this.oliIdsToDelete,
+            orderData:        updatedOrder
         })
             .then(() => {
                 this.showToastEvent("Success", "Order and Line Items saved successfully", "success");
@@ -894,34 +937,35 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     getBaseRecordData() {
         return {
             olis: {
-                Id: '',
-                Name: '',
-                PricebookEntryId: '',
-                Description: '',
-                Product2Id: '',
-                Quantity: 1,
-                UnitPrice: 0,
-                OriginalUnitPrice: 0,
-                ProductName: '',
-                DRC_NBC_FG_Code__c: '',
+                Id:                    '',
+                Name:                  '',
+                PricebookEntryId:      '',
+                Description:           '',
+                Product2Id:            '',
+                Quantity:              1,
+                UnitPrice:             0,
+                OriginalUnitPrice:     0,
+                ProductName:           '',
+                DRC_NBC_FG_Code__c:    '',
                 DRC_NBC_HSN_SAC_Code__c: '',
-                UOM: '',
-                modifiedPrice: 0,
-                totalAmount: 0,
-                showSearch: true,
-                searchResults: [],
-                noResultsFound: false,
-                packingDetails: [],
-                packingSizeOptions: [],
-                selectedPackingSize: '',
-                rawPackingQuantity: '',   // divisor from child record DRC_NBC_Packing_Qauntity__c
-                packingQuantity: ''       // displayed: ceil(Quantity / rawPackingQuantity)
+                UOM:                   '',
+                modifiedPrice:         0,
+                totalAmount:           0,
+                showSearch:            true,
+                searchResults:         [],
+                noResultsFound:        false,
+                packingDetails:        [],
+                packingSizeOptions:    [],
+                selectedPackingSize:   '',
+                rawPackingQuantity:    '',  // raw DRC_NBC_Packing_Qauntity__c — divisor & display value
+                packingQuantity:       '',  // shown in Packing Quantity column = rawPackingQuantity
+                quantityError:         ''   // inline error when qty is not a multiple
             }
         };
     }
 
     updateTotal(index) {
-        let record = this.filteredData[index].recordData;
+        let record          = this.filteredData[index].recordData;
         const modifiedPrice = parseFloat(record.modifiedPrice) || 0;
         const quantity      = parseFloat(record.Quantity)      || 0;
         record.totalAmount  = modifiedPrice * quantity;

@@ -156,180 +156,181 @@
         </div>
         
         <!-- Contact Information Section -->
-<div class={getContactInfoClass} style="margin-top: 0.5rem;">
-<h3 class="slds-section__title slds-theme_shade">
-    <button class="slds-button slds-button_reset slds-section__title-action" 
-            onclick={toggleContactInfo}
-            aria-expanded={isContactInfoOpen}
-            aria-controls="contact-info-content">
-        <lightning-icon icon-name={getContactInfoIcon} size="small" class="slds-section__title-icon"></lightning-icon>
-        <span class="slds-truncate slds-p-horizontal_small">Contact Information</span>
-    </button>
-</h3>
-<div id="contact-info-content" class="slds-section__content">
-    <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
-        <!-- Bill To Contact -->
-        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-            <div class="slds-form-element slds-is-required">
-                <label class="slds-form-element__label">
-                    <abbr class="slds-required" title="required">*</abbr>
-                    Bill To Contact
-                </label>
-                <div class="slds-form-element__control search-container">
-                    <lightning-input 
-                        type="search"
-                        variant="label-hidden"
-                        name="billToContact"
-                        placeholder="Search Bill To Contact..."
-                        value={billToContactName}
-                        onchange={handleBillToInputChange}
-                        onfocus={handleBillToInputFocus}
-                        onblur={handleFocusOut}
-                        class="search-input">
-                    </lightning-input>
+        <div class={getContactInfoClass} style="margin-top: 0.5rem;">
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action" 
+                        onclick={toggleContactInfo}
+                        aria-expanded={isContactInfoOpen}
+                        aria-controls="contact-info-content">
+                    <lightning-icon icon-name={getContactInfoIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small">Contact Information</span>
+                </button>
+            </h3>
+            <div id="contact-info-content" class="slds-section__content">
+                <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
+                    <!-- Bill To Contact -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <div class="slds-form-element slds-is-required">
+                            <label class="slds-form-element__label">
+                                <abbr class="slds-required" title="required">*</abbr>
+                                Bill To Contact
+                            </label>
+                            <div class="slds-form-element__control search-container">
+                                <lightning-input 
+                                    type="search"
+                                    variant="label-hidden"
+                                    name="billToContact"
+                                    placeholder="Search Bill To Contact..."
+                                    value={billToContactName}
+                                    onchange={handleBillToInputChange}
+                                    onfocus={handleBillToInputFocus}
+                                    onblur={handleFocusOut}
+                                    class="search-input">
+                                </lightning-input>
 
-                    <template if:true={showBillToSuggestions}>
-                        <div class="slds-dropdown slds-dropdown_fluid suggestions-box">
-                            <ul class="slds-listbox slds-listbox_vertical" role="presentation">
-                                <template if:true={filteredBillToContacts.length}>
-                                    <template for:each={filteredBillToContacts} for:item="contact">
-                                        <li key={contact.Id} role="presentation" class="slds-listbox__item">
-                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain suggestion-item" 
-                                                role="option"
-                                                onclick={handleBillToSelect}
-                                                data-id={contact.Id} 
-                                                data-name={contact.Name}>
-                                                <span class="slds-media__figure">
-                                                    <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
-                                                </span>
-                                                <span class="slds-media__body">
-                                                    <span class="slds-truncate" title={contact.Name}>{contact.Name}</span>
-                                                </span>
-                                            </div>
-                                        </li>
-                                    </template>
+                                <template if:true={showBillToSuggestions}>
+                                    <div class="slds-dropdown slds-dropdown_fluid suggestions-box">
+                                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                            <template if:true={filteredBillToContacts.length}>
+                                                <template for:each={filteredBillToContacts} for:item="contact">
+                                                    <li key={contact.Id} role="presentation" class="slds-listbox__item">
+                                                        <div class="slds-media slds-listbox__option slds-listbox__option_plain suggestion-item" 
+                                                            role="option"
+                                                            onclick={handleBillToSelect}
+                                                            data-id={contact.Id} 
+                                                            data-name={contact.Name}>
+                                                            <span class="slds-media__figure">
+                                                                <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
+                                                            </span>
+                                                            <span class="slds-media__body">
+                                                                <span class="slds-truncate" title={contact.Name}>{contact.Name}</span>
+                                                            </span>
+                                                        </div>
+                                                    </li>
+                                                </template>
+                                            </template>
+                                            <template if:false={filteredBillToContacts.length}>
+                                                <li role="presentation" class="slds-listbox__item">
+                                                    <div class="slds-media slds-listbox__option slds-listbox__option_plain no-result">
+                                                        <span class="slds-media__figure">
+                                                            <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
+                                                        </span>
+                                                        <span class="slds-media__body">
+                                                            <span class="slds-truncate">No results found</span>
+                                                        </span>
+                                                    </div>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
                                 </template>
-                                <template if:false={filteredBillToContacts.length}>
-                                    <li role="presentation" class="slds-listbox__item">
-                                        <div class="slds-media slds-listbox__option slds-listbox__option_plain no-result">
-                                            <span class="slds-media__figure">
-                                                <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
-                                            </span>
-                                            <span class="slds-media__body">
-                                                <span class="slds-truncate">No results found</span>
-                                            </span>
-                                        </div>
-                                    </li>
-                                </template>
-                            </ul>
+                            </div>
                         </div>
-                    </template>
+                    </div>
+
+                    <!-- Ship To Contact -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <div class="slds-form-element slds-is-required">
+                            <label class="slds-form-element__label">
+                                <abbr class="slds-required" title="required">*</abbr>
+                                Ship To Contact
+                            </label>
+                            <div class="slds-form-element__control search-container">
+                                <lightning-input 
+                                    type="search"
+                                    variant="label-hidden"
+                                    name="shipToContact"
+                                    placeholder="Search Ship To Contact..."
+                                    value={shipToContactName}
+                                    onchange={handleShipToInputChange}
+                                    onfocus={handleShipToInputFocus}
+                                    onblur={handleFocusOut}
+                                    class="search-input">
+                                </lightning-input>
+
+                                <template if:true={showShipToSuggestions}>
+                                    <div class="slds-dropdown slds-dropdown_fluid suggestions-box">
+                                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                            <template if:true={filteredShipToContacts.length}>
+                                                <template for:each={filteredShipToContacts} for:item="contact">
+                                                    <li key={contact.Id} role="presentation" class="slds-listbox__item">
+                                                        <div class="slds-media slds-listbox__option slds-listbox__option_plain suggestion-item" 
+                                                            role="option"
+                                                            onclick={handleShipToSelect}
+                                                            data-id={contact.Id} 
+                                                            data-name={contact.Name}>
+                                                            <span class="slds-media__figure">
+                                                                <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
+                                                            </span>
+                                                            <span class="slds-media__body">
+                                                                <span class="slds-truncate" title={contact.Name}>{contact.Name}</span>
+                                                            </span>
+                                                        </div>
+                                                    </li>
+                                                </template>
+                                            </template>
+                                            <template if:false={filteredShipToContacts.length}>
+                                                <li role="presentation" class="slds-listbox__item">
+                                                    <div class="slds-media slds-listbox__option slds-listbox__option_plain no-result">
+                                                        <span class="slds-media__figure">
+                                                            <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
+                                                        </span>
+                                                        <span class="slds-media__body">
+                                                            <span class="slds-truncate">No results found</span>
+                                                        </span>
+                                                    </div>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Ship To Contact -->
-        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-            <div class="slds-form-element slds-is-required">
-                <label class="slds-form-element__label">
-                    <abbr class="slds-required" title="required">*</abbr>
-                    Ship To Contact
-                </label>
-                <div class="slds-form-element__control search-container">
-                    <lightning-input 
-                        type="search"
-                        variant="label-hidden"
-                        name="shipToContact"
-                        placeholder="Search Ship To Contact..."
-                        value={shipToContactName}
-                        onchange={handleShipToInputChange}
-                        onfocus={handleShipToInputFocus}
-                        onblur={handleFocusOut}
-                        class="search-input">
-                    </lightning-input>
-
-                    <template if:true={showShipToSuggestions}>
-                        <div class="slds-dropdown slds-dropdown_fluid suggestions-box">
-                            <ul class="slds-listbox slds-listbox_vertical" role="presentation">
-                                <template if:true={filteredShipToContacts.length}>
-                                    <template for:each={filteredShipToContacts} for:item="contact">
-                                        <li key={contact.Id} role="presentation" class="slds-listbox__item">
-                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain suggestion-item" 
-                                                role="option"
-                                                onclick={handleShipToSelect}
-                                                data-id={contact.Id} 
-                                                data-name={contact.Name}>
-                                                <span class="slds-media__figure">
-                                                    <lightning-icon icon-name="standard:contact" size="small"></lightning-icon>
-                                                </span>
-                                                <span class="slds-media__body">
-                                                    <span class="slds-truncate" title={contact.Name}>{contact.Name}</span>
-                                                </span>
-                                            </div>
-                                        </li>
-                                    </template>
-                                </template>
-                                <template if:false={filteredShipToContacts.length}>
-                                    <li role="presentation" class="slds-listbox__item">
-                                        <div class="slds-media slds-listbox__option slds-listbox__option_plain no-result">
-                                            <span class="slds-media__figure">
-                                                <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
-                                            </span>
-                                            <span class="slds-media__body">
-                                                <span class="slds-truncate">No results found</span>
-                                            </span>
-                                        </div>
-                                    </li>
-                                </template>
-                            </ul>
-                        </div>
-                    </template>
+        <!-- Address Selection Section -->
+        <div class={getAddressClass} style="margin-top: 0.5rem;">
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action" 
+                        onclick={toggleAddress}
+                        aria-expanded={isAddressOpen}
+                        aria-controls="address-info-content">
+                    <lightning-icon icon-name={getAddressIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small" title="Address Information">
+                        Address Information
+                    </span>
+                </button>
+            </h3>
+            <div id="address-info-content" class="slds-section__content">
+                <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
+                    <!-- Billing Address (Read-Only from Account) -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-input
+                            type="text"
+                            label="Billing Address"
+                            value={billingAddressDisplay}
+                            disabled>                           
+                        </lightning-input>
+                    </div>
+                    
+                    <!-- Shipping Address (Selectable from custom object) -->
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                        <lightning-combobox
+                            name="shipping"
+                            label="Shipping Address"
+                            value={selectedShippingId}
+                            options={shippingAddressOptions}
+                            onchange={handleAddressChange}
+                            required>
+                        </lightning-combobox>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-</div>
 
-<!-- Address Selection Section -->
-<div class={getAddressClass} style="margin-top: 0.5rem;">
-<h3 class="slds-section__title slds-theme_shade">
-    <button class="slds-button slds-button_reset slds-section__title-action" 
-            onclick={toggleAddress}
-            aria-expanded={isAddressOpen}
-            aria-controls="address-info-content">
-        <lightning-icon icon-name={getAddressIcon} size="small" class="slds-section__title-icon"></lightning-icon>
-        <span class="slds-truncate slds-p-horizontal_small" title="Address Information">
-            Address Information
-        </span>
-    </button>
-</h3>
-<div id="address-info-content" class="slds-section__content">
-    <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
-        <!-- Billing Address (Read-Only from Account) -->
-        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-            <lightning-input
-                type="text"
-                label="Billing Address"
-                value={billingAddressDisplay}
-                disabled>                           
-            </lightning-input>
-        </div>
-        
-        <!-- Shipping Address (Selectable from custom object) -->
-        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-            <lightning-combobox
-                name="shipping"
-                label="Shipping Address"
-                value={selectedShippingId}
-                options={shippingAddressOptions}
-                onchange={handleAddressChange}
-                required>
-            </lightning-combobox>
-        </div>
-    </div>
-</div>
-</div>
         <template if:true={isPaidSample}>
             <div class={getBankDetailsClass}>
                 <h3 class="slds-section__title slds-theme_shade">
@@ -350,8 +351,7 @@
                                 name="DRC_NBC_Consignee_Bank_Name__c"
                                 value={samplingRec.DRC_NBC_Consignee_Bank_Name__c}
                                 data-field="DRC_NBC_Consignee_Bank_Name__c"
-                                onchange={handleFieldChange}
-                                >
+                                onchange={handleFieldChange}>
                             </lightning-input>
                         </div>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
@@ -361,8 +361,7 @@
                                 name="DRC_NBC_Consignee_Bank_Account_Number__c"
                                 value={samplingRec.DRC_NBC_Consignee_Bank_Account_Number__c}
                                 data-field="DRC_NBC_Consignee_Bank_Account_Number__c"
-                                onchange={handleFieldChange}
-                                >
+                                onchange={handleFieldChange}>
                             </lightning-input>
                         </div>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
@@ -372,8 +371,7 @@
                                 name="DRC_NBC_Consignee_Bank_IFSC_Code__c"
                                 value={samplingRec.DRC_NBC_Consignee_Bank_IFSC_Code__c}
                                 data-field="DRC_NBC_Consignee_Bank_IFSC_Code__c"
-                                onchange={handleFieldChange}
-                                >
+                                onchange={handleFieldChange}>
                             </lightning-input>
                         </div>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
@@ -383,242 +381,267 @@
                                 name="DRC_NBC_Consignee_Bank_Address__c"
                                 value={samplingRec.DRC_NBC_Consignee_Bank_Address__c}
                                 data-field="DRC_NBC_Consignee_Bank_Address__c"
-                                onchange={handleFieldChange}
-                                >
+                                onchange={handleFieldChange}>
                             </lightning-input>
                         </div>
                     </div>
                 </div>
             </div>
-</template>
-    <!-- Product Selection Section -->
-    <div class={getProductClass}>
-        <h3 class="slds-section__title slds-theme_shade">
-            <button class="slds-button slds-button_reset slds-section__title-action" 
-                    onclick={toggleProduct}
-                    aria-expanded={isProductOpen}
-                    aria-controls="product-content">
-                <lightning-icon icon-name={getProductIcon} size="small" class="slds-section__title-icon"></lightning-icon>
-                <span class="slds-truncate slds-p-horizontal_small">Product Information</span>
-            </button>
-        </h3>
+        </template>
 
-        <div id="product-content" class="slds-section__content">
-            
-            <!-- Add Products Button - Show when no products selected -->
-            <template if:false={selectedProducts.length}>
-                <div class="slds-grid slds-grid_align-spread slds-p-horizontal_small slds-m-bottom_small" style="padding-top:1rem">
-                    <div class="slds-text-heading_small" style="flex: 1; text-align: right;">
-                        <lightning-button 
-                            label="Add Products"
-                            icon-name="utility:add"
-                            icon-position="left"
-                            variant="brand"
-                            class="add-products-btn"
-                            onclick={handleAddProduct}>
-                        </lightning-button>
+        <!-- Product Selection Section -->
+        <div class={getProductClass}>
+            <h3 class="slds-section__title slds-theme_shade">
+                <button class="slds-button slds-button_reset slds-section__title-action" 
+                        onclick={toggleProduct}
+                        aria-expanded={isProductOpen}
+                        aria-controls="product-content">
+                    <lightning-icon icon-name={getProductIcon} size="small" class="slds-section__title-icon"></lightning-icon>
+                    <span class="slds-truncate slds-p-horizontal_small">Product Information</span>
+                </button>
+            </h3>
+
+            <div id="product-content" class="slds-section__content">
+                
+                <!-- Add Products Button - Show when no products selected -->
+                <template if:false={selectedProducts.length}>
+                    <div class="slds-grid slds-grid_align-spread slds-p-horizontal_small slds-m-bottom_small" style="padding-top:1rem">
+                        <div class="slds-text-heading_small" style="flex: 1; text-align: right;">
+                            <lightning-button 
+                                label="Add Products"
+                                icon-name="utility:add"
+                                icon-position="left"
+                                variant="brand"
+                                class="add-products-btn"
+                                onclick={handleAddProduct}>
+                            </lightning-button>
+                        </div>
                     </div>
-                </div>
-            </template>
+                </template>
 
-            <!-- Selected Product Table -->
-            <template if:true={selectedProducts.length}>
-                <table class="slds-table slds-table_bordered slds-table_striped slds-m-top_small">
-                    <thead>
-                        <tr>
-                            <th>Product Name <span style="color: red;">*</span></th>
-                            <th>FG Code</th>
-                            <th>HSN Code</th>
-                            <th>UOM</th>
-                            <th>Quantity <span style="color: red;">*</span></th>
-                            <th>Packing Size</th>
-                            <th>Packing Qty</th>
-                            <th>Sales Price</th>                              
-                            <th>Description</th>                       
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template for:each={selectedProducts} for:item="prod">
-                            <tr key={prod.Id}>
-                                <template if:true={prod.showSearch}>
-                                    <td style="position: relative;">
-                                        <lightning-input
-                                            type="search"
-                                            style="width: 200px;"
-                                            value={prod.Product2Name}
-                                            data-id={prod.Id}
-                                            placeholder="Search Product..."
-                                            onchange={handleProductSearchInline}
-                                            onfocus={handleProductFocusInline}
-                                            onblur={handleProductBlurInline}>
-                                        </lightning-input>
-                                        
-                                        <template if:true={prod.showSuggestions}>
-                                            <div class="slds-dropdown slds-dropdown_fluid suggestions-box" 
-                                                style="position: absolute; z-index: 1000; width: 200px;">
-                                                <ul class="slds-listbox slds-listbox_vertical" role="presentation">
-                                                    <template if:true={prod.searchResults.length}>
-                                                        <template for:each={prod.searchResults} for:item="result">
-                                                            <li key={result.Product2Id} role="presentation" class="slds-listbox__item">
-                                                                <div class="slds-media slds-listbox__option slds-listbox__option_plain suggestion-item" 
-                                                                    role="option"
-                                                                    onclick={handleProductSelectInline}
-                                                                    data-name={result.Name}
-                                                                    data-rowid={prod.Id}
-                                                                    data-productid={result.Product2Id}
-                                                                    data-fgcode={result.FGCode}
-                                                                    data-hsncode={result.HSNCode}
-                                                                    data-unitprice={result.UnitPrice}
-                                                                    data-pbeid={result.PricebookEntryId}
-                                                                    data-uom={result.UOM}
-                                                                    data-packingsize={result.PackingSize}>
+                <!-- Selected Product Table -->
+                <template if:true={selectedProducts.length}>
+                    <table class="slds-table slds-table_bordered slds-table_striped slds-m-top_small">
+                        <thead>
+                            <tr>
+                                <th>Product Name <span style="color: red;">*</span></th>
+                                <th>FG Code</th>
+                                <th>HSN Code</th>
+                                <th>UOM</th>
+                                <th>Quantity <span style="color: red;">*</span></th>
+                                <th>Packing Size</th>
+                                <th>Packing Qty</th>
+                                <th>Sales Price</th>                              
+                                <th>Description</th>                       
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={selectedProducts} for:item="prod" for:index="index">
+                                <tr key={prod.Id}>
+
+                                    <!-- ── Product Name cell ─────────────────────── -->
+                                    <template if:true={prod.showSearch}>
+                                        <td style="position: relative;">
+                                            <lightning-input
+                                                type="search"
+                                                style="width: 200px;"
+                                                value={prod.Product2Name}
+                                                data-id={prod.Id}
+                                                placeholder="Search Product..."
+                                                onchange={handleProductSearchInline}
+                                                onfocus={handleProductFocusInline}
+                                                onblur={handleProductBlurInline}>
+                                            </lightning-input>
+                                            
+                                            <template if:true={prod.showSuggestions}>
+                                                <div class="slds-dropdown slds-dropdown_fluid suggestions-box" 
+                                                    style="position: absolute; z-index: 1000; width: 200px;">
+                                                    <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                        <template if:true={prod.searchResults.length}>
+                                                            <template for:each={prod.searchResults} for:item="result">
+                                                                <li key={result.Product2Id} role="presentation" class="slds-listbox__item">
+                                                                    <div class="slds-media slds-listbox__option slds-listbox__option_plain suggestion-item" 
+                                                                        role="option"
+                                                                        onclick={handleProductSelectInline}
+                                                                        data-name={result.Name}
+                                                                        data-rowid={prod.Id}
+                                                                        data-productid={result.Product2Id}
+                                                                        data-fgcode={result.FGCode}
+                                                                        data-hsncode={result.HSNCode}
+                                                                        data-unitprice={result.UnitPrice}
+                                                                        data-pbeid={result.PricebookEntryId}
+                                                                        data-uom={result.UOM}
+                                                                        data-packingsize={result.PackingSize}>
+                                                                        <span class="slds-media__body">
+                                                                            <span class="slds-truncate">{result.Name}</span>
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                            </template>
+                                                        </template>
+                                                        <template if:false={prod.searchResults.length}>
+                                                            <li role="presentation" class="slds-listbox__item">
+                                                                <div class="slds-media slds-listbox__option slds-listbox__option_plain no-result">
                                                                     <span class="slds-media__body">
-                                                                        <span class="slds-truncate">{result.Name}</span>
+                                                                        <span class="slds-truncate">No results found</span>
                                                                     </span>
                                                                 </div>
                                                             </li>
                                                         </template>
-                                                    </template>
-                                                    <template if:false={prod.searchResults.length}>
-                                                        <li role="presentation" class="slds-listbox__item">
-                                                            <div class="slds-media slds-listbox__option slds-listbox__option_plain no-result">
-                                                                <span class="slds-media__body">
-                                                                    <span class="slds-truncate">No results found</span>
-                                                                </span>
-                                                            </div>
-                                                        </li>
-                                                    </template>
-                                                </ul>
+                                                    </ul>
+                                                </div>
+                                            </template>
+                                        </td>
+                                    </template>
+                                
+                                    <template if:false={prod.showSearch}>
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span>{prod.Product2Name}</span>
+                                                <lightning-button-icon
+                                                    icon-name="utility:close"
+                                                    variant="bare"
+                                                    alternative-text="Clear product"
+                                                    title="Clear product"
+                                                    data-index={index}
+                                                    onclick={handleClearProduct}
+                                                    class="slds-m-left_xx-small">
+                                                </lightning-button-icon>
                                             </div>
-                                        </template>
-                                    </td>
-                                </template>
-                            
-                                <template if:false={prod.showSearch}>
-                                    <td>
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span>{prod.Product2Name}</span>
-                                            <lightning-button-icon
-                                                icon-name="utility:close"
-                                                variant="bare"
-                                                alternative-text="Clear product"
-                                                title="Clear product"
+                                        </td>
+                                    </template>
+
+                                    <!-- ── PBE resolving spinner OR normal data cells ── -->
+                                    <template if:true={prod.isResolvingPbe}>
+                                        <!-- Span remaining columns with an inline spinner while
+                                             ensurePricebookEntryForProduct runs in the background -->
+                                        <td colspan="9">
+                                            <div class="slds-is-relative" style="min-height: 2rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem;">
+                                                <lightning-spinner
+                                                    alternative-text="Verifying pricebook entry..."
+                                                    size="x-small">
+                                                </lightning-spinner>
+                                                <span style="font-size: 0.75rem; color: #706e6b; margin-left: 2rem;">
+                                                    Verifying pricebook entry for {prod.Product2Name}…
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </template>
+
+                                    <template if:false={prod.isResolvingPbe}>
+                                        <td>{prod.FGCode}</td>
+                                        <td>{prod.HSNCode}</td>
+                                        <td>{prod.DRC_NBC_Unit_Of_Measurement__c}</td>
+                                        
+                                        <!-- Quantity — enforces step = packingStep when a packing size is selected -->
+                                        <td>
+                                            <div class="slds-form-element">
+                                                <lightning-input 
+                                                    type="number"
+                                                    variant="label-hidden"
+                                                    data-id={prod.Id} 
+                                                    value={prod.Quantity}
+                                                    min={prod.packingStep}
+                                                    step={prod.packingStep}
+                                                    onchange={handleQuantityChange} 
+                                                    class="small-input">
+                                                </lightning-input>
+                                                <!-- Helper text shown only when a packing step exists -->
+                                                <template if:true={prod.packingStep}>
+                                                    <p class="slds-form-element__help" style="font-size: 0.75rem; color: #706e6b;">
+                                                        Must be a multiple of {prod.packingStep}
+                                                    </p>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        
+                                        <td>
+                                            <lightning-combobox
+                                                name="packingSize"
+                                                variant="label-hidden"
+                                                placeholder="Select Size"
+                                                value={prod.SelectedPackingSize}
+                                                options={prod.PackingSizeOptions}
+                                                data-id={prod.Id}
+                                                onchange={handlePackingSizeChange}
+                                                class="small-input">
+                                            </lightning-combobox>
+                                        </td>
+                                        
+                                        <!-- Packing Qty — shows raw DRC_NBC_Packing_Qauntity__c value,
+                                             read-only, populated when product is selected or packing size changes -->
+                                        <td>
+                                            <lightning-input  
+                                                type="number" 
+                                                variant="label-hidden"
+                                                data-id={prod.Id} 
+                                                value={prod.PackingQuantity} 
+                                                readonly
+                                                class="small-input">
+                                            </lightning-input>
+                                        </td>
+                                        
+                                        <td>
+                                            <lightning-input 
+                                                type="number" 
+                                                variant="label-hidden"
+                                                data-id={prod.Id} 
+                                                value={prod.TotalPrice} 
+                                                onchange={handleTotalPriceChange} 
+                                                class="small-input">
+                                            </lightning-input>
+                                        </td>
+                                        
+                                        <!-- Description -->
+                                        <td>
+                                            <lightning-input 
+                                                type="text" 
+                                                variant="label-hidden"
+                                                data-id={prod.Id} 
+                                                value={prod.Description} 
+                                                onchange={handleDescriptionChange} 
+                                                class="large-input">
+                                            </lightning-input>
+                                        </td>
+                                        
+                                        <!-- Action Icons -->
+                                        <td>
+                                            <lightning-icon 
+                                                class="slds-p-top_medium"
+                                                style="cursor: pointer;"
                                                 data-index={index}
-                                                onclick={handleClearProduct}
-                                                class="slds-m-left_xx-small">
-                                            </lightning-button-icon>
-                                        </div>
-                                    </td>
-                                </template>
+                                                variant="brand"
+                                                icon-name="utility:new"
+                                                label="Add Row"
+                                                onclick={handleAddProduct}>
+                                            </lightning-icon>
+                                            
+                                            <lightning-icon 
+                                                data-index={index}
+                                                icon-name="action:delete"
+                                                style="cursor: pointer;"
+                                                size="x-small"
+                                                onclick={handleRemoveProduct}
+                                                data-id={prod.Id}>
+                                            </lightning-icon>
+                                        </td>
+                                    </template>
+                                    <!-- ── end normal data cells ─────────────────── -->
 
-                                <td class=".right-alignFG{">{prod.FGCode}</td>
-                                <td class=".right-alignFG{">{prod.HSNCode}</td>
-                                <td class=".right-alignFG{">{prod.DRC_NBC_Unit_Of_Measurement__c}</td>
-                                
-                                <td>
-                                    <lightning-input 
-                                        type="number" 
-                                        variant="label-hidden"
-                                        data-id={prod.Id} 
-                                        value={prod.Quantity} 
-                                        onchange={handleQuantityChange} 
-                                        class="small-input">
-                                    </lightning-input>
-                                </td>
-                                 
-                                <td>
-                                    <lightning-combobox
-                                        name="packingSize"
-                                        variant="label-hidden"
-                                        placeholder="Select Size"
-                                        value={prod.SelectedPackingSize}
-                                        options={prod.PackingSizeOptions}
-                                        data-id={prod.Id}
-                                        onchange={handlePackingSizeChange}
-                                        class="small-input">
-                                    </lightning-combobox>
-                                </td>
-                                
-                               <!-- <td>
-                                    <lightning-input  
-                                        type="number" 
-                                        variant="label-hidden"
-                                        data-id={prod.Id} 
-                                        value={prod.PackingQuantity} 
-                                       </lightning-input> onchange={handlePackingQuantityChange} 
-                                        class="small-input">
-                                    </lightning-input>
-                                </td> -->
-
-                                <td>
-                                    <lightning-input  
-                                        type="number" 
-                                        variant="label-hidden"
-                                        data-id={prod.Id} 
-                                        value={prod.PackingQuantity} 
-                                        readonly
-                                        class="small-input">
-                                    </lightning-input>
-                                </td>
-                                
-                                <td>
-                                    <lightning-input 
-                                        type="number" 
-                                        variant="label-hidden"
-                                        data-id={prod.Id} 
-                                        value={prod.TotalPrice} 
-                                        onchange={handleTotalPriceChange} 
-                                        class="small-input">
-                                    </lightning-input>
-                                </td>
-                                
-                                <!-- Description -->
-                                <td>
-                                    <lightning-input 
-                                        type="text" 
-                                        variant="label-hidden"
-                                        data-id={prod.Id} 
-                                        value={prod.Description} 
-                                        onchange={handleDescriptionChange} 
-                                        class="large-input">
-                                    </lightning-input>
-                                </td>
-                                
-                                <!-- Action Icons -->
-                                <td>
-                                    <lightning-icon 
-                                        class="slds-p-top_medium"
-                                        style="cursor: pointer;"
-                                        data-index={index}
-                                        variant="brand"
-                                        icon-name="utility:new"
-                                        label="Add Row"
-                                        onclick={handleAddProduct}>
-                                    </lightning-icon>
-                                    
-                                    <lightning-icon 
-                                        data-index={index}
-                                        icon-name="action:delete"
-                                        style="cursor: pointer;"
-                                        size="x-small"
-                                        onclick={handleRemoveProduct}
-                                        data-id={prod.Id}>
-                                    </lightning-icon>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+            </div>
         </div>
-    </div>
 
-    <!-- Footer -->
-    <footer class="slds-modal__footer">
-        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
-        <lightning-button variant="brand" label="Create Order" onclick={handleSave} class="slds-m-left_small" disabled={isLoading}></lightning-button>
-    </footer> 
+        <!-- Footer -->
+        <footer class="slds-modal__footer">
+            <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
+            <lightning-button variant="brand" label="Create Order" onclick={handleSave} class="slds-m-left_small" disabled={isLoading}></lightning-button>
+        </footer> 
     </div>
 </template>
 </template>

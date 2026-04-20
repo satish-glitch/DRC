@@ -506,8 +506,6 @@
             </h3>
            <div id="consignee-bank-content-paid1" class="slds-section__content">
                 <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
-
-                    <!-- Consignee Bank Name -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="Bank Name"
@@ -516,8 +514,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
-                    <!-- Consignee Bank Account Number -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="Bank Account Number"
@@ -526,8 +522,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
-                    <!-- Consignee Bank IFSC Code -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="IFSC Code"
@@ -536,8 +530,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
-                    <!-- Consignee Bank Address -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="Bank Address"
@@ -546,7 +538,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -564,8 +555,6 @@
             </h3>
            <div id="consignee-bank-content-paid" class="slds-section__content">
                 <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
-
-                    <!-- Consignee Bank Name -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="Bank Name"
@@ -574,8 +563,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
-                    <!-- Consignee Bank Account Number -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="Bank Account Number"
@@ -584,8 +571,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
-                    <!-- Consignee Bank IFSC Code -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="IFSC Code"
@@ -594,8 +579,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
-                    <!-- Consignee Bank Address -->
                     <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                         <lightning-input
                             label="Bank Address"
@@ -604,7 +587,6 @@
                             onchange={handleFieldChange}>
                         </lightning-input>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -732,7 +714,7 @@
                                                 <td style="text-align: center;">{data.recordData.DRC_NBC_FG_Code__c}</td>
                                                 <td style="text-align: center;">{data.recordData.DRC_NBC_HSN_SAC_Code__c}</td>
                                                 
-                                                <!-- Quantity Column -->
+                                                <!-- Quantity Column — shows inline error if not a multiple of packing quantity -->
                                                 <td class="input-cell">
                                                     <lightning-input
                                                         type="number"
@@ -742,6 +724,12 @@
                                                         data-index={index}
                                                         onchange={handleQuantityChange}>
                                                     </lightning-input>
+                                                    <!-- Inline error shown when qty is not a multiple of packing qty -->
+                                                    <template if:true={data.recordData.quantityError}>
+                                                        <p style="color: #c23934; font-size: 0.75rem; margin-top: 2px; white-space: normal; max-width: 180px;">
+                                                            {data.recordData.quantityError}
+                                                        </p>
+                                                    </template>
                                                 </td>
                                                 
                                                 <!-- UOM -->
@@ -765,6 +753,12 @@
                                                     </template>
                                                 </td>
 
+                                                <!--
+                                                    Packing Quantity column:
+                                                    Shows the raw DRC_NBC_Packing_Qauntity__c value from the child record.
+                                                    This is the bag/pack size (e.g. 100), NOT a calculated value.
+                                                    Users must enter a Quantity that is a multiple of this value.
+                                                -->
                                                 <td style="text-align: center; vertical-align: middle;">
                                                     <template if:true={data.recordData.packingQuantity}>
                                                         {data.recordData.packingQuantity}
@@ -854,9 +848,6 @@
             <button class="slds-button slds-button_brand" onclick={handleSave}>Save</button>
         </div>
     </template>
-    </div>
-    <div if:true={showLoading} class="slds-is-relative" style="height:200px">
-        <lightning-spinner alternative-text="Loading..." variant="brand"></lightning-spinner>
     </div>
     <div if:true={showLoading} class="slds-is-relative" style="height:200px">
         <lightning-spinner alternative-text="Loading..." variant="brand"></lightning-spinner>

@@ -11,6 +11,7 @@ import getAccountAddresses from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_
 import getOpportunityCurrency from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getOpportunityCurrency';
 import createSampleOrder from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.createSampleOrder';
 import getAccountBankDetails from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getAccountBankDetails';
+import ensurePricebookEntryForProduct from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.ensurePricebookEntryForProduct';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
 import { NavigationMixin } from 'lightning/navigation';
@@ -70,8 +71,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         }
     }
 
-    // Packing details map: Product2Id → List of { packingSize, packingQuantity (raw divisor) }
-    // Built from packingDetailsList returned by Apex (List instead of Map for LWC compatibility)
+    // Packing details map: Product2Id → List of { packingSize, packingQuantity (raw Decimal as number) }
     packingDetailsMap = {};
 
     // ─── Section toggles ─────────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
     get isRejected()   { return this.sampleStatus === 'Rejected'; }
     get isPaidSample() { return this.samplingRec.DRC_NBC_Sample_Type__c === 'Paid Sample'; }
 
-    // ─── Packing helpers (same pattern as Quote/Order modules) ──────────────────
+    // ─── Packing helpers ──────────────────────────────────────────────────────────
 
     buildPackingSizeOptions(packingDetailsList) {
         if (!packingDetailsList || packingDetailsList.length === 0) return [];
@@ -119,19 +119,28 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         const map = {};
         (packingDetailsList || []).forEach(item => {
             if (item.product2Id) {
-                map[item.product2Id] = item.packingDetails || [];
+                // Ensure packingQuantity is stored as a number
+                const details = (item.packingDetails || []).map(pd => ({
+                    packingSize:     pd.packingSize,
+                    packingQuantity: pd.packingQuantity != null ? parseFloat(pd.packingQuantity) : null
+                }));
+                map[item.product2Id] = details;
             }
         });
         return map;
     }
 
-    _recalcPackingQuantity(quantity, rawPackingQuantity) {
-        const qty    = parseFloat(quantity)           || 0;
-        const rawQty = parseFloat(rawPackingQuantity) || 0;
-        if (rawQty > 0 && qty > 0) {
-            return Math.ceil(qty / rawQty);
-        }
-        return null;
+    /**
+     * Validates that `quantity` is a positive multiple of `packingStep`.
+     * Returns true if valid, false otherwise.
+     * If packingStep is null / 0, any positive quantity is valid.
+     */
+    _isValidPackingQuantity(quantity, packingStep) {
+        const qty  = parseFloat(quantity)  || 0;
+        const step = parseFloat(packingStep) || 0;
+        if (qty <= 0) return false;
+        if (step <= 0) return true;                          // no step constraint
+        return Math.round(qty % step) === 0;                 // must be a multiple
     }
 
     // ─── Payment Term helper ─────────────────────────────────────────────────────
@@ -141,11 +150,9 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             const picklistData = this.paymentTermsPicklistData;
             if (!picklistData || !picklistData.controllerValues || !picklistData.values) return '';
 
-            // Get the controller index for the selected description
             const controllerIndex = picklistData.controllerValues[selectedDescription];
             if (controllerIndex === undefined) return '';
 
-            // Find the dependent value whose validFor includes this controller index
             const matched = picklistData.values.find(opt =>
                 opt.validFor && opt.validFor.includes(controllerIndex)
             );
@@ -180,8 +187,8 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
     }
 
     handleScroll(event) {
-        const scrollTop = event.target.scrollTop;
-        const scrollingDown = scrollTop > this.lastScrollTop;
+        const scrollTop      = event.target.scrollTop;
+        const scrollingDown  = scrollTop > this.lastScrollTop;
 
         const sections = [
             { element: this.template.querySelector('#basic-info-content')?.parentElement,   state: 'isBasicInfoOpen'   },
@@ -194,7 +201,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
         sections.forEach(section => {
             if (section.element) {
-                const rect = section.element.getBoundingClientRect();
+                const rect           = section.element.getBoundingClientRect();
                 const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
                 if (scrollingDown && rect.bottom < 50) {
                     this[section.state] = false;
@@ -234,7 +241,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
             this.currencyCode = currencyCode;
 
-            // Build packing details map from Apex list
+            // Build packing details map (packingQuantity already cast to number)
             this.packingDetailsMap = this.buildPackingDetailsMap(productResult.packingDetailsList);
 
             // Billing address
@@ -267,7 +274,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             this.addrDetails            = shippingAddresses || [];
             this.shippingAddressOptions = [];
             shippingAddresses.forEach(addr => {
-                const details = addr.DRC_NBC_Address__c;
+                const details    = addr.DRC_NBC_Address__c;
                 const labelParts = [];
                 if (details?.street)     labelParts.push(details.street);
                 if (details?.city)       labelParts.push(details.city);
@@ -300,7 +307,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                 this.shipToContactName           = firstContact.Name;
             }
 
-            // Map Apex products to row objects with packing details from child object
+            // Map Apex products to row objects
             this.oppProducts = (productResult.products || []).map(prod => {
                 const packingDetails     = this.getPackingDetailsForProduct(prod.Product2Id);
                 const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
@@ -320,9 +327,10 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                     packingDetails: packingDetails,
                     PackingSizeOptions: packingSizeOptions,
                     SelectedPackingSize: '',
-                    rawPackingQuantity: '',
+                    packingStep: null,
                     PackingQuantity: null,
-                    isSelected: false
+                    isSelected: false,
+                    isResolvingPbe: false
                 };
             });
 
@@ -421,12 +429,13 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             packingDetails: [],
             PackingSizeOptions: [],
             SelectedPackingSize: '',
-            rawPackingQuantity: '',
+            packingStep: null,
             PackingQuantity: null,
             isSelected: false,
             showSuggestions: false,
             showSearch: true,
-            searchResults: []
+            searchResults: [],
+            isResolvingPbe: false
         };
         this.selectedProducts = [...this.selectedProducts, newProduct];
     }
@@ -444,23 +453,27 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
         searchProducts({ keyword: searchTerm, currencyIsoCode: this.currencyCode, oppId: this.recordId })
             .then(searchResult => {
+                // Merge any new packing details into the local map
                 (searchResult.packingDetailsList || []).forEach(item => {
                     if (item.product2Id) {
-                        this.packingDetailsMap[item.product2Id] = item.packingDetails || [];
+                        this.packingDetailsMap[item.product2Id] = (item.packingDetails || []).map(pd => ({
+                            packingSize:     pd.packingSize,
+                            packingQuantity: pd.packingQuantity != null ? parseFloat(pd.packingQuantity) : null
+                        }));
                     }
                 });
 
-                const selectedIds = this.selectedProducts.filter(p => p.Product2Id).map(p => p.Product2Id);
+                const selectedIds     = this.selectedProducts.filter(p => p.Product2Id).map(p => p.Product2Id);
                 const filteredResults = (searchResult.products || [])
                     .filter(r => !selectedIds.includes(r.Product2Id))
                     .map(r => ({
-                        Product2Id: r.Product2Id,
-                        Name: r.Name,
-                        FGCode: r.FGCode,
-                        HSNCode: r.HSNCode,
-                        UnitPrice: r.UnitPrice,
+                        Product2Id:       r.Product2Id,
+                        Name:             r.Name,
+                        FGCode:           r.FGCode,
+                        HSNCode:          r.HSNCode,
+                        UnitPrice:        r.UnitPrice,
                         PricebookEntryId: r.PricebookEntryId,
-                        UOM: r.UOM
+                        UOM:              r.UOM
                     }));
 
                 this.selectedProducts = this.selectedProducts.map(prod => {
@@ -493,13 +506,24 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         }, 200);
     }
 
-    handleProductSelectInline(event) {
+    /**
+     * Called when the user clicks a product from the inline search dropdown.
+     *
+     * Flow:
+     * 1. Immediately update the row with product details from search (optimistic update).
+     * 2. Pre-populate PackingQuantity from the first packing detail's raw
+     *    DRC_NBC_Packing_Qauntity__c value so the field shows on product select.
+     * 3. Call ensurePricebookEntryForProduct (non-cacheable Apex) to create a
+     *    PricebookEntry for the opportunity currency if one does not exist.
+     * 4. Update the row with the confirmed PricebookEntryId and UnitPrice.
+     */
+    async handleProductSelectInline(event) {
         const rowId     = event.currentTarget.dataset.rowid;
         const productId = event.currentTarget.dataset.productid;
         const name      = event.currentTarget.dataset.name;
         const fgCode    = event.currentTarget.dataset.fgcode;
         const hsnCode   = event.currentTarget.dataset.hsncode;
-        const unitPrice = parseFloat(event.currentTarget.dataset.unitprice);
+        const unitPrice = parseFloat(event.currentTarget.dataset.unitprice) || 0;
         const pbeId     = event.currentTarget.dataset.pbeid;
         const uom       = event.currentTarget.dataset.uom;
 
@@ -511,32 +535,95 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         const packingDetails     = this.getPackingDetailsForProduct(productId);
         const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
 
+        // Pre-populate PackingQuantity from the first packing detail's raw
+        // DRC_NBC_Packing_Qauntity__c value immediately when a product is selected.
+        // This shows the packing qty value without requiring the user to pick a packing size first.
+        const firstDetail       = packingDetails.length > 0 ? packingDetails[0] : null;
+        const defaultStep       = firstDetail ? (parseFloat(firstDetail.packingQuantity) || null) : null;
+
+        // Step 1 — Optimistic update: show product info immediately, spinner on PBE resolve
         this.selectedProducts = this.selectedProducts.map(prod => {
             if (prod.Id === rowId) {
                 return {
                     ...prod,
-                    Product2Id: productId,
-                    Product2Name: name,
-                    FGCode: fgCode,
-                    HSNCode: hsnCode,
-                    PricebookEntryId: pbeId,
-                    UnitPrice: unitPrice,
-                    TotalPrice: unitPrice,
+                    Product2Id:                     productId,
+                    Product2Name:                   name,
+                    FGCode:                         fgCode,
+                    HSNCode:                        hsnCode,
+                    PricebookEntryId:               pbeId,
+                    UnitPrice:                      unitPrice,
+                    TotalPrice:                     unitPrice,
                     DRC_NBC_Unit_Of_Measurement__c: uom,
-                    packingDetails: packingDetails,
-                    PackingSizeOptions: packingSizeOptions,
-                    SelectedPackingSize: '',
-                    rawPackingQuantity: '',
-                    PackingQuantity: null,
-                    showSuggestions: false,
-                    searchResults: [],
-                    showSearch: false
+                    packingDetails:                 packingDetails,
+                    PackingSizeOptions:             packingSizeOptions,
+                    SelectedPackingSize:            '',
+                    // packingStep set from first packing detail's raw DRC_NBC_Packing_Qauntity__c
+                    packingStep:                    defaultStep,
+                    // PackingQuantity = raw value from DRC_NBC_Packing_Qauntity__c
+                    PackingQuantity:                defaultStep,
+                    showSuggestions:                false,
+                    searchResults:                  [],
+                    showSearch:                     false,
+                    isResolvingPbe:                 true
                 };
             }
             return prod;
         });
+
+        // Step 2 — Ensure a PricebookEntry exists for the opportunity currency (may do DML)
+        try {
+            const result = await ensurePricebookEntryForProduct({
+                opportunityId:   this.recordId,
+                product2Id:      productId,
+                currencyIsoCode: this.currencyCode
+            });
+
+            // Step 3 — Update the row with the confirmed/newly created PBE id and its unit price
+            this.selectedProducts = this.selectedProducts.map(prod => {
+                if (prod.Id === rowId) {
+                    const resolvedPrice = (result.unitPrice != null) ? result.unitPrice : prod.UnitPrice;
+                    return {
+                        ...prod,
+                        PricebookEntryId: result.pricebookEntryId,
+                        UnitPrice:        resolvedPrice,
+                        TotalPrice:       resolvedPrice,
+                        isResolvingPbe:   false
+                    };
+                }
+                return prod;
+            });
+
+            if (result.created) {
+                this.showToast(
+                    'Info',
+                    `Pricebook entry created for "${name}" in ${this.currencyCode}.`,
+                    'info'
+                );
+            }
+
+        } catch (error) {
+            console.error('Error resolving PricebookEntry:', error);
+            this.showToast(
+                'Warning',
+                `Could not verify pricebook entry for "${name}". Price may be 0. Please check before saving.`,
+                'warning'
+            );
+            // Clear the spinner flag even on error so the row is still usable
+            this.selectedProducts = this.selectedProducts.map(prod =>
+                prod.Id === rowId ? { ...prod, isResolvingPbe: false } : prod
+            );
+        }
     }
 
+    /**
+     * When a packing size is selected:
+     * - Read the packingQuantity (raw DRC_NBC_Packing_Qauntity__c value) from the
+     *   matching packing detail record.
+     * - Store this raw value directly in PackingQuantity (what the user sees in the
+     *   "Packing Qty (Boxes)" column).
+     * - Also use it as the step/multiplier for quantity validation.
+     * - Warn the user if the current quantity does not satisfy the new step.
+     */
     handlePackingSizeChange(event) {
         const id           = event.target.dataset.id;
         const selectedSize = event.detail.value;
@@ -544,33 +631,36 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         this.selectedProducts = this.selectedProducts.map(prod => {
             if (prod.Id === id) {
                 const matchedDetail = (prod.packingDetails || []).find(pd => pd.packingSize === selectedSize);
-                const rawQty        = matchedDetail ? (matchedDetail.packingQuantity || '') : '';
-                const packingQty    = this._recalcPackingQuantity(prod.Quantity, rawQty);
+                // packingQuantity from the packing detail record = the raw DRC_NBC_Packing_Qauntity__c value
+                const step = matchedDetail ? (matchedDetail.packingQuantity || null) : null;
+
+                // Warn if existing quantity is not a valid multiple of the new step
+                if (step && !this._isValidPackingQuantity(prod.Quantity, step)) {
+                    this.showToast(
+                        'Warning',
+                        `Quantity must be a multiple of ${step} for packing size "${selectedSize}". Please update the quantity.`,
+                        'warning'
+                    );
+                }
+
                 return {
                     ...prod,
                     SelectedPackingSize: selectedSize,
-                    rawPackingQuantity: rawQty,
-                    PackingQuantity: packingQty
+                    packingStep:         step,
+                    // PackingQuantity shows the raw DRC_NBC_Packing_Qauntity__c value directly
+                    PackingQuantity:     step != null ? step : null
                 };
             }
             return prod;
         });
     }
 
-    handlePackingQuantityChange(event) {
-        const id    = event.target.dataset.id;
-        const value = parseFloat(event.target.value);
-
-        if (isNaN(value) || value <= 0) {
-            this.showToast('Warning', 'Packing Quantity must be a positive number.', 'warning');
-            return;
-        }
-
-        this.selectedProducts = this.selectedProducts.map(prod =>
-            prod.Id === id ? { ...prod, PackingQuantity: value } : prod
-        );
-    }
-
+    /**
+     * When the quantity changes:
+     * - If a packing size is selected, validate that quantity is a multiple of the step.
+     * - PackingQuantity (raw DRC_NBC_Packing_Qauntity__c) is not recalculated here;
+     *   it is set once when the packing size is chosen.
+     */
     handleQuantityChange(event) {
         const id    = event.target.dataset.id;
         const value = parseInt(event.target.value, 10);
@@ -582,10 +672,24 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
         this.selectedProducts = this.selectedProducts.map(prod => {
             if (prod.Id === id) {
-                const packingQty = prod.SelectedPackingSize
-                    ? this._recalcPackingQuantity(value, prod.rawPackingQuantity)
-                    : prod.PackingQuantity;
-                return { ...prod, Quantity: value, PackingQuantity: packingQty };
+                const step = prod.packingStep || null;
+
+                // If a packing size is selected, enforce the step multiplier
+                if (step && prod.SelectedPackingSize) {
+                    if (!this._isValidPackingQuantity(value, step)) {
+                        this.showToast(
+                            'Error',
+                            `Quantity must be a multiple of ${step} for packing size "${prod.SelectedPackingSize}". ` +
+                            `Valid values: ${step}, ${step * 2}, ${step * 3}...`,
+                            'error'
+                        );
+                        // Revert to the last valid quantity; PackingQuantity unchanged
+                        return prod;
+                    }
+                }
+
+                // Only update Quantity; PackingQuantity stays as the raw DRC_NBC_Packing_Qauntity__c value
+                return { ...prod, Quantity: value };
             }
             return prod;
         });
@@ -636,11 +740,12 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             packingDetails: [],
             PackingSizeOptions: [],
             SelectedPackingSize: '',
-            rawPackingQuantity: '',
+            packingStep: null,
             PackingQuantity: null,
             showSearch: true,
             showSuggestions: false,
-            searchResults: []
+            searchResults: [],
+            isResolvingPbe: false
         };
         this.selectedProducts = [
             ...this.selectedProducts.slice(0, index),
@@ -667,7 +772,6 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                         this.samplingRec['DRC_NBC_Payment_Terms__c'] = mappedCode;
                         this.autoSelectedPaymentTerm = mappedCode;
 
-                        // Update the DOM field
                         const paymentTermField = this.template.querySelector(
                             'lightning-input-field[field-name="DRC_NBC_Payment_Terms__c"]'
                         );
@@ -684,12 +788,12 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
 
     validateOrderData() {
         const validations = [
-            { field: 'EffectiveDate',          message: 'Enter Order Start Date.'   },
-            { field: 'EndDate',                message: 'Enter Order End Date.'     },
-            { field: 'BillToContactId',        message: 'Select Bill To Contact.'  },
-            { field: 'ShipToContactId',        message: 'Select Ship To Contact.'  },
-            { field: 'ShippingStreet',         message: 'Select Shipping Address.' },
-            { field: 'DRC_NBC_Warehouse__c',   message: 'Select Warehouse.'        }
+            { field: 'EffectiveDate',        message: 'Enter Order Start Date.'   },
+            { field: 'EndDate',              message: 'Enter Order End Date.'     },
+            { field: 'BillToContactId',      message: 'Select Bill To Contact.'  },
+            { field: 'ShipToContactId',      message: 'Select Ship To Contact.'  },
+            { field: 'ShippingStreet',       message: 'Select Shipping Address.' },
+            { field: 'DRC_NBC_Warehouse__c', message: 'Select Warehouse.'        }
         ];
 
         for (const v of validations) {
@@ -732,6 +836,28 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             return false;
         }
 
+        // Block save if any row is still resolving its PricebookEntry
+        const resolving = this.selectedProducts.find(p => p.isResolvingPbe);
+        if (resolving) {
+            this.showToast('Warning', 'Please wait — verifying pricebook entries for selected products.', 'warning');
+            return false;
+        }
+
+        // Validate packing quantity constraints for all selected products
+        for (const prod of this.selectedProducts) {
+            if (prod.SelectedPackingSize && prod.packingStep) {
+                if (!this._isValidPackingQuantity(prod.Quantity, prod.packingStep)) {
+                    this.showToast(
+                        'Error',
+                        `Product "${prod.Product2Name}": Quantity must be a multiple of ${prod.packingStep} ` +
+                        `for packing size "${prod.SelectedPackingSize}".`,
+                        'error'
+                    );
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 
@@ -764,7 +890,8 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                 UnitPrice:        p.TotalPrice || p.UnitPrice || 0,
                 Description:      p.Description || '',
                 PackingSize:      p.SelectedPackingSize || '',
-                PackingQuantity:  p.PackingQuantity || null
+                // PackingQuantity = raw value from DRC_NBC_Packing_Qauntity__c
+                PackingQuantity:  p.PackingQuantity != null ? p.PackingQuantity : null
             }));
 
             if (selectedItems.length === 0) {
