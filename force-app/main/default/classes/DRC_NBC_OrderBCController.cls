@@ -84,4 +84,16 @@ public with sharing class DRC_NBC_OrderBCController {
         return ord.DRC_NBC_Integration_Status__c;
     }
 
+    @AuraEnabled
+    public static DRC_NBC_API_Log__c getLatestLog(Id orderId) {
+        List<DRC_NBC_API_Log__c> logs = [
+            SELECT DRC_NBC_Log_Type__c, DRC_NBC_Response_Body__c, DRC_NBC_Timestamp__c, DRC_NBC_Error_Message__c
+            FROM DRC_NBC_API_Log__c
+            WHERE DRC_NBC_Created_Updated_SF_Id__c = :orderId
+            ORDER BY DRC_NBC_Timestamp__c DESC
+            LIMIT 1
+        ];
+        return logs.isEmpty() ? null : logs[0];
+    }
+
 }
