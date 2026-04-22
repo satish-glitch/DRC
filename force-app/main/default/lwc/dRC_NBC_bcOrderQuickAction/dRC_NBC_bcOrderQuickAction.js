@@ -87,7 +87,7 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                         this.showToast('Success', successMessage, 'success');
 
                     }  else {
-                        this.showToast('Info', parsed, 'info');
+                        this.showToast('Info', 'order sync in progress, please refresh the after few minutes', 'info');
                     }                                                                                                                                       
 
                     this.closeAction();
