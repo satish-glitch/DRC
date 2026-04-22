@@ -1,3 +1,3 @@
-trigger DRC_AutoShipToCodeTrigger on DRC_NBC_Addresses__c (before insert) {
-    //DRC_ShipToCodeGenerator.assignShipToCode(Trigger.new);
+trigger DRC_AutoShipToCodeTrigger on DRC_NBC_Addresses__c (after insert) {
+    DRC_NBC_ShipToCodeGenerator.assignShipToCodeSync(Trigger.new);
 }

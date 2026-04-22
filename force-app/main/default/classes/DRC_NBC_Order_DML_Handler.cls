@@ -17,11 +17,11 @@ public class DRC_NBC_Order_DML_Handler implements Queueable {
             System.debug('Need Order Number: ' + needsOrderNumber);
             
             // STEP 1: Generate Ship-To Code if needed (DML)
-            if (needsShipToCode) {
+            /*if (needsShipToCode) {
                 System.debug('Generating Ship-To Code...');
                 DRC_NBC_ShipToCodeGenerator.assignShipToCode(orderId);
                 System.debug('Ship-To Code generated successfully');
-            }
+            }*/
             
             // STEP 2: Generate Order Number if needed (DML)
             if (needsOrderNumber) {

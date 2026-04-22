@@ -134,8 +134,6 @@ global with sharing class DRC_NBC_Integration_Payload {
         Public Boolean Salesforce_Order_Created;
         Public String Currency_Code;
         Public Boolean Export_Document; 
-        
-        
     }
     
     public class OrderLinePayload {

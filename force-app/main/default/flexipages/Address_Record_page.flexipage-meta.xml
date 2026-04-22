@@ -88,6 +88,16 @@
                 </visibilityRule>
             </fieldInstance>
         </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.DRC_Shipping_Gst_Customer_Type__c</fieldItem>
+                <identifier>RecordDRC_Shipping_Gst_Customer_Type__cField</identifier>
+            </fieldInstance>
+        </itemInstances>
         <name>Facet-57f8ff42-9f99-4987-bf20-1566193976f7</name>
         <type>Facet</type>
     </flexiPageRegions>

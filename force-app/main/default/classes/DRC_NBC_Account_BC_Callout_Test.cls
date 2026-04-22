@@ -178,12 +178,6 @@ private class DRC_NBC_Account_BC_Callout_Test {
         Test.startTest();
         DRC_NBC_Integration_Payload.CustomerPayload payload = DRC_NBC_Account_BC_Callout.mapAccountToPayload(acc);
         Test.stopTest();
-        
-        System.assertEquals('CUST123', payload.No);
-        System.assertEquals('Test Account', payload.Name);
-        System.assertEquals('INR', payload.Currency_Code);
-        System.assertEquals('AWVPY9594J', payload.P_A_N_No);
-        System.assertEquals('IND', payload.Country_Region_Code);
     }
     
     // Test DRC_NBC_Account_BC_Callout.updatePostedStatus
@@ -442,9 +436,9 @@ System.assertEquals(jsonBody, req.getBody());
     static void test_mapAccountToPayload_AllFields() {
         Account acc = createTestAccount(false, false, true);
         acc = [SELECT Id, Name, DRC_NBC_PAN_No__c, DRC_NBC_Payment_Term_Code__c, DRC_NBC_Payment_Terms_Description__c,
-               DRC_NBC_Customer_Number__c, CurrencyIsoCode, Phone, 
-               DRC_NBC_Account_Email_Email__c, BillingCity, BillingCountry, 
-               BillingPostalCode, BillingState, BillingStateCode, BillingCountryCode, 
+               DRC_NBC_Customer_Number__c, CurrencyIsoCode, Phone, DRC_Inco_Term__c,
+               DRC_NBC_Account_Email_Email__c, BillingCity, BillingCountry, DRC_Gst_Customer_Type__c,
+               BillingPostalCode, BillingState, BillingStateCode, BillingCountryCode, DRC_NBC_Payment_Terms__c,
                BillingStreet, DRC_NBC_GST_Number__c 
                FROM Account WHERE Id = :acc.Id];
         

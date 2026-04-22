@@ -189,4 +189,25 @@
         <shortDescription>DRC Price Books External Id</shortDescription>
         <value>DRC001</value>
     </labels>
+    <labels>
+        <fullName>DRC_Customer_Other_Tax_Number</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_Customer_Other_Tax_Number</shortDescription>
+        <value>70563200</value>
+    </labels>
+    <labels>
+        <fullName>DRC_Other_Tax_Number</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC Other Tax Number</shortDescription>
+        <value>70563200</value>
+    </labels>
+    <labels>
+        <fullName>DRC_TCS_Tax_Number</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>DRC_TCS_Tax_Number</shortDescription>
+        <value>70563200</value>
+    </labels>
 </CustomLabels>

@@ -108,20 +108,21 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
         payload = new DRC_NBC_Integration_Payload.ShipToPayload();
         payload.CustomerNo = acc.DRC_NBC_Customer_Number__c;
         payload.ShiptoCode = addr.DRC_NBC_Ship_To_Code__c;
-        If (payload.ShiptoCode == null) {
-            AggregateResult result = [
-                SELECT MAX(DRC_NBC_Ship_To_Code__c) maxSeq
-                FROM DRC_NBC_Addresses__c
-                WHERE DRC_NBC_Type__c = 'Shipping'
-            ];
-            
-            Decimal maxDecimal = (Decimal) result.get('maxSeq');
-            Integer currentMax = (maxDecimal != null) ? maxDecimal.intValue() : 0;
-            currentMax++;
-            payload.ShiptoCode = string.valueOf(currentMax);
-            System.debug('Shipto code >>> '+  currentMax);
-            
-        }
+        /*If (payload.ShiptoCode == null) {
+AggregateResult result = [
+SELECT MAX(DRC_NBC_Ship_To_Code__c) maxSeq
+FROM DRC_NBC_Addresses__c
+WHERE DRC_NBC_Type__c = 'Shipping'
+];
+
+String maxSeqStr = (String) result.get('maxSeq');
+Integer currentMax = String.isBlank(maxSeqStr) ? 0 : Integer.valueOf(maxSeqStr);
+currentMax++;
+
+payload.ShiptoCode = String.valueOf(currentMax);
+System.debug('Shipto code >>> '+  currentMax);
+
+}*/
         System.debug('Shipto code >>> '+  payload.ShiptoCode);
         payload.Name = acc.Name;
         
@@ -144,7 +145,13 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
         payload.ShippingCity = addr.DRC_NBC_Address__City__s;
         payload.State = addr.DRC_NBC_Address__StateCode__s;
         payload.ShippingPostCode = addr.DRC_NBC_Address__PostalCode__s;
-        payload.ShippingCountry = 'IND';
+        if (addr.DRC_NBC_Address__CountryCode__s == 'IN'){
+            payload.ShippingCountry = 'IND';
+        }
+        else{
+            payload.ShippingCountry = addr.DRC_NBC_Address__CountryCode__s;
+        }
+        
         payload.ShippingPhoneNo = acc.Phone;
         payload.ShippingGSTRegistrationNo = addr.DRC_NBC_GST_Number__c;
         payload.Ship_to_GST_Customer_Type  = addr.DRC_Shipping_Gst_Customer_Type__c;
@@ -187,7 +194,9 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
         } else {
             System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
         }
-        payload.Shipment_Method_Code = incoTermsMeta.DRC_NBC_Code__c;
+        payload.Shipment_Method_Code = !incoTermsList.isEmpty()
+            ? incoTermsList[0].DRC_NBC_Code__c
+            : null;
         return payload;
     }
     

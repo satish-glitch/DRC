@@ -2,7 +2,7 @@ public class DRC_NBC_Order_BC_Update_Service {
     
     public static void processOrderUpdate(Id orderId) {
         try {
-            markOrderSynced(orderId);
+          //  markOrderSynced(orderId);
             System.debug('Total OrderItems for Order ' + orderId );
             // Start the first batch with index 0
             Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(orderId));
@@ -13,7 +13,6 @@ public class DRC_NBC_Order_BC_Update_Service {
             DRC_NBC_API_Log_Handler.createApiLog('DRC_NBC_Order_BC_Update_Service', null, null,'DirectCall', e.getMessage(), null,  e.getStackTraceString(), 'Error', orderId );
         }
     }
-    @future
     Public static void markOrderSynced(Id orderId) {
         List<Order> ordersToUpdate = [
             SELECT Id, DRC_NBC_Order_Sync_To_BC__c,DRC_NBC_Integration_Status__c

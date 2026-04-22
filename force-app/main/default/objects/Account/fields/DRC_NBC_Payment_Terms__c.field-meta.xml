@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Payment_Terms__c</fullName>
+    <externalId>false</externalId>
+    <formula>CASE(
+TEXT(DRC_NBC_Payment_Terms_Description__c),
+
+&quot;PDC 90 days&quot;, &quot;PDC90&quot;,
+&quot;PDC 60 days&quot;, &quot;PDC60&quot;,
+&quot;PDC 45 days&quot;, &quot;PDC45&quot;,
+&quot;PDC 30 days&quot;, &quot;PDC30&quot;,
+
+&quot;Irrevocable LC at sight&quot;, &quot;IRRELC&quot;,
+&quot;Irrevocable LC 90 days&quot;, &quot;IRRLC90&quot;,
+&quot;Irrevocable LC 60 days&quot;, &quot;IRRLC60&quot;,
+&quot;Irrevocable LC 45 days&quot;, &quot;IRRLC45&quot;,
+&quot;Irrevocable LC 30 days&quot;, &quot;IRRLC30&quot;,
+
+&quot;Free sample&quot;, &quot;FOC&quot;,
+
+&quot;DP AT SIGHT&quot;, &quot;DPSIGHT&quot;,
+&quot;DP 90 days&quot;, &quot;DP90&quot;,
+&quot;DP 60 days&quot;, &quot;DP60&quot;,
+&quot;DP 30 days&quot;, &quot;DP30&quot;,
+
+&quot;DA 90 days&quot;, &quot;DA90&quot;,
+&quot;DA 60 days&quot;, &quot;DA60&quot;,
+&quot;DA 45 days&quot;, &quot;DA45&quot;,
+&quot;DA 30 days&quot;, &quot;DA30&quot;,
+
+&quot;Bond transfer&quot;, &quot;BONTRN&quot;,
+
+&quot;BL 90 days&quot;, &quot;BL90&quot;,
+&quot;BL 75 days&quot;, &quot;BL75&quot;,
+&quot;BL 60 days&quot;, &quot;BL60&quot;,
+&quot;BL 45 days&quot;, &quot;BL45&quot;,
+&quot;BL 30 days&quot;, &quot;BL30&quot;,
+&quot;BL 120 days&quot;, &quot;BL120&quot;,
+
+&quot;90 days from invoice&quot;, &quot;INV90&quot;,
+&quot;75 days from invoice&quot;, &quot;INV75&quot;,
+&quot;7 days from invoice&quot;, &quot;INV07&quot;,
+&quot;60 days from invoice&quot;, &quot;INV60&quot;,
+&quot;45 days from invoice&quot;, &quot;INV45&quot;,
+&quot;40 days from invoice&quot;, &quot;INV40&quot;,
+&quot;30 days from invoice&quot;, &quot;INV30&quot;,
+&quot;20 days from invoice&quot;, &quot;INV20&quot;,
+&quot;15 days from invoice&quot;, &quot;INV15&quot;,
+&quot;120 days from invoice&quot;, &quot;INV120&quot;,
+
+&quot;60 days from LR&quot;, &quot;LR60&quot;,
+&quot;30 days from goods arrival&quot;, &quot;30DDEL&quot;,
+
+&quot;70% advance &amp; 30% CACD&quot;, &quot;70ADV-30CD&quot;,
+
+&quot;50% advance &amp; 50% PDC 45 days&quot;, &quot;50ADV50PDC&quot;,
+&quot;50% advance &amp; 50% CACD&quot;, &quot;50ADV-50CD&quot;,
+&quot;50% advance &amp; 50% BL 60 days&quot;, &quot;50ADV-50BL&quot;,
+&quot;50% advance &amp; 50% BL 45 days&quot;, &quot;50ADV-50BL&quot;,
+&quot;50% advance &amp; 50% against inspection&quot;, &quot;50ADV50INS&quot;,
+&quot;50% advance &amp; 50% against dispatch&quot;, &quot;50ADV50DIS&quot;,
+&quot;50% advance &amp; 50% 60 days from invoice&quot;, &quot;50ADV50INV&quot;,
+
+&quot;40% advance &amp; 60% before dispatch&quot;, &quot;40ADV60DIS&quot;,
+
+&quot;30% advance &amp; 70% CACD&quot;, &quot;30ADV-70CD&quot;,
+&quot;30% advance &amp; 70% before dispatch&quot;, &quot;30ADV70DIS&quot;,
+
+&quot;25% advance &amp; 75% LC at sight&quot;, &quot;25ADV-75LC&quot;,
+&quot;25% advance &amp; 75% CACD&quot;, &quot;25ADV-75CD&quot;,
+&quot;25% advance &amp; 75% BL 60 days&quot;, &quot;25ADV-75BL&quot;,
+&quot;25% advance &amp; 75% before dispatch&quot;, &quot;25ADV75DIS&quot;,
+
+&quot;20% advance &amp; 80% CACD&quot;, &quot;20ADV-80CD&quot;,
+&quot;20% advance &amp; 80% before dispatch&quot;, &quot;20ADV80DIS&quot;,
+&quot;20% advance &amp; 80% 60 days from invoice&quot;, &quot;20ADV80INV&quot;,
+
+&quot;100% cash against copy documents&quot;, &quot;CACD&quot;,
+&quot;100% against delivery&quot;, &quot;100%DEL&quot;,
+&quot;100% advance against proforma&quot;, &quot;100%PI&quot;,
+&quot;100% advance against BL copy&quot;, &quot;100%CBL&quot;,
+&quot;100% advance&quot;, &quot;100%ADV&quot;,
+
+&quot;10% advance &amp; 90% BL 30 days&quot;, &quot;10ADV-90BL&quot;,
+&quot;10% ADV &amp; 90% CACD&quot;, &quot;10ADV-90CD&quot;,
+
+&quot;10 days from invoice&quot;, &quot;INV10&quot;,
+
+&quot;&quot;
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Payment Terms</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

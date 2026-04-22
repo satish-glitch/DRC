@@ -118,7 +118,7 @@ insert customSetting;*/
         insert pbe;
         
         // Create Order
-        Order testOrder = new Order(
+       /* Order testOrder = new Order(
             AccountId = testAccount.Id,
             EffectiveDate = Date.today(),
             EndDate = Date.today().addDays(30),
@@ -139,12 +139,11 @@ insert customSetting;*/
             ShippingCountryCode = 'IN',
             DRC_NBC_Warehouse__c = 'C4/2/2 D.R COATS INK & RESINS PVT LTD (UNIT-III)'
         );
-        insert testOrder;
+        insert testOrder;*/
         
         // Create Shipping Address
         DRC_NBC_Addresses__c shippingAddress = new DRC_NBC_Addresses__c(
             DRC_NBC_Account__c = testAccount.Id,
-            DRC_NBC_Order__c = testOrder.Id,
             DRC_NBC_Type__c = 'Shipping',
             DRC_NBC_Ship_To_Code__c = 'SHIP001',
             DRC_NBC_Warehouse__c = 'CFS - JNPT',
@@ -157,10 +156,32 @@ insert customSetting;*/
         );
         insert shippingAddress;
         
-        // Update Order with Shipping Address
-        testOrder.DRC_NBC_Shipping_Address__c = shippingAddress.Id;
-        update testOrder;
         
+          // Create Order
+        Order testOrder = new Order(
+            AccountId = testAccount.Id,
+            EffectiveDate = Date.today(),
+            EndDate = Date.today().addDays(30),
+            Status = 'Draft',
+            Pricebook2Id = standardPricebook.Id,
+            BillToContactId = billToContact.Id,
+            ShipToContactId = shipToContact.Id,
+            PoNumber = 'PO12345',
+            PoDate = Date.today(),
+            DRC_NBC_Payment_Terms__c = 'PDC90',
+            DRC_NBC_Inco_Terms__c = 'Cost Insurance & Freight (CIF)',
+            DRC_NBC_Cust_Order_Number__c = 'ORD-001',
+            ShippingStreet = '123 Test St',
+            ShippingCity = 'Test City',
+            ShippingState = 'Maharashtra',
+            ShippingPostalCode = '12345',
+            ShippingCountry = 'India',
+            ShippingCountryCode = 'IN',
+            DRC_NBC_Warehouse__c = 'CFS - JNPT',
+            DRC_NBC_Shipping_Address__c = shippingAddress.Id
+        );
+        insert testOrder;
+      
         // Create Order Line Items
         OrderItem testOrderItem = new OrderItem(
             OrderId = testOrder.Id,
@@ -563,7 +584,7 @@ insert customSetting;*/
             Account.Industry,
             Account.Type, Account.DRC_NBC_Customer_Number__c,
             EffectiveDate, PoNumber, PoDate, DRC_NBC_Warehouse__c, ShipToContactId, CurrencyIsoCode,
-            DRC_NBC_Cust_Order_Number__c, Status, DRC_NBC_Payment_Terms__c,
+            DRC_NBC_Cust_Order_Number__c, Status, DRC_NBC_Payment_Terms__c, DRC_NBC_Type__c,
             DRC_NBC_Inco_Terms__c, ShippingStreet, ShippingCity, ShippingState,
             ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c, DRC_NBC_Grand_Total__c,
             DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name

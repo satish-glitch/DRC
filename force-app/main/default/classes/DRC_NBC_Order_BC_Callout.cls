@@ -56,44 +56,44 @@ this.orderId = orderId;
     public static Order getOrderDetails(Id orderId) {
         return [
             SELECT 
-            	Id, 
-                Name, 
-                AccountId,
-                EffectiveDate,
-                OrderNumber, 
-                PoDate,
-                PoNumber,
-                DRC_NBC_Warehouse__c,
-                ShipToContactId,
-                DRC_NBC_Cust_Order_Number__c, 
-                Status,
-                DRC_NBC_Payment_Terms__c,
-                RecordType.Name,
-                ShippingCountryCode, 
-                DRC_NBC_Inco_Terms__c,
-                CreatedDate,
-                Account.Name,
-                ShippingCity, 
-                ShippingCountry,
-                DRC_NBC_Order_Sync_To_BC__c,
-                ShippingPostalCode, 
-                ShippingStreet, 
-                DRC_NBC_Shipping_Address__c,
-                Account.DRC_NBC_Posted_To_BC__c, 
-                Account.DRC_NBC_Customer_Number__c,
-                DRC_NBC_Grand_Total__c,
-                Account.BillingStreet,
-                Account.BillingPostalCode,
-                Account.DRC_NBC_BC_Approval_Status__c,
-                Account.BillingCity, 
-                CurrencyIsoCode,
-                DRC_NBC_Type__c,
-                DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c
+            Id, 
+            Name, 
+            AccountId,
+            EffectiveDate,
+            OrderNumber, 
+            PoDate,
+            PoNumber,
+            DRC_NBC_Warehouse__c,
+            ShipToContactId,
+            DRC_NBC_Cust_Order_Number__c, 
+            Status,
+            DRC_NBC_Payment_Terms__c,
+            RecordType.Name,
+            ShippingCountryCode, 
+            DRC_NBC_Inco_Terms__c,
+            CreatedDate,
+            Account.Name,
+            ShippingCity, 
+            ShippingCountry,
+            DRC_NBC_Order_Sync_To_BC__c,
+            ShippingPostalCode, 
+            ShippingStreet, 
+            DRC_NBC_Shipping_Address__c,
+            Account.DRC_NBC_Posted_To_BC__c, 
+            Account.DRC_NBC_Customer_Number__c,
+            DRC_NBC_Grand_Total__c,
+            Account.BillingStreet,
+            Account.BillingPostalCode,
+            Account.DRC_NBC_BC_Approval_Status__c,
+            Account.BillingCity, 
+            CurrencyIsoCode,
+            DRC_NBC_Type__c,
+            DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
+            DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c
             FROM
-            	Order
+            Order
             WHERE 
-            	Id = :orderId
+            Id = :orderId
             LIMIT 1
         ];
     }
@@ -103,7 +103,7 @@ this.orderId = orderId;
         Warehouse_Location_Code__mdt warehouseMeta;
         String warehouseLabel = ord.DRC_NBC_Warehouse__c;
         String locationType = 'Warehouse Location';
-        
+        String locationcode  = '';
         List<Warehouse_Location_Code__mdt> metaList = [
             SELECT MasterLabel, DRC_NBC_Code__c, DRC_NBC_Type__c 
             FROM Warehouse_Location_Code__mdt
@@ -156,12 +156,15 @@ this.orderId = orderId;
         payload.Status = 'Open';
         payload.Sample_Sales = sampleSales;
         payload.Payment_Terms_Code = String.isNotBlank(ord.DRC_NBC_Payment_Terms__c) ? ord.DRC_NBC_Payment_Terms__c : '';
+        // payload.Payment_Terms_Code = '100';
+        
         payload.Shipment_Method_Code = (incoTermsMeta != null && 
                                         String.isNotBlank(incoTermsMeta.DRC_NBC_Code__c)) ? 
             incoTermsMeta.DRC_NBC_Code__c : '';
         payload.Location_Code = (warehouseMeta != null && 
                                  String.isNotBlank(warehouseMeta.DRC_NBC_Code__c)) ? 
-            warehouseMeta.DRC_NBC_Code__c : '';           
+            warehouseMeta.DRC_NBC_Code__c : '';
+      //  payload.Location_Code = 'J-51';        
         payload.Salesperson_Code = ord.ShipToContactId;
         payload.Salesforce_So_No = ord.Id;
         payload.External_Document_No = String.isNotBlank(ord.PoNumber) ? 
@@ -170,7 +173,14 @@ this.orderId = orderId;
             ?ord.DRC_NBC_Grand_Total__c
             : 0.00;
         payload.Salesforce_Order_Created = SalesforceOrderCreated;
-        payload.Currency_Code = Ord.CurrencyIsoCode;
+        
+       // payload.Currency_Code = Ord.CurrencyIsoCode;
+        If(Ord.CurrencyIsoCode == 'INR') {
+            payload.Currency_Code = '';
+        }
+        else{
+            payload.Currency_Code = Ord.CurrencyIsoCode;
+        }
         payload.Export_Document = 'Export'.equalsIgnoreCase(ord.DRC_NBC_Type__c);        
         
         // Initialize shipping fields
@@ -181,6 +191,8 @@ this.orderId = orderId;
         payload.Ship_to_Address_2 = '';
         payload.Ship_to_Post_Code = '';
         payload.Ship_to_Country_Region_Code = '';
+      //  payload.Ship_to_GST_Customer_Type = '';
+       // payload.Ship_to_GST_Reg_No = '';
         
         // Populate shipping address if available
         if (ord.DRC_NBC_Shipping_Address__c != null) {
@@ -203,8 +215,8 @@ this.orderId = orderId;
                 payload.Ship_to_Name = ord.Account != null && String.isNotBlank(ord.Account.Name) ? 
                     ord.Account.Name : '';
                 payload.Ship_to_Name_2 = '';
-                payload.Ship_to_GST_Customer_Type = String.isBlank(address.DRC_Shipping_Gst_Customer_Type__c) ? '' : address.DRC_Shipping_Gst_Customer_Type__c;
-                payload.Ship_to_GST_Reg_No = String.isBlank(address.DRC_NBC_GST_Number__c) ? '' : address.DRC_NBC_GST_Number__c;
+                //payload.Ship_to_GST_Customer_Type = String.isBlank(address.DRC_Shipping_Gst_Customer_Type__c) ? '' : address.DRC_Shipping_Gst_Customer_Type__c;
+               // payload.Ship_to_GST_Reg_No = String.isBlank(address.DRC_NBC_GST_Number__c) ? '' : address.DRC_NBC_GST_Number__c;
                 
                 // Compose full address
                 String fullAddress = '';
@@ -245,8 +257,12 @@ this.orderId = orderId;
                 } else {
                     payload.Ship_to_Country_Region_Code = countryCode;
                 }
+                //payload.Ship_to_GST_Customer_Type = address.DRC_Shipping_Gst_Customer_Type__c;
+              //  payload.Ship_to_GST_Reg_No = address.DRC_NBC_GST_Number__c;
+                
+                
             }
-        }
+        } 
         
         return payload;
     }

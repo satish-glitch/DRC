@@ -37,6 +37,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         @AuraEnabled public String oppCurrency;
         @AuraEnabled public Id     accountId;
         @AuraEnabled public String accountSpecialInstruction;
+        @AuraEnabled public String paymentTerm;
+        @AuraEnabled public String paymentTermDescription;
     }
 
     public class AccountAddressWrapper {
@@ -117,7 +119,9 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
     public static QuoteWrapper getQuoteMdtDetails(Id oppId) {
         QuoteWrapper w = new QuoteWrapper();
         Opportunity opp = [
-            SELECT CurrencyISOCode, AccountId, Account.DRC_NBC_Special_Instructions__c
+            SELECT CurrencyISOCode, AccountId, Account.DRC_NBC_Special_Instructions__c,
+            Account.DRC_NBC_Payment_Terms__c,
+            Account.DRC_NBC_Payment_Terms_Description__c
             FROM Opportunity
             WHERE Id = :oppId
             LIMIT 1
@@ -125,6 +129,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         w.oppCurrency              = opp.CurrencyISOCode;
         w.accountId                = opp.AccountId;
         w.accountSpecialInstruction = opp.Account.DRC_NBC_Special_Instructions__c;
+        w.paymentTerm = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms__c : null;
+        w.paymentTermDescription = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms_Description__c : null;
         return w;
     }
 
@@ -151,6 +157,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             Opportunity opp = [
                 SELECT Account.BillingStreet, Account.BillingCity, Account.BillingState,
                        Account.BillingPostalCode, Account.BillingCountry, Account.BillingCountryCode
+                        
                 FROM Opportunity
                 WHERE Id = :oppId
                 LIMIT 1

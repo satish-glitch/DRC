@@ -121,6 +121,11 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             if (quoteWrapper.accountSpecialInstruction) {
                 this.quoteRec.DRC_NBC_Special_Requirements__c = quoteWrapper.accountSpecialInstruction;
             }
+            this.quoteRec = {
+                ...this.quoteRec,
+                DRC_NBC_Payemnt_Term__c: quoteWrapper.paymentTerm,
+                DRC_NBC_Payment_Term_Description__c: quoteWrapper.paymentTermDescription
+            };
 
             // ── Contacts ──────────────────────────────────────────────────────
             this.allContacts    = contacts || [];

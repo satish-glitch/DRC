@@ -29,7 +29,8 @@ public class DRC_NBC_OrderProduct_BC_Integration extends DRC_NBC_Base_API_Integr
         System.debug('Status Code >>> ' + statusCode);
 
         if (statusCode >= 200 && statusCode < 300) {
-         /* DRC_NBC_API_Log_Handler.createApiLogAsync(
+            DRC_NBC_Order_BC_Update_Service.processOrderUpdate(orderId);
+         DRC_NBC_API_Log_Handler.createApiLogAsync(
                 this.apiPath,
                 DRC_NBC_BC_Callout_Utility.trimPayload(payload),
                 DRC_NBC_BC_Callout_Utility.trimPayload(responseBody),
@@ -39,9 +40,9 @@ public class DRC_NBC_OrderProduct_BC_Integration extends DRC_NBC_Base_API_Integr
                 null,
                 'Success',
                 orderId
-            );*/
+            );
         } else {
-           /* DRC_NBC_API_Log_Handler.createApiLogAsync(
+            DRC_NBC_API_Log_Handler.createApiLogAsync(
                 this.apiPath,
                 DRC_NBC_BC_Callout_Utility.trimPayload(payload),
                 DRC_NBC_BC_Callout_Utility.trimPayload(responseBody),
@@ -51,7 +52,7 @@ public class DRC_NBC_OrderProduct_BC_Integration extends DRC_NBC_Base_API_Integr
                 null,
                 'Error',
                 orderId
-            );*/
+            );
         }
     }
 }

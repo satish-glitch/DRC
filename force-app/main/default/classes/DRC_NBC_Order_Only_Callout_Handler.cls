@@ -53,14 +53,14 @@ public class DRC_NBC_Order_Only_Callout_Handler implements Queueable, Database.A
             if (integration.httpStatusCode != null && integration.httpStatusCode == 201) {
                 System.debug('Order Callout Handler → Order Sync SUCCESS');
                 // Chain to Order Update Queueable (separate DML context)
-                DRC_NBC_Order_BC_Update_Service.processOrderUpdate(orderId);
+             //   DRC_NBC_Order_BC_Update_Service.processOrderUpdate(orderId);
                 System.debug('Order update queued in separate Queueable');
                 
             } else {
                 String failureMsg = 'FAILURE: ' + (integration.responseSummary != null ? 
                                                    integration.responseSummary : 'No response body');
                 System.debug('Order Callout Handler → ' + failureMsg);
-                DRC_NBC_Order_BC_Update_Service.failedOrderUpdate(orderId);
+              //  DRC_NBC_Order_BC_Update_Service.failedOrderUpdate(orderId);
                 
             }
             

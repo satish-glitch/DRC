@@ -349,7 +349,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Description = item.Description != null ? item.Description : '';
         payload.Location_Code = locationCode;
         payload.Quantity = item.Quantity != null ? item.Quantity : 0;
-        payload.Unit_of_Measure_Code = item.DRC_NBC_Unit_Of_Measurement__c;
+        payload.Unit_of_Measure_Code = 'KGS';
         payload.Unit_Price = isSampleOrder ? 0 : (item.UnitPrice != null ? item.UnitPrice : 0);
             payload.Line_Amount = totalPrice;
         payload.Line_Discount_Percent = discountPercent;
@@ -361,7 +361,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         // Packing_Details: String, default to ''
         payload.Packing_Details = String.isNotBlank(item.DRC_NBC_Packing_Size__c) ? item.DRC_NBC_Packing_Size__c : '';
         if (String.isNotBlank(item.DRC_NBC_Packing_Quantity__c)) {
-            payload.No_of_Pkg_for_Qty = Decimal.valueOf(item.DRC_NBC_Packing_Quantity__c);
+            payload.No_of_Pkg_for_Qty = item.Quantity;
         } else {
             payload.No_of_Pkg_for_Qty = 0;
         }
@@ -395,7 +395,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
        
         // FIX: Quantity must be 1 for G/L Account (not 0)
         payload.Quantity = 1;
-        payload.Unit_of_Measure_Code = '';
+        payload.Unit_of_Measure_Code = 'KGS';
         // FIX: Unit_Price should be the tax amount, Line_Amount will auto-calculate
         payload.Unit_Price = otherTaxAmount;
         payload.Line_Amount = otherTaxAmount;
@@ -408,7 +408,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.GST_Group_Code = '';
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
-        payload.No_of_Pkg_for_Qty = 0;
+        payload.No_of_Pkg_for_Qty = 1;
         System.debug('  << Other Tax payload mapping complete');
         return payload;
     }
@@ -439,7 +439,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         
         // FIX: Quantity must be 1 for G/L Account (not 0)
         payload.Quantity = 1;
-        payload.Unit_of_Measure_Code = '';
+        payload.Unit_of_Measure_Code = 'KGS';
         // FIX: Unit_Price should be the tax amount, Line_Amount will auto-calculate
         payload.Unit_Price = tcsAmount;
         payload.Line_Amount = tcsAmount;
@@ -452,7 +452,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.GST_Group_Code = '';
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
-        payload.No_of_Pkg_for_Qty = 0;
+        payload.No_of_Pkg_for_Qty = 1;
         
         System.debug('  << TCS Amount payload mapping complete');
         return payload;

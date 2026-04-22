@@ -27,7 +27,7 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
     public static Account getAccountDetails(Id accId) {
         return [
             SELECT Id, Name, DRC_NBC_PAN_No__c, DRC_NBC_Payment_Term_Code__c, DRC_NBC_Customer_Number__c,DRC_NBC_BC_Approval_Status__c,
-            CurrencyIsoCode, Phone, AccountNumber, DRC_NBC_Account_Email_Email__c,
+            CurrencyIsoCode, Phone, AccountNumber, DRC_NBC_Account_Email_Email__c, DRC_NBC_Payment_Terms__c,
             BillingCity, BillingCountry, BillingCountryCode, BillingPostalCode, DRC_Inco_Term__c, DRC_Gst_Customer_Type__c,
             BillingState, BillingStateCode, BillingStreet, DRC_NBC_GST_Number__c,
             (SELECT Id, DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s,
@@ -78,7 +78,8 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         payload.Phone_No = acc.Phone;
         payload.Mobile_Phone_No = '';
         payload.E_Mail = acc.DRC_NBC_Account_Email_Email__c;
-        payload.Payment_Terms_Code = acc.DRC_NBC_Payment_Term_Code__c;
+        payload.Payment_Terms_Code = acc.DRC_NBC_Payment_Terms__c;
+      // payload.Payment_Terms_Code = '100';
         payload.Address = acc.BillingStreet;
         payload.Address_2 = '';
         payload.City = acc.BillingCity;

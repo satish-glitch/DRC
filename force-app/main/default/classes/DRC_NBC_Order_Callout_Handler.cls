@@ -2,11 +2,6 @@ public class DRC_NBC_Order_Callout_Handler implements Queueable, Database.Allows
     
     private Id orderId;
     
-    /**
-     * Callout-only Queueable - SHIPPING ONLY
-     * This handles ONLY Shipping HTTP callout
-     * Then chains to Order callout in separate Queueable
-     */
     public DRC_NBC_Order_Callout_Handler(Id orderId) {
         this.orderId = orderId;
     }
@@ -14,25 +9,34 @@ public class DRC_NBC_Order_Callout_Handler implements Queueable, Database.Allows
     public void execute(QueueableContext context) {
         try {
             System.debug('=== Shipping Callout Handler Started ===');
+            
             Order order = DRC_NBC_Order_BC_Callout.getOrderDetails(orderId);
             Id accountId = order.AccountId;
             
-            // STEP 1: Shipping Callout (if shipping address exists)
-            if (order.DRC_NBC_Shipping_Address__c != null && order.DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c == null) {
-                String shippingResult = processShippingCallout(accountId, orderId);
-                System.debug('Shipping BC Result → ' + shippingResult);
+            // STEP 1: Shipping Callout (only if shipping address is linked)
+            if (order.DRC_NBC_Shipping_Address__c != null) {
                 
-                if (!shippingResult.startsWith('SUCCESS')) {
-                    System.debug('Shipping callout failed: ' + shippingResult);
-                    // Continue to order callout even if shipping fails
+                Boolean canCreate = DRC_NBC_CheckShiipingDetails.checkShippingExists(orderId, accountId);
+                
+                if (canCreate) {
+                    String shippingResult = processShippingCallout(accountId, orderId);
+                    System.debug('Shipping BC Result → ' + shippingResult);
+                    
+                    if (!shippingResult.startsWith('SUCCESS')) {
+                        System.debug('Shipping callout failed: ' + shippingResult);
+                        // Intentionally continuing to order callout even on shipping failure
+                    }
+                } else {
+                    System.debug('Ship-To already exists in BC - skipping shipping callout');
                 }
+                
             } else {
-                System.debug('No shipping address - skipping shipping callout');
+                System.debug('No shipping address linked to order - skipping shipping callout');
             }
             
             System.debug('=== Shipping Callout Handler Completed ===');
             
-            // STEP 2: Chain to Order Callout Handler (separate Queueable)
+            // STEP 2: Always chain to Order Callout Handler regardless of shipping outcome
             System.debug('Chaining to Order Callout Handler...');
             System.enqueueJob(new DRC_NBC_Order_Only_Callout_Handler(orderId));
             
@@ -54,6 +58,7 @@ public class DRC_NBC_Order_Callout_Handler implements Queueable, Database.Allows
             
             String jsonBody = JSON.serialize(payload, true);
             String endpoint = DRC_NBC_BC_Callout_Utility.getConfig().DRC_NBC_Shipping_Address_Endpoint__c;
+            
             DRC_NBC_Shipping_BC_Integration integration = new DRC_NBC_Shipping_BC_Integration(
                 endpoint, 'POST', jsonBody, accountId
             );
