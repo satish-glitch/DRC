@@ -50,6 +50,7 @@
                                             <th>Quantity <span style="color:red;">*</span></th>
                                             <th style="text-align:center;">UOM</th>
                                             <th>Packing Size</th>
+                                            <!-- Packing Qty = DRC_NBC_Packing_Qauntity__c (raw unit qty) -->
                                             <th style="text-align:center;">Packing Qty</th>
                                             <th>Unit Price</th>
                                             <th>Description</th>
@@ -92,7 +93,6 @@
                                                         </template>
 
                                                         <!-- Results dropdown -->
-                                                        <!-- product2Name is a FLAT string from ProductWrapper — always renders correctly -->
                                                         <template if:true={row.recordData.searchResults.length}>
                                                             <div style="position:absolute; z-index:200;
                                                                         background:white; width:210px;
@@ -166,6 +166,11 @@
                                                         data-index={index}
                                                         onchange={handleQuantityChange}>
                                                     </lightning-input>
+                                                    <template if:true={row.recordData.quantityError}>
+                                                        <p style="color:red; font-size:11px; margin:2px 0 0;">
+                                                            {row.recordData.quantityError}
+                                                        </p>
+                                                    </template>
                                                 </td>
 
                                                 <!-- UOM -->
@@ -191,10 +196,13 @@
                                                     </template>
                                                 </td>
 
-                                                <!-- Packing Quantity -->
+                                                <!-- ── Packing Qty column ──
+                                                     Shows DRC_NBC_Packing_Qauntity__c (the raw packing unit qty,
+                                                     e.g. 100). This is read-only; it comes from the packing details
+                                                     record for the selected packing size. -->
                                                 <td style="text-align:center; vertical-align:middle;">
                                                     <template if:true={row.recordData.packingQuantity}>
-                                                        {row.recordData.packingQuantity}
+                                                        <strong>{row.recordData.packingQuantity}</strong>
                                                     </template>
                                                     <template if:false={row.recordData.packingQuantity}>
                                                         <span style="color:#999;">-</span>

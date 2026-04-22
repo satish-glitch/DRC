@@ -1,0 +1,83 @@
+=== Test Results
+TEST NAME                                                                                           OUTCOME  MESSAGE  RUNTIME (MS)
+──────────────────────────────────────────────────────────────────────────────────────────────────  ───────  ───────  ────────────
+DRC_NBC_UpdateOrderAndLineItems_Test.test_OrderSyncQueueable_HappyPath                              Pass              340         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_OrderSyncQueueable_NullId_CatchBlock                      Pass              61          
+DRC_NBC_UpdateOrderAndLineItems_Test.test_ShippingCalloutQueueable_HappyPath                        Pass              89          
+DRC_NBC_UpdateOrderAndLineItems_Test.test_ShippingCalloutQueueable_ShippingException_CatchBlock     Pass              81          
+DRC_NBC_UpdateOrderAndLineItems_Test.test_ShippingCalloutQueueable_ShippingHTTP500_ChainsContinues  Pass              77          
+DRC_NBC_UpdateOrderAndLineItems_Test.test_WrapperClasses_ConstructorFields                          Pass              12          
+DRC_NBC_UpdateOrderAndLineItems_Test.test_buildUpdateMultiple_BothTaxNodes_NonZeroAmounts           Pass              214         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_buildUpdateMultiple_NoMatchingSFItem_WarningBranch        Pass              542         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_buildUpdateMultiple_NullDiscount_DefaultsToZero           Pass              282         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_buildUpdateMultiple_SampleOrder_PricesZeroed              Pass              263         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_escapeXml_BlankValue_ReturnsEmpty                         Pass              215         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_getLocationCode_BlankWarehouseLabel                       Pass              286         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_getLocationCode_LabelPresentNoMetadataMatch               Pass              226         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_BothTaxAmountsNull_DeleteBranch           Pass              201         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_BothTaxAmountsZero_DeleteBranch           Pass              229         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_EmptyBC_CreatePath_NoUpdate               Pass              118         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_InnerExceptionPath                        Pass              171         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_MalformedReadMultipleXML_CatchBlock       Pass              112         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_ReadMultipleHTTP500_NullBCDetails         Pass              106         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_Step4_OrderReadUpdateEnqueued             Pass              107         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_TaxLinesPreserved_NonZeroAmounts          Pass              231         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_intelligentSync_UnmatchedProduct_UpdateAndDelete          Pass              111         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_orderId_NullId_ExceptionCaught                            Pass              29          
+DRC_NBC_UpdateOrderAndLineItems_Test.test_orderId_ShipToCodePresent_QueuesJob                       Pass              152         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_processOrderSync_OrderReadHTTP500_NullResult_EarlyReturn  Pass              103         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_processOrderSync_OrderReadNoKey_EarlyReturn               Pass              111         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_processOrderSync_Released_FreshKeyBlank_EarlyReturn       Pass              101         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_processOrderSync_Released_FreshReadHTTP500_EarlyReturn    Pass              107         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_processOrderSync_Released_ReopenHTTP500_EarlyReturn       Pass              105         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_processOrderSync_Released_ReopenSuccess_FullSync          Pass              102         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_readMultipleLineItems_CalloutException_CatchBlock         Pass              96          
+DRC_NBC_UpdateOrderAndLineItems_Test.test_readOrderFromBC_CalloutException_CatchBlock               Pass              105         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_readOrderFromBC_MalformedXML_CatchBlock                   Pass              105         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_reopenOrderInBC_CalloutException_CatchBlock               Pass              104         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateMultipleLineItems_CalloutException                  Pass              106         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateMultipleLineItems_HTTP500                           Pass              117         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateMultipleLineItems_Success_AndGetLocationCode        Pass              105         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateOrderInBC_BlankWarehouse_SkipsMetadata              Pass              280         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateOrderInBC_CalloutException_CatchBlock               Pass              113         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateOrderInBC_HTTP500_LineItemsSkipped                  Pass              103         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateOrderInBC_ShipToLocationDiffers_ShipToUpdateIssued  Pass              114         
+DRC_NBC_UpdateOrderAndLineItems_Test.test_updateOrderInBC_WarehouseMetadataLookup                   Pass              199         
+
+
+=== Apex Code Coverage by Class
+CLASSES                          PERCENT  UNCOVERED LINES      
+───────────────────────────────  ───────  ─────────────────────
+DRC_NBC_Integration_Payload      0%       163,164,165          
+DRC_NBC_ShipToCodeGenerator      86%      18,34,58,62          
+DRC_NBC_Order_BC_Callout         49%      10,11,12,13,15,...   
+DRC_NBC_Shipping_BC_Callout      18%      6,7,8,11,12,...      
+DRC_NBC_UpdateOrderAndLineItems  50%      74,76,101,246,247,...
+DRC_NBC_LineItemCreator          88%      41,73,76,80,88,...   
+DRC_NBC_OrderTriggerHandler      67%      47,49,61,105,106,... 
+DRC_NBC_UpdateShippingAddress    88%      49,51,59,61,85,...   
+DRC_AutoShipToCodeTrigger        100%                          
+DRC_NBC_OrderTrigger             100%                          
+
+
+=== Test Setup Time by Test Class for Run 707C300000YxPbf
+TEST SETUP METHOD NAME                              SETUP TIME
+──────────────────────────────────────────────────  ──────────
+DRC_NBC_UpdateOrderAndLineItems_Test.setupTestData  1218      
+
+
+=== Test Summary
+NAME                 VALUE                                
+───────────────────  ─────────────────────────────────────
+Outcome              Passed                               
+Tests Ran            43                                   
+Pass Rate            100%                                 
+Fail Rate            0%                                   
+Skip Rate            0%                                   
+Test Run Id          707C300000YxPbf                      
+Test Setup Time      1218 ms                              
+Test Execution Time  6431 ms                              
+Test Total Time      7649 ms                              
+Org Id               00DC3000002PAe9MAG                   
+Username             satishyadav0231@gmail.com.drcresindev
+Org Wide Coverage    80%                                  

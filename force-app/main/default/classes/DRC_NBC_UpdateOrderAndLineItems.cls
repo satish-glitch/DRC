@@ -90,9 +90,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             System.debug('Ship To Code: ' + ord.DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c);
             
             // Step 2: Check if Ship-To Code generation is needed
-            if (String.isBlank(ord.DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c)) {
-                System.debug('Ship-To Code is missing. Starting chained Queueable process...');
-                System.enqueueJob(new ShipToCodeGeneratorQueueable(orderRecordId, accountId));
+           if ((ord.DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c != null)) {
+                System.enqueueJob(new ShippingCalloutQueueable(orderRecordId, accountId));
                 resultMessage = 'QUEUED: Ship-To Code generation started. Shipping and Order sync will follow.';
                 System.debug(resultMessage);
                 return resultMessage;
@@ -121,10 +120,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     // "uncommitted work pending" errors when mixing DML and callouts.
     // ========================================================================
     
-    /**
+/*    /**
 * QUEUEABLE 1: Generate Ship-To Code (DML ONLY)
 * No callouts here. Chains to ShippingCalloutQueueable after DML commits.
-*/
+
     public class ShipToCodeGeneratorQueueable implements Queueable {
         private Id orderRecordId;
         private Id accountId;
@@ -159,6 +158,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
 * Runs in a clean transaction after Ship-To Code DML is committed.
 * Chains to OrderSyncQueueable after shipping callout completes.
 */
+
     public class ShippingCalloutQueueable implements Queueable, Database.AllowsCallouts {
         private Id orderRecordId;
         private Id accountId;
@@ -845,6 +845,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                          Map<Integer, BCLineItem> bcLineDetails) {
                                                              System.debug('    *** buildUpdateMultipleSOAPRequest Started ***');
                                                              System.debug('    BC Line Keys to Update: ' + bcLineKeys.keySet());
+                                                             String orderLocationCode = getLocationCodeFromWarehouse(ord.DRC_NBC_Warehouse__c);
+                                                             System.debug('Resolved Order Location Code: ' + orderLocationCode);
                                                              
                                                              String soapBody =
                                                                  '<?xml version="1.0" encoding="utf-8"?>' +
@@ -918,26 +920,30 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          lineDiscountAmount = 0;
                                                                      }
                                                                      
+                                                                     
                                                                      soapBody +=
                                                                          '<SalesOrderLineSalesForce>' +
                                                                          '<Key>' + escapeXml(bcKey) + '</Key>' +
+                                                                         '<Document_Type>Order</Document_Type>' +
                                                                          '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
                                                                          '<Line_No>' + lineNo + '</Line_No>' +
+                                                                         '<Type>Item</Type>'+
                                                                          '<No>' + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c) + '</No>' +
                                                                          '<Customer_item_no>' + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c) + '</Customer_item_no>' +
                                                                          '<Description>' + escapeXml(matchedItem.Description != null ? matchedItem.Description : '') + '</Description>' +
                                                                          '<Quantity>' + (matchedItem.Quantity != null ? matchedItem.Quantity : 0) + '</Quantity>' +
-                                                                         '<Unit_of_Measure_Code>' + escapeXml(matchedItem.DRC_NBC_Unit_Of_Measurement__c) + '</Unit_of_Measure_Code>' +
+                                                                         '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
                                                                          '<Unit_Price>' + (isSampleOrder ? 0 : (matchedItem.UnitPrice != null ? matchedItem.UnitPrice : 0)) + '</Unit_Price>' +
                                                                          '<Line_Amount>' + totalPrice + '</Line_Amount>' +
                                                                          '<Line_Discount_Percent>' + discountPercent + '</Line_Discount_Percent>' +
                                                                          '<Line_Discount_Amount>' + lineDiscountAmount + '</Line_Discount_Amount>' +
                                                                          '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                                                                          '<GST_Credit>' + GST_CREDIT_VALUE + '</GST_Credit>' +
+                                                                         '<Location_Code>' + escapeXml(orderLocationCode) + '</Location_Code>' +
                                                                          '<GST_Group_Code>' + escapeXml(matchedItem.Product2.DRC_NBC_GST_Group_Code__c) + '</GST_Group_Code>' +
                                                                          '<HSN_SAC_Code>' + escapeXml(matchedItem.Product2.DRC_NBC_HSN_SAC_Code__c) + '</HSN_SAC_Code>' +
                                                                          '<Packing_Details>' + escapeXml(matchedItem.DRC_NBC_Packing_Size__c) + '</Packing_Details>' +
-                                                                         '<No_of_Pkg_for_Qty>' + escapeXml(matchedItem.DRC_NBC_Packing_Quantity__c) + '</No_of_Pkg_for_Qty>' +
+                                                                         '<No_of_Pkg_for_Qty>' + (matchedItem.Quantity != null ? matchedItem.Quantity : 0) + '</No_of_Pkg_for_Qty>' +
                                                                          '</SalesOrderLineSalesForce>';
                                                                  } else {
                                                                      System.debug('    WARNING: No matching SF item for BC Line ' + lineNo);
@@ -955,8 +961,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                      
                                                                      soapBody +=
                                                                          '<SalesOrderLineSalesForce>' +
-                                                                         '<Key>' + escapeXml(otherTaxKey) + '</Key>' +
-                                                                         '<Document_Type>Order</Document_Type>' +
+                                                                         '<Key>' + escapeXml(otherTaxKey) + '</Key>' + '<Document_Type>Order</Document_Type>' +
                                                                          '<Document_No>' + escapeXml(bcOrderNo) + '</Document_No>' +
                                                                          '<Line_No>' + otherTaxLineNo + '</Line_No>' +
                                                                          '<Type>G/L Account</Type>' +
@@ -964,15 +969,17 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          '<Customer_item_no></Customer_item_no>' +
                                                                          '<Description>Other Tax Amount</Description>' +
                                                                          '<Quantity>1</Quantity>' +
-                                                                         '<Location_Code>' + ord.DRC_NBC_Location_Code__c + '</Location_Code>' +
-                                                                         '<Unit_Price>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Unit_Price>' +
-                                                                         '<Line_Amount>' + ord.DRC_NBC_Other_Tax_Amount__c + '</Line_Amount>' +
+                                                                         '<HSN_SAC_Code></HSN_SAC_Code>' +
+                                                                         '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
+                                                                         '<Location_Code>' + escapeXml(orderLocationCode) + '</Location_Code>' +
+                                                                         '<Unit_Price>' + ord.DRC_NBC_TCS_Amount__c + '</Unit_Price>' +
+                                                                         '<Line_Amount>' + ord.DRC_NBC_TCS_Amount__c + '</Line_Amount>' +
                                                                          '<Line_Discount_Percent>0</Line_Discount_Percent>' +
                                                                          '<Line_Discount_Amount>0</Line_Discount_Amount>' +
                                                                          '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                                                                          '<GST_Credit>_blank_</GST_Credit>' +
                                                                          '<Packing_Details></Packing_Details>' +
-                                                                         '<No_of_Pkg_for_Qty>0</No_of_Pkg_for_Qty>' +
+                                                                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
                                                                          '</SalesOrderLineSalesForce>';
                                                                  }
                                                              
@@ -994,9 +1001,11 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          '<Type>G/L Account</Type>' +
                                                                          '<No>70563200</No>' +
                                                                          '<Customer_item_no></Customer_item_no>' +
-                                                                         '<Description>TCS Amount</Description>' +
+                                                                         '<Description>Other Tax Amount</Description>' +
                                                                          '<Quantity>1</Quantity>' +
-                                                                         '<Location_Code>' + ord.DRC_NBC_Location_Code__c + '</Location_Code>' +
+                                                                         '<HSN_SAC_Code></HSN_SAC_Code>' +
+                                                                         '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
+                                                                         '<Location_Code>' + escapeXml(orderLocationCode) + '</Location_Code>' +
                                                                          '<Unit_Price>' + ord.DRC_NBC_TCS_Amount__c + '</Unit_Price>' +
                                                                          '<Line_Amount>' + ord.DRC_NBC_TCS_Amount__c + '</Line_Amount>' +
                                                                          '<Line_Discount_Percent>0</Line_Discount_Percent>' +
@@ -1004,7 +1013,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                                          '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                                                                          '<GST_Credit>_blank_</GST_Credit>' +
                                                                          '<Packing_Details></Packing_Details>' +
-                                                                         '<No_of_Pkg_for_Qty>0</No_of_Pkg_for_Qty>' +
+                                                                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
                                                                          '</SalesOrderLineSalesForce>';
                                                                  }
                                                              
@@ -1131,5 +1140,31 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     private static String escapeXml(String value) {
         if (String.isBlank(value)) return '';
         return value.escapeXml();
+    }
+    
+    private static String getLocationCodeFromWarehouse(String warehouseLabel) {
+        System.debug('Warehouse Label: ' + warehouseLabel);
+        
+        if (String.isBlank(warehouseLabel)) {
+            System.debug('!!! Warehouse label is blank');
+            return '';
+        }
+        
+        List<Warehouse_Location_Code__mdt> metaList = [
+            SELECT DRC_NBC_Code__c
+            FROM Warehouse_Location_Code__mdt
+            WHERE MasterLabel = :warehouseLabel
+            AND DRC_NBC_Type__c = 'Warehouse Location'
+            LIMIT 1
+        ];
+        
+        if (!metaList.isEmpty()) {
+            String locationCode = metaList[0].DRC_NBC_Code__c;
+            System.debug('Location Code (from metadata): ' + locationCode);
+            return locationCode;
+        } else {
+            System.debug('!!! No Location Code found for warehouse: ' + warehouseLabel);
+            return '';
+        }
     }
 }

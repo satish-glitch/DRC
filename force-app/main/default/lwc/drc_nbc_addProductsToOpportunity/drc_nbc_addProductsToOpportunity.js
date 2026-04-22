@@ -7,6 +7,9 @@ import searchProducts  from '@salesforce/apex/DRC_NBC_OpportunityProductsControl
 import saveOLIData     from '@salesforce/apex/DRC_NBC_OpportunityProductsController.saveOLIData';
 import AddProductCSS   from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
 
+// How many multiples to generate for the Quantity combobox
+const QUANTITY_MULTIPLES_COUNT = 20;
+
 export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
 
     _oppId      = null;
@@ -24,7 +27,6 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
         }
     }
 
-    // Aura-callable method fallback
     @api
     setRecordId(id) {
         console.log('[LWC setRecordId] received:', id);
@@ -51,7 +53,6 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
     _tryLoad() {
         if (this._dataLoaded || !this._oppId) return;
         this._dataLoaded = true;
-        console.log('[_tryLoad] opportunityId:', this._oppId);
         this.fetchOLIData();
     }
 
@@ -69,6 +70,7 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
     }
 
     // ─── Packing helpers ─────────────────────────────────────────────────────
+
     _buildPackingSizeOptions(list) {
         if (!list || list.length === 0) return [];
         return list.map(pd => ({ label: pd.packingSize || '', value: pd.packingSize || '' }));
@@ -79,15 +81,48 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
         return this.packingDetailsMap[product2Id] || [];
     }
 
-    _recalcPackingQuantity(rowData) {
-        const qty    = parseFloat(rowData.Quantity)           || 0;
+    /**
+     * Returns the raw packingQuantity (DRC_NBC_Packing_Qauntity__c) of the
+     * currently selected packing size — this is what is shown in the
+     * "Packing Qty" column.
+     */
+    _getRawPackingQty(rowData) {
         const pkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
-        return (pkgQty > 0 && qty > 0) ? String(Math.ceil(qty / pkgQty)) : '';
+        return pkgQty > 0 ? String(pkgQty) : '';
+    }
+
+    /**
+     * Builds combobox options for Quantity as multiples of the packing quantity.
+     * e.g. packingQty = 100 → [100, 200, 300 … 2000]
+     * If no packing size is selected, returns [] so a plain number input is used.
+     */
+    _buildQuantityOptions(rawPackingQty) {
+        const pkgQty = parseFloat(rawPackingQty) || 0;
+        if (pkgQty <= 0) return [];
+        const options = [];
+        for (let i = 1; i <= QUANTITY_MULTIPLES_COUNT; i++) {
+            const val = String(pkgQty * i);
+            options.push({ label: val, value: val });
+        }
+        return options;
+    }
+
+    /**
+     * Validates that the entered quantity is a positive multiple of packingQty.
+     * Returns an error string or '' if valid.
+     */
+    _validateQuantity(qty, rawPackingQty) {
+        const pkgQty = parseFloat(rawPackingQty) || 0;
+        const q      = parseFloat(qty) || 0;
+        if (q <= 0) return 'Quantity must be greater than 0.';
+        if (pkgQty > 0 && q % pkgQty !== 0) {
+            return `Quantity must be a multiple of ${pkgQty}.`;
+        }
+        return '';
     }
 
     // ─── Load existing OLIs ───────────────────────────────────────────────────
     fetchOLIData() {
-        console.log('[fetchOLIData] opportunityId:', this._oppId);
         this.showLoading = true;
         getExistingOLIs({ opportunityId: this._oppId })
             .then(data => {
@@ -108,13 +143,18 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
         this.filteredData = olis.map(item => {
             const packingDetails     = this._getPackingDetailsForProduct(item.Product2Id);
             const packingSizeOptions = this._buildPackingSizeOptions(packingDetails);
-            const savedPackingSize   = item.DRC_NBC_Packing_Size__c     || '';
-            const savedPackingQty    = item.DRC_NBC_Packing_Qauntity__c || '';
-            let   rawPackingQuantity = '';
+            const savedPackingSize   = item.DRC_NBC_Packing_Size__c      || '';
+            // DRC_NBC_Packing_Qauntity__c stored on OLI is the raw packing qty
+            const savedPackingQty    = item.DRC_NBC_Packing_Qauntity__c  || '';
+
+            let rawPackingQuantity = '';
             if (savedPackingSize) {
                 const matched      = packingDetails.find(pd => pd.packingSize === savedPackingSize);
-                rawPackingQuantity = matched ? (matched.packingQuantity || '') : '';
+                rawPackingQuantity = matched ? (matched.packingQuantity || '') : savedPackingQty;
             }
+
+            const quantityOptions = this._buildQuantityOptions(rawPackingQuantity);
+
             const prod = item.Product2 || {};
             return {
                 recordData: {
@@ -135,7 +175,10 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
                     packingSizeOptions,
                     selectedPackingSize:            savedPackingSize,
                     rawPackingQuantity,
-                    packingQuantity:                savedPackingQty
+                    // "Packing Qty" column = the raw packing unit qty (e.g. 100)
+                    packingQuantity:                rawPackingQuantity,
+                    quantityOptions,
+                    quantityError:                  ''
                 }
             };
         });
@@ -164,7 +207,9 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
             packingSizeOptions:             [],
             selectedPackingSize:            '',
             rawPackingQuantity:             '',
-            packingQuantity:                ''
+            packingQuantity:                '',   // raw packing unit qty shown in column
+            quantityOptions:                [],   // multiples combobox options
+            quantityError:                  ''
         };
     }
 
@@ -224,7 +269,6 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
     }
 
     _callSearchApex(index, searchTerm) {
-        console.log('[search] term:', searchTerm, '| opportunityId:', this._oppId);
         if (!this._oppId) {
             this._toast('Error', 'Opportunity ID not available. Please close and reopen.', 'error');
             return;
@@ -275,7 +319,8 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
         }
         const packingDetails     = selected.packingDetails || [];
         const packingSizeOptions = this._buildPackingSizeOptions(packingDetails);
-        const updated            = [...this.filteredData];
+
+        const updated = [...this.filteredData];
         updated[index] = {
             recordData: {
                 ...updated[index].recordData,
@@ -295,21 +340,30 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
                 packingSizeOptions,
                 selectedPackingSize:            '',
                 rawPackingQuantity:             '',
-                packingQuantity:                ''
+                packingQuantity:                '',   // cleared until packing size chosen
+                quantityOptions:                [],
+                quantityError:                  '',
+                Quantity:                       1
             }
         };
         this.filteredData = updated;
     }
 
     // ─── Field handlers ───────────────────────────────────────────────────────
+
+    /**
+     * Quantity change handler.
+     * - If packing size is selected → user picks from combobox (multiples), no free input.
+     * - If NO packing size → free number input, any positive value allowed.
+     */
     handleQuantityChange(event) {
         const index   = parseInt(event.target.dataset.index);
         const updated = [...this.filteredData];
-        updated[index].recordData.Quantity = parseFloat(event.target.value) || 0;
-        if (updated[index].recordData.selectedPackingSize) {
-            updated[index].recordData.packingQuantity =
-                this._recalcPackingQuantity(updated[index].recordData);
-        }
+        const row     = updated[index].recordData;
+        const newQty  = parseFloat(event.detail ? event.detail.value : event.target.value) || 0;
+        const error   = this._validateQuantity(newQty, row.rawPackingQuantity);
+
+        updated[index].recordData = { ...row, Quantity: newQty, quantityError: error };
         this.filteredData = updated;
     }
 
@@ -324,13 +378,26 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
         const index        = parseInt(event.target.dataset.index);
         const selectedSize = event.detail.value;
         const updated      = [...this.filteredData];
-        const packingDetails = updated[index].recordData.packingDetails || [];
+        const row          = { ...updated[index].recordData };
+
+        const packingDetails = row.packingDetails || [];
         const matched        = packingDetails.find(pd => pd.packingSize === selectedSize);
-        updated[index].recordData.selectedPackingSize = selectedSize;
-        updated[index].recordData.rawPackingQuantity  =
-            matched?.packingQuantity ? String(matched.packingQuantity) : '';
-        updated[index].recordData.packingQuantity =
-            this._recalcPackingQuantity(updated[index].recordData);
+        const rawPkgQty      = matched?.packingQuantity ? String(matched.packingQuantity) : '';
+
+        const quantityOptions = this._buildQuantityOptions(rawPkgQty);
+
+        // Reset quantity to first multiple when packing size changes
+        const firstQty = quantityOptions.length > 0 ? parseFloat(quantityOptions[0].value) : row.Quantity;
+
+        row.selectedPackingSize = selectedSize;
+        row.rawPackingQuantity  = rawPkgQty;
+        // "Packing Qty" column shows the raw packing unit quantity (e.g. 100)
+        row.packingQuantity     = rawPkgQty;
+        row.quantityOptions     = quantityOptions;
+        row.Quantity            = firstQty;
+        row.quantityError       = '';
+
+        updated[index] = { recordData: row };
         this.filteredData = updated;
     }
 
@@ -343,13 +410,28 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
 
     // ─── Save ─────────────────────────────────────────────────────────────────
     handleSave() {
-        let isValid = true, rowCount = 0;
+        let isValid = true;
+        let rowCount = 0;
+
         for (const row of this.filteredData) {
             rowCount++;
             const r = row.recordData;
-            if (!r.Product2Id)                    { this._toast('Error', `Product required for row ${rowCount}`, 'error');       isValid = false; }
-            if (!r.Quantity || r.Quantity <= 0)   { this._toast('Error', `Quantity > 0 required for row ${rowCount}`, 'error');  isValid = false; }
-            if (r.UnitPrice == null || r.UnitPrice < 0) { this._toast('Error', `Unit Price required for row ${rowCount}`, 'error'); isValid = false; }
+
+            if (!r.Product2Id) {
+                this._toast('Error', `Product required for row ${rowCount}`, 'error');
+                isValid = false;
+            }
+
+            const qtyError = this._validateQuantity(r.Quantity, r.rawPackingQuantity);
+            if (qtyError) {
+                this._toast('Error', `Row ${rowCount}: ${qtyError}`, 'error');
+                isValid = false;
+            }
+
+            if (r.UnitPrice == null || r.UnitPrice < 0) {
+                this._toast('Error', `Unit Price required for row ${rowCount}`, 'error');
+                isValid = false;
+            }
         }
         if (!isValid) return;
 
@@ -367,14 +449,14 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
                 Description:                    r.Description || '',
                 DRC_NBC_Unit_Of_Measurement__c: r.DRC_NBC_Unit_Of_Measurement__c || '',
                 DRC_NBC_Packing_Size__c:        r.selectedPackingSize || '',
-                DRC_NBC_Packing_Qauntity__c:    r.packingQuantity || ''
+                // Save the raw packing unit qty (e.g. 100) to DRC_NBC_Packing_Qauntity__c
+                DRC_NBC_Packing_Qauntity__c:    r.rawPackingQuantity || ''
             };
         });
 
         saveOLIData({ oliList: olisToSave, oliIdsToDelete: this.oliIdsToDelete, opportunityId: this._oppId })
         .then(() => {
             this._toast('Success', 'Products saved successfully', 'success');
-            // Small delay so the toast is visible before redirect
             setTimeout(() => { this._goToOpportunity(); }, 1500);
         })
         .catch(error => {
@@ -388,18 +470,11 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
         this._goToOpportunity();
     }
 
-    // ─── Navigate to Opportunity ──────────────────────────────────────────────
-    // In VF + Lightning Out context:
-    //   - NavigationMixin does NOT work (no Lightning App context)
-    //   - CloseActionScreenEvent does NOT work
-    //   - window.location.href is the only reliable redirect
     _goToOpportunity() {
         if (!this._oppId) return;
-        // Standard Salesforce record page URL — works in Classic and LEX via VF
         window.location.href = '/' + this._oppId;
     }
 
-    // ─── Toast ────────────────────────────────────────────────────────────────
     _toast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
