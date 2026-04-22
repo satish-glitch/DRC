@@ -52,28 +52,28 @@
                         </template>
                        <template if:false={isSample}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Payment_Term_Description__c" onchange={handleFieldChange} required></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Payment_Term_Description__c" onchange={handleFieldChange} required disabled></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Payment_Terms__c" onchange={handleFieldChange} required></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Payment_Terms__c" onchange={handleFieldChange} required disabled></lightning-input-field>
                             </div>
                         </template>
                          <template if:true={isSamplePaid}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Payment_Term_Description__c" onchange={handleFieldChange} required></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Payment_Term_Description__c" onchange={handleFieldChange} required disabled></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Payment_Terms__c" onchange={handleFieldChange} required></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Payment_Terms__c" onchange={handleFieldChange} required disabled></lightning-input-field>
                             </div>
                         </template>
                         <template if:false={isSample}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Inco_Terms__c" onchange={handleFieldChange} required></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Inco_Terms__c" onchange={handleFieldChange} required disabled></lightning-input-field>
                             </div>
                         </template>
                         <template if:true={isSamplePaid}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Inco_Terms__c" onchange={handleFieldChange} required></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Inco_Terms__c" onchange={handleFieldChange} required disabled></lightning-input-field>
                             </div>
                         </template>
                          <template if:false={isSample}>

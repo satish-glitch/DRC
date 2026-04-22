@@ -477,7 +477,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             response.getStatusCode(),
             null,
             'Success',
-            orderItemId
+            orderId
         );
     }
     
@@ -502,7 +502,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             response != null ? response.getStatusCode() : null,
             null,
             'Error',
-            orderItemId
+            orderId
         );
     }
 }

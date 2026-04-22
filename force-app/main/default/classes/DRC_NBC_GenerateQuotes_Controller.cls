@@ -39,7 +39,9 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         @AuraEnabled public String accountSpecialInstruction;
         @AuraEnabled public String paymentTerm;
         @AuraEnabled public String paymentTermDescription;
+         @AuraEnabled public String incoterms;
     }
+    
 
     public class AccountAddressWrapper {
         @AuraEnabled public String street;
@@ -121,7 +123,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         Opportunity opp = [
             SELECT CurrencyISOCode, AccountId, Account.DRC_NBC_Special_Instructions__c,
             Account.DRC_NBC_Payment_Terms__c,
-            Account.DRC_NBC_Payment_Terms_Description__c
+            Account.DRC_NBC_Payment_Terms_Description__c, Account.DRC_Inco_Term__c
             FROM Opportunity
             WHERE Id = :oppId
             LIMIT 1
@@ -131,6 +133,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         w.accountSpecialInstruction = opp.Account.DRC_NBC_Special_Instructions__c;
         w.paymentTerm = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms__c : null;
         w.paymentTermDescription = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms_Description__c : null;
+        w.incoterms              = opp.Account != null ? opp.Account.DRC_Inco_Term__c : null;
         return w;
     }
 
@@ -229,7 +232,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                     ORDER BY Name
                     LIMIT 100
                 ];
-            } else {
+            } /*else {
                 products = [
                     SELECT Id, Name, DRC_NBC_FG_Code__c, DRC_NBC_HSN_SAC_Code__c, QuantityUnitOfMeasure
                     FROM   Product2
@@ -238,7 +241,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                     ORDER BY Name
                     LIMIT 100
                 ];
-            }
+            }*/
 
             if (products.isEmpty()) return new List<ProductWrapper>();
 

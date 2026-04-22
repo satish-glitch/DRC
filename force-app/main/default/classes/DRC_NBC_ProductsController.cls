@@ -237,7 +237,7 @@ public class DRC_NBC_ProductsController {
         }
     }
     
-    @AuraEnabled
+   /* @AuraEnabled
     public static qliWrapper getExistingQLIs(String quoteId) {
         List<DRC_NBC_Restricted_Product__c> productAccessibilitiesList = getrestrictedProductsAccessList(quoteId);
         Set<Id> accessibleRestrictedProductIds = new Set<Id>();
@@ -249,17 +249,7 @@ public class DRC_NBC_ProductsController {
             LIMIT 1
         ];
         
-        /*if (quoteRecord.Pricebook2Id == null) {
-Pricebook2 defaultPricebook = [
-SELECT Id 
-FROM Pricebook2 
-WHERE IsActive = true 
-ORDER BY IsStandard DESC, CreatedDate ASC 
-LIMIT 1
-];
-quoteRecord.Pricebook2Id = defaultPricebook.Id;
-update quoteRecord;
-}*/
+
         if (quoteRecord.Pricebook2Id == null) {
             Id standardPricebookId;
             
@@ -357,6 +347,7 @@ update quoteRecord;
                     AND CurrencyISOCode = :quoteRecord.CurrencyIsoCode
                     AND Product2.IsActive = true
                     AND Pricebook2Id = :quoteRecord.Pricebook2Id
+                    AND Product2Id IN :accessibleRestrictedProductIds
                     ORDER BY Name
                 ]);
             }
@@ -391,7 +382,137 @@ update quoteRecord;
         qliRecs.packingDetailsMap = productPackingMap;
         
         return qliRecs;
+    }*/
+
+    @AuraEnabled
+public static qliWrapper getExistingQLIs(String quoteId) {
+    List<DRC_NBC_Restricted_Product__c> productAccessibilitiesList = getrestrictedProductsAccessList(quoteId);
+    Set<Id> accessibleRestrictedProductIds = new Set<Id>();
+
+    Quote quoteRecord = [
+        SELECT Id, Opportunity.AccountId, CurrencyIsoCode, Pricebook2Id
+        FROM Quote
+        WHERE Id = :quoteId
+        LIMIT 1
+    ];
+
+    if (quoteRecord.Pricebook2Id == null) {
+        Id standardPricebookId;
+        if (Test.isRunningTest()) {
+            standardPricebookId = Test.getStandardPricebookId();
+        } else {
+            standardPricebookId = [
+                SELECT Id FROM Pricebook2 WHERE IsStandard = true LIMIT 1
+            ].Id;
+        }
+        quoteRecord.Pricebook2Id = standardPricebookId;
+        update quoteRecord;
     }
+
+    // Query QLIs
+    List<QuoteLineItem> qlis = [
+        SELECT
+            Id,
+            Product2.Name,
+            Product2.Family,
+            Product2.QuantityUnitOfMeasure,
+            Product2.DRC_NBC_FG_Code__c,
+            Product2.DRC_NBC_HSN_SAC_Code__c,
+            Quote.CurrencyIsoCode,
+            PricebookEntryId,
+            Description,
+            Discount,
+            ListPrice,
+            Product2Id,
+            Quantity,
+            UnitPrice,
+            DRC_NBC_Packing_Size__c,
+            DRC_NBC_Packing_Qauntity__c
+        FROM QuoteLineItem
+        WHERE QuoteId = :quoteId
+    ];
+
+    qliWrapper qliRecs = new qliWrapper();
+    qliRecs.qlis = qlis;
+    qliRecs.productsList = new List<PricebookEntry>();
+
+    // Fetch ALL active pricebook entries once
+    List<PricebookEntry> allEntries = [
+        SELECT
+            Id,
+            Product2Id,
+            Product2.Name,
+            Product2.Family,
+            Product2.DRC_NBC_FG_Code__c,
+            Product2.DRC_NBC_HSN_SAC_Code__c,
+            Product2.QuantityUnitOfMeasure,
+            CurrencyIsoCode,
+            Pricebook2Id,
+            Product2.Description,
+            Product2.IsActive,
+            UnitPrice
+        FROM PricebookEntry
+        WHERE IsActive = true
+            AND CurrencyISOCode = :quoteRecord.CurrencyIsoCode
+            AND Product2.IsActive = true
+            AND Pricebook2Id = :quoteRecord.Pricebook2Id
+        ORDER BY Product2.Name
+    ];
+
+    if (!productAccessibilitiesList.isEmpty()) {
+        // Build the set of allowed product Ids for this account
+        for (DRC_NBC_Restricted_Product__c access : productAccessibilitiesList) {
+            if (access.DRC_NBC_Customer__c == quoteRecord?.Opportunity?.AccountId) {
+                accessibleRestrictedProductIds.add(access.DRC_NBC_Product__c);
+            }
+        }
+
+        if (!accessibleRestrictedProductIds.isEmpty()) {
+            // Filter allEntries in-memory — no second SOQL needed
+            for (PricebookEntry pbe : allEntries) {
+                if (accessibleRestrictedProductIds.contains(pbe.Product2Id)) {
+                    qliRecs.productsList.add(pbe);
+                }
+            }
+        }
+        // If accessibleRestrictedProductIds is still empty → show nothing
+    } else {
+        // No restrictions for this account → show all products
+        qliRecs.productsList = allEntries;
+    }
+
+    // Collect all Product2 Ids from QLIs and product list for packing details
+    Set<Id> product2Ids = new Set<Id>();
+    for (QuoteLineItem qli : qlis) {
+        if (qli.Product2Id != null) product2Ids.add(qli.Product2Id);
+    }
+    for (PricebookEntry pbe : qliRecs.productsList) {
+        if (pbe.Product2Id != null) product2Ids.add(pbe.Product2Id);
+    }
+
+    // Fetch packing details from child object for all relevant products
+    Map<Id, List<PackingDetailWrapper>> productPackingMap = new Map<Id, List<PackingDetailWrapper>>();
+    if (!product2Ids.isEmpty()) {
+        for (DRC_NBC_Packing_Details__c pd : [
+            SELECT Id, Product__c, DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Qauntity__c
+            FROM DRC_NBC_Packing_Details__c
+            WHERE Product__c IN :product2Ids
+            ORDER BY DRC_NBC_Packing_Size__c
+        ]) {
+            if (!productPackingMap.containsKey(pd.Product__c)) {
+                productPackingMap.put(pd.Product__c, new List<PackingDetailWrapper>());
+            }
+            String qtyStr = pd.DRC_NBC_Packing_Qauntity__c != null
+                ? String.valueOf(pd.DRC_NBC_Packing_Qauntity__c) : '';
+            productPackingMap.get(pd.Product__c).add(
+                new PackingDetailWrapper(pd.DRC_NBC_Packing_Size__c, qtyStr)
+            );
+        }
+    }
+
+    qliRecs.packingDetailsMap = productPackingMap;
+    return qliRecs;
+}
     
     @AuraEnabled
     public static List<DRC_NBC_Restricted_Product__c> getrestrictedProductsAccessList(String quoteId) {

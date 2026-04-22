@@ -761,10 +761,22 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             System.debug('    *** UpdateMultiple Started ***');
             
-            String requestBody = buildUpdateMultipleSOAPRequest(
-                bcOrderNo, bcLineKeys, orderItems, ord, bcLineDetails);
-            String sfOrderId = String.valueOf(orderId);
+            // ✅ FIX: Re-fetch order to get the latest Warehouse__c before building payload
+            // The passed-in `ord` may be stale — updateOrderInBC runs before this and
+            // can result in a different location code being needed.
+            Order freshOrd = [
+                SELECT DRC_NBC_Warehouse__c, DRC_NBC_Other_Tax_Amount__c,
+                DRC_NBC_TCS_Amount__c, DRC_NBC_Cust_Order_Number__c,
+                RecordType.Name, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c
+                FROM Order
+                WHERE Id = :orderId
+                LIMIT 1
+            ];
             
+            String requestBody = buildUpdateMultipleSOAPRequest(
+                bcOrderNo, bcLineKeys, orderItems, freshOrd, bcLineDetails);  // pass freshOrd
+            String sfOrderId = String.valueOf(orderId);
+                        
             try {
                 HttpRequest req = new HttpRequest();
                 req.setEndpoint(BC_LINE_ITEM_ENDPOINT);

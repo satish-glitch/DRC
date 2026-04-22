@@ -49,7 +49,7 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
     @AuraEnabled(cacheable=true)
     public static String getAccountPaymentTerms(Id oppId) {
         Opportunity opp = [
-            SELECT Account.DRC_NBC_Payment_Term_Code__c
+            SELECT Account.DRC_NBC_Payment_Term_Code__c, Account.DRC_NBC_Payment_Terms_Description__c, Account.DRC_Inco_Term__c
             FROM Opportunity
             WHERE Id = :oppId
             LIMIT 1
@@ -376,7 +376,7 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
                 ORDER BY Product2.Name
                 LIMIT 100
             ];
-        } else {
+        } /*else {
             entries = [
                 SELECT Id, Product2Id, Product2.Name, Product2.DRC_NBC_FG_Code__c,
                        Product2.DRC_NBC_HSN_SAC_Code__c, Product2.QuantityUnitOfMeasure,
@@ -389,7 +389,7 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
                 ORDER BY Product2.Name
                 LIMIT 100
             ];
-        }
+        }*/
 
         Set<Id>              product2Ids    = new Set<Id>();
         Set<Id>              seenProductIds = new Set<Id>();
