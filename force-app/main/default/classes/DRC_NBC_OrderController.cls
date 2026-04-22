@@ -221,7 +221,7 @@ public class DRC_NBC_OrderController {
             WHERE OrderId = :orderId
         ];
         
-        oliWrapper oliRecs = new oliWrapper();
+    /*    oliWrapper oliRecs = new oliWrapper();
         oliRecs.olis = olis;
         oliRecs.productsList = new List<PricebookEntry>();
         
@@ -274,7 +274,37 @@ public class DRC_NBC_OrderController {
                     ORDER BY Name
                 ]);
             }
+        }*/
+
+        oliWrapper oliRecs = new oliWrapper();
+oliRecs.olis = olis;
+oliRecs.productsList = new List<PricebookEntry>();
+
+// Collect restricted product IDs for this account only
+if (!productAccessibilitiesList.isEmpty()) {
+    for (DRC_NBC_Restricted_Product__c access : productAccessibilitiesList) {
+        if (access.DRC_NBC_Customer__c == orderRecord.AccountId) {
+            accessibleRestrictedProductIds.add(access.DRC_NBC_Product__c);
         }
+    }
+}
+
+// Show ONLY restricted products assigned to this account
+// If the account has no restricted products, productsList stays empty
+if (!accessibleRestrictedProductIds.isEmpty()) {
+    oliRecs.productsList = [
+        SELECT Id, Product2Id, Product2.Name, Product2.Family,
+        Product2.DRC_NBC_FG_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
+        Product2.QuantityUnitOfMeasure, CurrencyIsoCode, Pricebook2Id,
+        Product2.Description, Product2.IsActive, UnitPrice
+        FROM PricebookEntry
+        WHERE IsActive = true
+        AND Product2.IsActive = true
+        AND Pricebook2Id = :orderRecord.Pricebook2Id
+        AND Product2Id IN :accessibleRestrictedProductIds
+        ORDER BY Product2.Name
+    ];
+}
         
         Set<Id> product2Ids = new Set<Id>();
         for (OrderItem oli : olis) {
