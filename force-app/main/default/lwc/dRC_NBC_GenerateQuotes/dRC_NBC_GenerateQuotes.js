@@ -377,14 +377,24 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         this.filteredData[index].recordData[field] = value;
 
         if (field === 'ProductName' && value.length >= 2) {
-            searchProducts({
+           searchProducts({
                 keyword:         value,
                 currencyIsoCode: this.currencyCode,
                 accountId:       this.accountId
             })
             .then(results => {
-                this.filteredData[index].recordData.searchResults  = results;
-                this.filteredData[index].recordData.noResultsFound = results.length === 0;
+                // Collect Product2Ids already selected in OTHER rows (not the current one)
+                const selectedProductIds = this.filteredData
+                    .filter((_, i) => i !== index)
+                    .map(row => row.recordData.Product2Id)
+                    .filter(Boolean);
+
+                const filteredResults = results.filter(
+                    r => !selectedProductIds.includes(r.Product2Id)
+                );
+
+                this.filteredData[index].recordData.searchResults  = filteredResults;
+                this.filteredData[index].recordData.noResultsFound = filteredResults.length === 0;
                 this.filteredData = [...this.filteredData];
             })
             .catch(error => {
