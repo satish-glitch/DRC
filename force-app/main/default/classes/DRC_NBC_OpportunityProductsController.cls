@@ -73,7 +73,87 @@ public with sharing class DRC_NBC_OpportunityProductsController {
         return productPackingMap;
     }
 
-    // ─── Shared: query PricebookEntries with currency fallback to INR ────────
+    // ─── NEW HELPER: Ensure PricebookEntries exist for the Opportunity currency ─
+    // For any product that has entries in OTHER currencies but NOT in oppCurrency,
+    // this method creates a new PricebookEntry with the same UnitPrice from the
+    // existing entry (source currency). Returns a map of Product2Id → new/existing PBE.
+    private static Map<Id, PricebookEntry> ensurePricebookEntriesForCurrency(
+        Set<Id>  product2Ids,
+        String   oppCurrency,
+        Id       pricebookId
+    ) {
+        Map<Id, PricebookEntry> result = new Map<Id, PricebookEntry>();
+        if (product2Ids.isEmpty()) return result;
+
+        // 1. Find which products already have an entry in the opp currency
+        Set<Id> alreadyHasCurrency = new Set<Id>();
+        for (PricebookEntry existing : [
+            SELECT Id, Product2Id, UnitPrice
+            FROM   PricebookEntry
+            WHERE  Product2Id     IN :product2Ids
+              AND  Pricebook2Id   = :pricebookId
+              AND  CurrencyIsoCode = :oppCurrency
+              AND  IsActive       = true
+        ]) {
+            alreadyHasCurrency.add(existing.Product2Id);
+            result.put(existing.Product2Id, existing);
+        }
+
+        // 2. Find the products that are MISSING the opp currency
+        Set<Id> missingCurrency = new Set<Id>();
+        for (Id pid : product2Ids) {
+            if (!alreadyHasCurrency.contains(pid)) {
+                missingCurrency.add(pid);
+            }
+        }
+
+        if (missingCurrency.isEmpty()) return result;
+
+        // 3. Fetch any existing PricebookEntry for missing products (any currency)
+        //    to copy the UnitPrice from
+        Map<Id, PricebookEntry> sourcePbeMap = new Map<Id, PricebookEntry>();
+        for (PricebookEntry sourcePbe : [
+            SELECT Id, Product2Id, UnitPrice, CurrencyIsoCode
+            FROM   PricebookEntry
+            WHERE  Product2Id   IN :missingCurrency
+              AND  Pricebook2Id = :pricebookId
+              AND  IsActive     = true
+            ORDER BY CurrencyIsoCode   // deterministic: pick first alphabetically
+            LIMIT  200
+        ]) {
+            // Keep only the first entry found per product (one source to copy from)
+            if (!sourcePbeMap.containsKey(sourcePbe.Product2Id)) {
+                sourcePbeMap.put(sourcePbe.Product2Id, sourcePbe);
+            }
+        }
+
+        if (sourcePbeMap.isEmpty()) return result;
+
+        // 4. Build new PricebookEntries in the opp currency using the source price
+        List<PricebookEntry> toInsert = new List<PricebookEntry>();
+        for (Id pid : sourcePbeMap.keySet()) {
+            PricebookEntry src = sourcePbeMap.get(pid);
+            toInsert.add(new PricebookEntry(
+                Product2Id      = pid,
+                Pricebook2Id    = pricebookId,
+                CurrencyIsoCode = oppCurrency,
+                UnitPrice       = src.UnitPrice,   // list price copied from source currency
+                IsActive        = true
+            ));
+        }
+
+        // 5. Insert and add to result map
+        if (!toInsert.isEmpty()) {
+            insert toInsert;
+            for (PricebookEntry newPbe : toInsert) {
+                result.put(newPbe.Product2Id, newPbe);
+            }
+        }
+
+        return result;
+    }
+
+    // ─── Shared: query PricebookEntries with auto-create for opp currency ────
     private static List<PricebookEntry> queryPricebookEntries(
         String      likePattern,
         String      currencyCode,
@@ -81,92 +161,92 @@ public with sharing class DRC_NBC_OpportunityProductsController {
         Set<Id>     restrictedProductIds,
         Boolean     useRestricted
     ) {
-        List<PricebookEntry> entries = new List<PricebookEntry>();
+        // ── Step 1: Find matching products (any currency) ─────────────────────
+        List<PricebookEntry> allEntries = new List<PricebookEntry>();
 
-        // ── First attempt: opportunity currency ──────────────────────────────
         if (useRestricted) {
-            entries = [
+            allEntries = [
                 SELECT Id, Product2Id,
                        Product2.Name,
                        Product2.DRC_NBC_FG_Code__c,
                        Product2.DRC_NBC_HSN_SAC_Code__c,
                        Product2.QuantityUnitOfMeasure,
                        Product2.Description,
-                       UnitPrice
+                       UnitPrice,
+                       CurrencyIsoCode
                 FROM   PricebookEntry
                 WHERE  IsActive          = true
                   AND  Product2.IsActive = true
                   AND  Product2.Name     LIKE :likePattern
-                  AND  CurrencyIsoCode   = :currencyCode
                   AND  Pricebook2Id      = :pricebookId
                   AND  Product2Id        IN :restrictedProductIds
                 ORDER BY Product2.Name
                 LIMIT  100
             ];
         } else {
-            entries = [
+            allEntries = [
                 SELECT Id, Product2Id,
                        Product2.Name,
                        Product2.DRC_NBC_FG_Code__c,
                        Product2.DRC_NBC_HSN_SAC_Code__c,
                        Product2.QuantityUnitOfMeasure,
                        Product2.Description,
-                       UnitPrice
+                       UnitPrice,
+                       CurrencyIsoCode
                 FROM   PricebookEntry
                 WHERE  IsActive          = true
                   AND  Product2.IsActive = true
                   AND  Product2.Name     LIKE :likePattern
-                  AND  CurrencyIsoCode   = :currencyCode
                   AND  Pricebook2Id      = :pricebookId
                 ORDER BY Product2.Name
                 LIMIT  100
             ];
         }
 
-        // ── Fallback: INR if original currency returned nothing ───────────────
-        if (entries.isEmpty() && currencyCode != 'INR') {
-            String inrCode = 'INR';
-            if (useRestricted) {
-                entries = [
-                    SELECT Id, Product2Id,
-                           Product2.Name,
-                           Product2.DRC_NBC_FG_Code__c,
-                           Product2.DRC_NBC_HSN_SAC_Code__c,
-                           Product2.QuantityUnitOfMeasure,
-                           Product2.Description,
-                           UnitPrice
-                    FROM   PricebookEntry
-                    WHERE  IsActive          = true
-                      AND  Product2.IsActive = true
-                      AND  Product2.Name     LIKE :likePattern
-                      AND  CurrencyIsoCode   = :inrCode
-                      AND  Pricebook2Id      = :pricebookId
-                      AND  Product2Id        IN :restrictedProductIds
-                    ORDER BY Product2.Name
-                    LIMIT  100
-                ];
-            } else {
-                entries = [
-                    SELECT Id, Product2Id,
-                           Product2.Name,
-                           Product2.DRC_NBC_FG_Code__c,
-                           Product2.DRC_NBC_HSN_SAC_Code__c,
-                           Product2.QuantityUnitOfMeasure,
-                           Product2.Description,
-                           UnitPrice
-                    FROM   PricebookEntry
-                    WHERE  IsActive          = true
-                      AND  Product2.IsActive = true
-                      AND  Product2.Name     LIKE :likePattern
-                      AND  CurrencyIsoCode   = :inrCode
-                      AND  Pricebook2Id      = :pricebookId
-                    ORDER BY Product2.Name
-                    LIMIT  100
-                ];
+        if (allEntries.isEmpty()) return allEntries;
+
+        // ── Step 2: Collect all matching Product2Ids ──────────────────────────
+        Set<Id> allProduct2Ids = new Set<Id>();
+        for (PricebookEntry pbe : allEntries) {
+            allProduct2Ids.add(pbe.Product2Id);
+        }
+
+        // ── Step 3: Ensure every product has a PBE in the opp currency ────────
+        // This creates missing entries automatically, copying price from existing currency
+        Map<Id, PricebookEntry> currencyPbeMap = ensurePricebookEntriesForCurrency(
+            allProduct2Ids,
+            currencyCode,
+            pricebookId
+        );
+
+        // ── Step 4: Build final deduplicated list using opp-currency PBEs ─────
+        // For each product, prefer the opp-currency entry (existing or newly created)
+        Set<Id> seen = new Set<Id>();
+        List<PricebookEntry> finalEntries = new List<PricebookEntry>();
+
+        // First pass: use opp-currency PBEs where available
+        for (PricebookEntry pbe : allEntries) {
+            if (!seen.contains(pbe.Product2Id) && currencyPbeMap.containsKey(pbe.Product2Id)) {
+                seen.add(pbe.Product2Id);
+                PricebookEntry oppCurrencyPbe = currencyPbeMap.get(pbe.Product2Id);
+
+                // Stamp the opp-currency PBE's Id + price onto the record
+                // but carry over product details from the allEntries query
+                pbe.Id        = oppCurrencyPbe.Id;
+                pbe.UnitPrice = oppCurrencyPbe.UnitPrice;
+                finalEntries.add(pbe);
             }
         }
 
-        return entries;
+        // Second pass: any product not in currencyPbeMap (edge case — no source PBE found)
+        for (PricebookEntry pbe : allEntries) {
+            if (!seen.contains(pbe.Product2Id)) {
+                seen.add(pbe.Product2Id);
+                finalEntries.add(pbe);
+            }
+        }
+
+        return finalEntries;
     }
 
     // ─── Fetch existing OLIs on modal open ────────────────────────────────────
@@ -227,80 +307,7 @@ public with sharing class DRC_NBC_OpportunityProductsController {
         return result;
     }
 
-    // ─── Search products by name (with INR currency fallback) ─────────────────
-   /* @AuraEnabled
-    public static List<ProductWrapper> searchProducts(String searchTerm, Id opportunityId) {
-        if (String.isBlank(searchTerm)) return new List<ProductWrapper>();
-        if (String.isBlank(opportunityId)) {
-            throw new AuraHandledException('Opportunity ID is required for product search.');
-        }
-
-        Opportunity opp = [
-            SELECT Id, CurrencyIsoCode, Pricebook2Id, AccountId
-            FROM   Opportunity
-            WHERE  Id = :opportunityId
-            LIMIT  1
-        ];
-
-        Id pricebookId = (opp.Pricebook2Id != null) ? opp.Pricebook2Id : getStandardPricebookId();
-
-        String likePattern = '%' + String.escapeSingleQuotes(searchTerm) + '%';
-
-        // Restricted products for this account + current user
-        Set<Id> restrictedProductIds = new Set<Id>();
-        for (DRC_NBC_Restricted_Product__c rp : [
-            SELECT DRC_NBC_Product__c
-            FROM   DRC_NBC_Restricted_Product__c
-            WHERE  DRC_NBC_Customer__c = :opp.AccountId
-              AND  DRC_NBC_User__c     = :UserInfo.getUserId()
-        ]) {
-            restrictedProductIds.add(rp.DRC_NBC_Product__c);
-        }
-
-        Boolean useRestricted = !restrictedProductIds.isEmpty();
-
-        // Query with automatic INR fallback
-        List<PricebookEntry> entries = queryPricebookEntries(
-            likePattern,
-            opp.CurrencyIsoCode,
-            pricebookId,
-            restrictedProductIds,
-            useRestricted
-        );
-
-        Set<Id> product2Ids = new Set<Id>();
-        for (PricebookEntry pbe : entries) product2Ids.add(pbe.Product2Id);
-
-        Map<Id, List<PackingDetailWrapper>> productPackingMap = getPackingDetailsMap(product2Ids);
-
-        Set<Id> seen = new Set<Id>();
-        List<ProductWrapper> results = new List<ProductWrapper>();
-
-        for (PricebookEntry pbe : entries) {
-            if (!seen.contains(pbe.Product2Id)) {
-                seen.add(pbe.Product2Id);
-
-                List<PackingDetailWrapper> packing = productPackingMap.containsKey(pbe.Product2Id)
-                    ? productPackingMap.get(pbe.Product2Id)
-                    : new List<PackingDetailWrapper>();
-
-                results.add(new ProductWrapper(
-                    pbe.Id,
-                    pbe.Product2Id,
-                    pbe.Product2.Name,
-                    pbe.Product2.DRC_NBC_FG_Code__c,
-                    pbe.Product2.DRC_NBC_HSN_SAC_Code__c,
-                    pbe.Product2.QuantityUnitOfMeasure,
-                    pbe.Product2.Description,
-                    pbe.UnitPrice,
-                    packing
-                ));
-            }
-        }
-
-        return results;
-    }*/
-
+    // ─── Search products by name ───────────────────────────────────────────────
     @AuraEnabled
     public static List<ProductWrapper> searchProducts(String searchTerm, Id opportunityId) {
         if (String.isBlank(searchTerm)) return new List<ProductWrapper>();
@@ -318,7 +325,7 @@ public with sharing class DRC_NBC_OpportunityProductsController {
         Id pricebookId = (opp.Pricebook2Id != null) ? opp.Pricebook2Id : getStandardPricebookId();
         String likePattern = '%' + String.escapeSingleQuotes(searchTerm) + '%';
 
-        // ── Account-level restriction (no user filter) ────────────────────────────
+        // ── Account-level restriction ─────────────────────────────────────────
         Set<Id> restrictedProductIds = new Set<Id>();
         for (DRC_NBC_Restricted_Product__c rp : [
             SELECT DRC_NBC_Product__c
@@ -330,7 +337,7 @@ public with sharing class DRC_NBC_OpportunityProductsController {
 
         Boolean useRestricted = !restrictedProductIds.isEmpty();
 
-        // ── Query with automatic INR fallback ────────────────────────────────────
+        // ── Query (auto-creates missing currency PBEs inside) ─────────────────
         List<PricebookEntry> entries = queryPricebookEntries(
             likePattern,
             opp.CurrencyIsoCode,
@@ -344,28 +351,23 @@ public with sharing class DRC_NBC_OpportunityProductsController {
 
         Map<Id, List<PackingDetailWrapper>> productPackingMap = getPackingDetailsMap(product2Ids);
 
-        Set<Id> seen = new Set<Id>();
         List<ProductWrapper> results = new List<ProductWrapper>();
-
         for (PricebookEntry pbe : entries) {
-            if (!seen.contains(pbe.Product2Id)) {
-                seen.add(pbe.Product2Id);
-                List<PackingDetailWrapper> packing = productPackingMap.containsKey(pbe.Product2Id)
-                    ? productPackingMap.get(pbe.Product2Id)
-                    : new List<PackingDetailWrapper>();
+            List<PackingDetailWrapper> packing = productPackingMap.containsKey(pbe.Product2Id)
+                ? productPackingMap.get(pbe.Product2Id)
+                : new List<PackingDetailWrapper>();
 
-                results.add(new ProductWrapper(
-                    pbe.Id,
-                    pbe.Product2Id,
-                    pbe.Product2.Name,
-                    pbe.Product2.DRC_NBC_FG_Code__c,
-                    pbe.Product2.DRC_NBC_HSN_SAC_Code__c,
-                    pbe.Product2.QuantityUnitOfMeasure,
-                    pbe.Product2.Description,
-                    pbe.UnitPrice,
-                    packing
-                ));
-            }
+            results.add(new ProductWrapper(
+                pbe.Id,
+                pbe.Product2Id,
+                pbe.Product2.Name,
+                pbe.Product2.DRC_NBC_FG_Code__c,
+                pbe.Product2.DRC_NBC_HSN_SAC_Code__c,
+                pbe.Product2.QuantityUnitOfMeasure,
+                pbe.Product2.Description,
+                pbe.UnitPrice,
+                packing
+            ));
         }
 
         return results;
