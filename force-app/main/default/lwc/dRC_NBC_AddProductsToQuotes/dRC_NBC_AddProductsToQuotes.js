@@ -616,11 +616,32 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         const value = event.target.value;
         this.filteredData[index].recordData[field] = value;
 
-        if (field === 'ProductName' && value.length >= 2) {
+       /* if (field === 'ProductName' && value.length >= 2) {
             // ✅ Search by name pattern only — currency already on productsMasterList from Quote
             const matches = this.productsMasterList.filter(product =>
                 product.Product2.Name.toLowerCase().includes(value.toLowerCase())
             );
+            this.filteredData[index].recordData.searchResults  = matches;
+            this.filteredData[index].recordData.noResultsFound = matches.length === 0;
+        } else if (field === 'ProductName') {
+            this.filteredData[index].recordData.searchResults  = [];
+            this.filteredData[index].recordData.noResultsFound = false;
+        }*/
+
+        if (field === 'ProductName' && value.length >= 2) {
+            // Collect Product2Ids already selected in OTHER rows (not the current row)
+            const selectedProduct2Ids = this.filteredData
+                .filter((_, i) => i !== parseInt(index))
+                .map(row => row.recordData.Product2Id)
+                .filter(Boolean);
+
+            // Search within productsMasterList (already account-restricted from Apex)
+            // and exclude products already selected in other rows
+            const matches = this.productsMasterList.filter(product =>
+                product.Product2.Name.toLowerCase().includes(value.toLowerCase()) &&
+                !selectedProduct2Ids.includes(product.Product2Id)
+            );
+
             this.filteredData[index].recordData.searchResults  = matches;
             this.filteredData[index].recordData.noResultsFound = matches.length === 0;
         } else if (field === 'ProductName') {
