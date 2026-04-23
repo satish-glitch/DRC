@@ -424,9 +424,22 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         this.filteredData = [...this.allData];
     }
 
+    /*handleAddRow() {
+        let newRow        = this.getBaseRecordData().qlis;
+        newRow.Id         = null;
+        newRow.showSearch = true;
+        newRow.searchResults  = null;
+        newRow.noResultsFound = false;
+        newRow.searchKey      = '';
+        this.filteredData.push({ recordData: newRow });
+        this.filteredData     = [...this.filteredData];
+        this.showAddProducts  = false;
+    }*/
+
     handleAddRow() {
         let newRow        = this.getBaseRecordData().qlis;
         newRow.Id         = null;
+        newRow.QuoteId    = this.recordId;  // ← ADD THIS LINE
         newRow.showSearch = true;
         newRow.searchResults  = null;
         newRow.noResultsFound = false;

@@ -620,13 +620,31 @@ public static qliWrapper getExistingQLIs(String quoteId) {
                     throw new AuraHandledException('Missing UnitPrice.');
                 }
                 
-                QuoteLineItem qliToSave = new QuoteLineItem(
+               /* QuoteLineItem qliToSave = new QuoteLineItem(
                     Id = qli.Id,
                     Product2Id = qli.Product2Id,
                     Quantity = qli.Quantity,
                     UnitPrice = qli.UnitPrice,
                     Discount = qli.Discount,
                     QuoteId = qli.QuoteId,
+                    PricebookEntryId = qli.PricebookEntryId,
+                    Description = qli.Description,
+                    DRC_NBC_Unit_Of_Measurement__c = qli.DRC_NBC_Unit_Of_Measurement__c,
+                    DRC_NBC_Packing_Size__c = qli.DRC_NBC_Packing_Size__c,
+                    DRC_NBC_Packing_Qauntity__c = qli.DRC_NBC_Packing_Qauntity__c
+                );*/
+                Id resolvedQuoteId = (qli.QuoteId != null) ? qli.QuoteId : quoteData.Id;
+                if (resolvedQuoteId == null) {
+                    throw new AuraHandledException('QuoteId is missing for a line item. Cannot save.');
+                }
+
+                QuoteLineItem qliToSave = new QuoteLineItem(
+                    Id = qli.Id,
+                    Product2Id = qli.Product2Id,
+                    Quantity = qli.Quantity,
+                    UnitPrice = qli.UnitPrice,
+                    Discount = qli.Discount,
+                    QuoteId = resolvedQuoteId,
                     PricebookEntryId = qli.PricebookEntryId,
                     Description = qli.Description,
                     DRC_NBC_Unit_Of_Measurement__c = qli.DRC_NBC_Unit_Of_Measurement__c,
