@@ -441,7 +441,7 @@ public static qliWrapper getExistingQLIs(String quoteId) {
         SELECT
             Id,
             Product2Id,
-            Product2.Name,
+            Product2.Name, 
             Product2.Family,
             Product2.DRC_NBC_FG_Code__c,
             Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -453,13 +453,13 @@ public static qliWrapper getExistingQLIs(String quoteId) {
             UnitPrice
         FROM PricebookEntry
         WHERE IsActive = true
-            AND CurrencyISOCode = :quoteRecord.CurrencyIsoCode
+           // AND CurrencyISOCode = :quoteRecord.CurrencyIsoCode
             AND Product2.IsActive = true
             AND Pricebook2Id = :quoteRecord.Pricebook2Id
         ORDER BY Product2.Name
     ];
 
-    if (!productAccessibilitiesList.isEmpty()) {
+   /* if (!productAccessibilitiesList.isEmpty()) {
         // Build the set of allowed product Ids for this account
         for (DRC_NBC_Restricted_Product__c access : productAccessibilitiesList) {
             if (access.DRC_NBC_Customer__c == quoteRecord?.Opportunity?.AccountId) {
@@ -476,10 +476,28 @@ public static qliWrapper getExistingQLIs(String quoteId) {
             }
         }
         // If accessibleRestrictedProductIds is still empty → show nothing
-    } else {
+    }
+     else {
         // No restrictions for this account → show all products
         qliRecs.productsList = allEntries;
-    }
+    }*/
+    // Build allowed product Ids from restriction records (filtered by account)
+        for (DRC_NBC_Restricted_Product__c access : productAccessibilitiesList) {
+            if (access.DRC_NBC_Customer__c == quoteRecord?.Opportunity?.AccountId) {
+                accessibleRestrictedProductIds.add(access.DRC_NBC_Product__c);
+            }
+        }
+
+        // Always filter — only show products assigned to this account via restriction records.
+        // If no restriction records exist for the account, productsList stays empty.
+        if (!accessibleRestrictedProductIds.isEmpty()) {
+            for (PricebookEntry pbe : allEntries) {
+                if (accessibleRestrictedProductIds.contains(pbe.Product2Id)) {
+                    qliRecs.productsList.add(pbe);
+                }
+            }
+        }
+// If accessibleRestrictedProductIds is empty → no products shown (intentional)
 
     // Collect all Product2 Ids from QLIs and product list for packing details
     Set<Id> product2Ids = new Set<Id>();
@@ -533,7 +551,6 @@ public static qliWrapper getExistingQLIs(String quoteId) {
             FROM DRC_NBC_Restricted_Product__c
             WHERE
             DRC_NBC_Customer__c = :accountId
-            AND DRC_NBC_User__c = :currentUserId
         ];
     }
     
