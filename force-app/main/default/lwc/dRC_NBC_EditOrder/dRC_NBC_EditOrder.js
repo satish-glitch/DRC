@@ -582,7 +582,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.filteredData[index].recordData[field] = value;
 
         // ── Product search is now by name only — NOT filtered by currency (v1.3) ──
-        if (field === 'ProductName' && value.length >= 2) {
+       /* if (field === 'ProductName' && value.length >= 2) {
             const matches = this.productsMasterList.filter(product =>
                 product.Product2.Name.toLowerCase().includes(value.toLowerCase())
             );
@@ -591,8 +591,31 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         } else if (field === 'ProductName') {
             this.filteredData[index].recordData.searchResults  = [];
             this.filteredData[index].recordData.noResultsFound = false;
-        }
+        }*/
 
+      if (field === 'ProductName' && value.length >= 2) {
+        // Collect Product2Ids already selected in OTHER rows
+        // Convert all to String to avoid Id-vs-String type mismatch in includes()
+        const selectedProduct2Ids = this.filteredData
+            .filter((_, i) => i !== parseInt(index))
+            .map(row => row.recordData.Product2Id)
+            .filter(Boolean)
+            .map(id => String(id));
+
+        const matches = this.productsMasterList.filter(product => {
+            // PricebookEntry has Product2Id as direct field
+            const product2Id = String(product.Product2Id || product.Product2?.Id || '');
+            const nameMatch  = product.Product2.Name.toLowerCase().includes(value.toLowerCase());
+            const notSelected = !selectedProduct2Ids.includes(product2Id);
+            return nameMatch && notSelected;
+        });
+
+        this.filteredData[index].recordData.searchResults  = matches;
+        this.filteredData[index].recordData.noResultsFound = matches.length === 0;
+    } else if (field === 'ProductName') {
+        this.filteredData[index].recordData.searchResults  = [];
+        this.filteredData[index].recordData.noResultsFound = false;
+    }
         if (field === 'Quantity') {
             this.handleQuantityChange(event);
         }
