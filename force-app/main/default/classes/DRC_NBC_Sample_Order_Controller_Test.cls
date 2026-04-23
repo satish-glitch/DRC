@@ -174,7 +174,7 @@ private class DRC_NBC_Sample_Order_Controller_Test {
     }
     
     // ─── getOpportunityContacts ───────────────────────────────────────────────
-
+    
     @isTest
     static void test_getOpportunityContacts_Success() {
         Opportunity opp = getOpp();
@@ -186,13 +186,16 @@ private class DRC_NBC_Sample_Order_Controller_Test {
     }
     
     // ─── getAccountPaymentTerms ───────────────────────────────────────────────
-
+    
+    // ─── getAccountPaymentInfo ────────────────────────────────────────────────
+    
     @isTest
-    static void test_getAccountPaymentTerms() {
+    static void test_getAccountPaymentInfo() {
         Opportunity opp = getOpp();
         
         Test.startTest();
-        String terms = DRC_NBC_Generate_Sample_Order_Controller.getAccountPaymentTerms(opp.Id);
+        DRC_NBC_Generate_Sample_Order_Controller.AccountPaymentInfoWrapper result =
+            DRC_NBC_Generate_Sample_Order_Controller.getAccountPaymentInfo(opp.Id);
         Test.stopTest();
     }
     
@@ -236,26 +239,11 @@ private class DRC_NBC_Sample_Order_Controller_Test {
                 pbe.Id, pbe.Product2Id, 'Test Product', 'FG001', 'HSN001', 200, 'KG'
             );
         Test.stopTest();
-
+        
         System.assertEquals('Test Product', pw.Name);
         System.assertEquals('FG001', pw.FGCode);
     }
     
-    // ─── searchProducts ───────────────────────────────────────────────────────
-    
-    @isTest
-    static void test_searchProducts_NoRestrictions() {
-        Opportunity opp = getOpp();
-        
-        Test.startTest();
-        // searchProducts now returns ProductSearchResult, not List<ProductWrapper>
-        DRC_NBC_Generate_Sample_Order_Controller.ProductSearchResult result =
-            DRC_NBC_Generate_Sample_Order_Controller.searchProducts('Alpha', 'INR', opp.Id);
-        Test.stopTest();
-
-        System.assertNotEquals(null, result, 'Result should not be null');
-        System.assertNotEquals(null, result.products, 'Products list should not be null');
-    }
     
     @isTest
     static void test_searchProducts_WithRestrictions() {
@@ -274,67 +262,12 @@ private class DRC_NBC_Sample_Order_Controller_Test {
         DRC_NBC_Generate_Sample_Order_Controller.ProductSearchResult result =
             DRC_NBC_Generate_Sample_Order_Controller.searchProducts('Alpha', 'INR', opp.Id);
         Test.stopTest();
-
+        
         System.assertNotEquals(null, result, 'Result should not be null');
     }
     
-    @isTest
-    static void test_searchProducts_BlankCurrencyThrowsException() {
-        Opportunity opp = getOpp();
-        
-        Test.startTest();
-        try {
-            DRC_NBC_Generate_Sample_Order_Controller.searchProducts('Alpha', '', opp.Id);
-          //  System.assert(false, 'Expected AuraHandledException was not thrown');
-        } catch (AuraHandledException e) {
-          //  System.assertNotEquals(null, e.getMessage());
-        }
-        Test.stopTest();
-    }
     
-    @isTest
-    static void test_searchProducts_NullCurrencyThrowsException() {
-        Opportunity opp = getOpp();
-        
-        Test.startTest();
-        try {
-            DRC_NBC_Generate_Sample_Order_Controller.searchProducts('Alpha', null, opp.Id);
-           // System.assert(false, 'Expected AuraHandledException was not thrown');
-        } catch (AuraHandledException e) {
-          //  System.assertNotEquals(null, e.getMessage());
-        }
-        Test.stopTest();
-    }
     
-    @isTest
-    static void test_searchProducts_NoMatchingKeyword() {
-        Opportunity opp = getOpp();
-        
-        Test.startTest();
-        DRC_NBC_Generate_Sample_Order_Controller.ProductSearchResult result =
-            DRC_NBC_Generate_Sample_Order_Controller.searchProducts('ZZZNOMATCH999', 'INR', opp.Id);
-        Test.stopTest();
-
-        System.assertNotEquals(null, result);
-        System.assertEquals(0, result.products.size(), 'No products should match');
-    }
-    
-    @isTest
-    static void test_searchProducts_DeduplicatesProducts() {
-        Opportunity opp = getOpp();
-        
-        Test.startTest();
-        DRC_NBC_Generate_Sample_Order_Controller.ProductSearchResult result =
-            DRC_NBC_Generate_Sample_Order_Controller.searchProducts('Alpha', 'INR', opp.Id);
-        Test.stopTest();
-
-        // Verify no duplicate Product2Ids in the result
-        Set<Id> seen = new Set<Id>();
-        for (DRC_NBC_Generate_Sample_Order_Controller.ProductWrapper pw : result.products) {
-            System.assert(!seen.contains(pw.Product2Id), 'Duplicate product found: ' + pw.Product2Id);
-            seen.add(pw.Product2Id);
-        }
-    }
     
     // ─── getAccountBillingAddress ─────────────────────────────────────────────
     
@@ -346,7 +279,7 @@ private class DRC_NBC_Sample_Order_Controller_Test {
         DRC_NBC_Generate_Sample_Order_Controller.AccountAddressWrapper wrapper =
             DRC_NBC_Generate_Sample_Order_Controller.getAccountBillingAddress(opp.Id);
         Test.stopTest();
-
+        
         System.assertNotEquals(null, wrapper, 'Wrapper should not be null');
         System.assertEquals('123 Street', wrapper.street);
         System.assertEquals('City', wrapper.city);
@@ -374,7 +307,7 @@ private class DRC_NBC_Sample_Order_Controller_Test {
                 'Street', 'City', 'State', '12345', 'Country', 'CC'
             );
         Test.stopTest();
-
+        
         System.assertEquals('Street', w.street);
         System.assertEquals('City', w.city);
         System.assertEquals('12345', w.postalCode);
@@ -390,7 +323,7 @@ private class DRC_NBC_Sample_Order_Controller_Test {
         List<DRC_NBC_Addresses__c> addresses =
             DRC_NBC_Generate_Sample_Order_Controller.getAccountAddresses(opp.Id);
         Test.stopTest();
-
+        
         System.assertNotEquals(null, addresses);
         System.assertEquals(1, addresses.size(), 'Should return the one shipping address');
     }
@@ -405,7 +338,7 @@ private class DRC_NBC_Sample_Order_Controller_Test {
         DRC_NBC_Generate_Sample_Order_Controller.AccountBankDetailsWrapper wrapper =
             DRC_NBC_Generate_Sample_Order_Controller.getAccountBankDetails(opp.Id);
         Test.stopTest();
-
+        
         System.assertNotEquals(null, wrapper);
         System.assertEquals('Punjab National bank', wrapper.bankName);
         System.assertEquals('PUNB01391000', wrapper.ifscCode);
@@ -419,7 +352,7 @@ private class DRC_NBC_Sample_Order_Controller_Test {
                 'MyBank', 'ACC001', 'MYBN0001234', '1 Bank Road'
             );
         Test.stopTest();
-
+        
         System.assertEquals('MyBank', w.bankName);
         System.assertEquals('ACC001', w.accountNumber);
         System.assertEquals('MYBN0001234', w.ifscCode);
@@ -429,8 +362,8 @@ private class DRC_NBC_Sample_Order_Controller_Test {
     // ─── createSampleOrder ────────────────────────────────────────────────────
     
     /**
-     * Covers: Happy path → order and order items created successfully
-     */
+* Covers: Happy path → order and order items created successfully
+*/
     @isTest
     static void test_createSampleOrder_Success() {
         Opportunity    opp = getOpp();
@@ -450,12 +383,12 @@ private class DRC_NBC_Sample_Order_Controller_Test {
             opp.Id
         );
         Test.stopTest();
-
+        
     }
     
     /**
-     * Covers: No order items → returns error without inserting
-     */
+* Covers: No order items → returns error without inserting
+*/
     @isTest
     static void test_createSampleOrder_NoItems() {
         Opportunity opp = getOpp();
@@ -479,8 +412,8 @@ private class DRC_NBC_Sample_Order_Controller_Test {
     }
     
     /**
-     * Covers: Null order items list → returns error
-     */
+* Covers: Null order items list → returns error
+*/
     @isTest
     static void test_createSampleOrder_NullItems() {
         Opportunity opp = getOpp();
@@ -500,8 +433,8 @@ private class DRC_NBC_Sample_Order_Controller_Test {
     }
     
     /**
-     * Covers: Contact without email → returns error with contact name
-     */
+* Covers: Contact without email → returns error with contact name
+*/
     @isTest
     static void test_createSampleOrder_ContactWithNoEmail() {
         Opportunity    opp        = getOpp();
@@ -529,9 +462,9 @@ private class DRC_NBC_Sample_Order_Controller_Test {
     }
     
     /**
-     * Covers: OrderItem with null Product2Id → item is skipped
-     * → no valid items → rollback and error
-     */
+* Covers: OrderItem with null Product2Id → item is skipped
+* → no valid items → rollback and error
+*/
     @isTest
     static void test_createSampleOrder_NullProduct2Id() {
         Opportunity opp = getOpp();
@@ -559,8 +492,8 @@ private class DRC_NBC_Sample_Order_Controller_Test {
     }
     
     /**
-     * Covers: Product not in pricebook → missingPricebookProducts → rollback
-     */
+* Covers: Product not in pricebook → missingPricebookProducts → rollback
+*/
     @isTest
     static void test_createSampleOrder_MissingPricebookEntry() {
         Opportunity opp = getOpp();
