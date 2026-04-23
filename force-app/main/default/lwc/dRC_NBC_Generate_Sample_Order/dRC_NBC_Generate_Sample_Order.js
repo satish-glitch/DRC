@@ -11,6 +11,7 @@ import getAccountAddresses from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_
 import getOpportunityCurrency from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getOpportunityCurrency';
 import createSampleOrder from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.createSampleOrder';
 import getAccountBankDetails from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getAccountBankDetails';
+import getAccountPaymentInfo from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.getAccountPaymentInfo';
 import ensurePricebookEntryForProduct from '@salesforce/apex/DRC_NBC_Generate_Sample_Order_Controller.ensurePricebookEntryForProduct';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
@@ -24,7 +25,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
     @track isLoading = false;
     @track disabledButton = false;
     @track selectedRecordTypeId = '';
-    @track oppProducts = [];
+    @track oppProducts = []; 
     @track billToContactName = '';
     @track shipToContactName = '';
     @track filteredBillToContacts = [];
@@ -764,6 +765,17 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             if (fieldName) {
                 this.samplingRec[fieldName] = value;
                 if (fieldName === 'Status') this.sampleStatus = value;
+                 if (fieldName === 'DRC_NBC_Sample_Type__c') {
+                if (value === 'Paid Sample') {
+                    this._autofillPaymentInfo();
+                } else {
+                    // Clear auto-filled fields if user switches away from Paid Sample
+                    this.samplingRec['DRC_NBC_Payment_Term_Description__c'] = '';
+                    this.samplingRec['DRC_NBC_Payment_Terms__c']            = '';
+                    this.samplingRec['DRC_NBC_Inco_Terms__c']               = '';
+                    this.autoSelectedPaymentTerm                            = '';
+                }
+            }
 
                 // Auto-map Payment Term Code when Payment Term Description changes
                 if (fieldName === 'DRC_NBC_Payment_Term_Description__c') {
@@ -781,6 +793,42 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             }
         } catch (error) {
             console.error('Error in handleFieldChange:', error);
+        }
+    }
+
+    async _autofillPaymentInfo() {
+        try {
+            const info = await getAccountPaymentInfo({ oppId: this.recordId });
+            if (!info) return;
+
+            // Payment Term Description
+            if (info.paymentTermDescription) {
+                this.samplingRec['DRC_NBC_Payment_Term_Description__c'] = info.paymentTermDescription;
+
+                // Drive the dependent Payment Term Code via picklist mapping
+                const mappedCode = this._getMatchingPaymentTermCode(info.paymentTermDescription);
+                if (mappedCode) {
+                    this.samplingRec['DRC_NBC_Payment_Terms__c'] = mappedCode;
+                    this.autoSelectedPaymentTerm                 = mappedCode;
+                }
+            }
+
+            // Payment Term Code — direct fallback if description mapping didn't resolve
+            if (info.paymentTermCode && !this.samplingRec['DRC_NBC_Payment_Terms__c']) {
+                this.samplingRec['DRC_NBC_Payment_Terms__c'] = info.paymentTermCode;
+                this.autoSelectedPaymentTerm                 = info.paymentTermCode;
+            }
+
+            // Inco Terms
+            if (info.incoTerm) {
+                this.samplingRec['DRC_NBC_Inco_Terms__c'] = info.incoTerm;
+            }
+
+            this.showToast('Info', 'Payment and Inco Term details auto-filled from Account.', 'info');
+
+        } catch (e) {
+            console.error('Error fetching account payment info:', e);
+            this.showToast('Warning', 'Could not auto-fill payment details from Account.', 'warning');
         }
     }
 

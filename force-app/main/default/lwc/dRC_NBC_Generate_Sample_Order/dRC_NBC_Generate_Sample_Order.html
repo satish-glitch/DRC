@@ -119,12 +119,16 @@
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="DRC_NBC_Sample_Amount__c" onchange={handleFieldChange}></lightning-input-field>
                             </div>  
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Payment_Term_Description__c" onchange={handleFieldChange}>
+                            <div>
+                                <lightning-input-field
+                                    field-name="DRC_NBC_Payment_Term_Description__c"
+                                    value={samplingRec.DRC_NBC_Payment_Term_Description__c}
+                                    data-field="DRC_NBC_Payment_Term_Description__c"
+                                    onchange={handleFieldChange}>
                                 </lightning-input-field>
                             </div>
                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2"> 
-                                <lightning-input-field 
+                               <lightning-input-field 
                                     field-name="DRC_NBC_Payment_Terms__c"
                                     value={autoSelectedPaymentTerm}
                                     data-field="DRC_NBC_Payment_Terms__c"
@@ -132,7 +136,11 @@
                                 </lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Inco_Terms__c" onchange={handleFieldChange}>
+                                <lightning-input-field
+                                    field-name="DRC_NBC_Inco_Terms__c"
+                                    value={samplingRec.DRC_NBC_Inco_Terms__c}
+                                    data-field="DRC_NBC_Inco_Terms__c"
+                                    onchange={handleFieldChange}>
                                 </lightning-input-field>
                             </div>
                         </template>                         

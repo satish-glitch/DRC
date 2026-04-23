@@ -46,7 +46,7 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
         }
     }
 
-    @AuraEnabled(cacheable=true)
+  /*  @AuraEnabled(cacheable=true)
     public static String getAccountPaymentTerms(Id oppId) {
         Opportunity opp = [
             SELECT Account.DRC_NBC_Payment_Term_Code__c, Account.DRC_NBC_Payment_Terms_Description__c, Account.DRC_Inco_Term__c
@@ -55,6 +55,35 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
             LIMIT 1
         ];
         return opp.Account.DRC_NBC_Payment_Term_Code__c;
+    }*/
+
+    public class AccountPaymentInfoWrapper {
+        @AuraEnabled public String paymentTermCode;
+        @AuraEnabled public String paymentTermDescription;
+        @AuraEnabled public String incoTerm;
+
+        public AccountPaymentInfoWrapper(String code, String des, String inco) {
+            this.paymentTermCode        = code;
+            this.paymentTermDescription = des;
+            this.incoTerm               = inco;
+        }
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static AccountPaymentInfoWrapper getAccountPaymentInfo(Id oppId) {
+        Opportunity opp = [
+            SELECT Account.DRC_NBC_Payment_Term_Code__c,
+                Account.DRC_NBC_Payment_Terms_Description__c,
+                Account.DRC_Inco_Term__c
+            FROM Opportunity
+            WHERE Id = :oppId
+            LIMIT 1
+        ];
+        return new AccountPaymentInfoWrapper(
+            opp.Account.DRC_NBC_Payment_Term_Code__c,
+            opp.Account.DRC_NBC_Payment_Terms_Description__c,
+            opp.Account.DRC_Inco_Term__c
+        );
     }
 
     @AuraEnabled(cacheable=true)
