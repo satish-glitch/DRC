@@ -268,7 +268,7 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
         }
     }
 
-    _callSearchApex(index, searchTerm) {
+  /*  _callSearchApex(index, searchTerm) {
         if (!this._oppId) {
             this._toast('Error', 'Opportunity ID not available. Please close and reopen.', 'error');
             return;
@@ -282,6 +282,55 @@ export default class Drc_nbc_addProductsToOpportunity extends LightningElement {
                     ...updated[index].recordData,
                     searchResults:  results || [],
                     noResultsFound: !results || results.length === 0,
+                    isSearching:    false
+                }
+            };
+            this.filteredData = updated;
+        })
+        .catch(err => {
+            console.error('[search] error:', err);
+            const updated = [...this.filteredData];
+            if (!updated[index]) return;
+            updated[index] = {
+                recordData: {
+                    ...updated[index].recordData,
+                    searchResults:  [],
+                    noResultsFound: true,
+                    isSearching:    false
+                }
+            };
+            this.filteredData = updated;
+            this._toast('Error', err?.body?.message || 'Error searching products', 'error');
+        });
+    }*/
+
+     _callSearchApex(index, searchTerm) {
+        if (!this._oppId) {
+            this._toast('Error', 'Opportunity ID not available. Please close and reopen.', 'error');
+            return;
+        }
+        searchProducts({ searchTerm, opportunityId: this._oppId })
+        .then(results => {
+            const updated = [...this.filteredData];
+            if (!updated[index]) return;
+
+            // Collect Product2Ids already selected in OTHER rows (convert to String to avoid Id type mismatch)
+            const selectedProduct2Ids = this.filteredData
+                .filter((_, i) => i !== index)
+                .map(row => row.recordData.Product2Id)
+                .filter(Boolean)
+                .map(id => String(id));
+
+            // Filter out already-selected products
+            const filteredResults = (results || []).filter(r =>
+                !selectedProduct2Ids.includes(String(r.product2Id))
+            );
+
+            updated[index] = {
+                recordData: {
+                    ...updated[index].recordData,
+                    searchResults:  filteredResults,
+                    noResultsFound: filteredResults.length === 0,
                     isSearching:    false
                 }
             };

@@ -228,7 +228,7 @@ public with sharing class DRC_NBC_OpportunityProductsController {
     }
 
     // ─── Search products by name (with INR currency fallback) ─────────────────
-    @AuraEnabled
+   /* @AuraEnabled
     public static List<ProductWrapper> searchProducts(String searchTerm, Id opportunityId) {
         if (String.isBlank(searchTerm)) return new List<ProductWrapper>();
         if (String.isBlank(opportunityId)) {
@@ -280,6 +280,76 @@ public with sharing class DRC_NBC_OpportunityProductsController {
             if (!seen.contains(pbe.Product2Id)) {
                 seen.add(pbe.Product2Id);
 
+                List<PackingDetailWrapper> packing = productPackingMap.containsKey(pbe.Product2Id)
+                    ? productPackingMap.get(pbe.Product2Id)
+                    : new List<PackingDetailWrapper>();
+
+                results.add(new ProductWrapper(
+                    pbe.Id,
+                    pbe.Product2Id,
+                    pbe.Product2.Name,
+                    pbe.Product2.DRC_NBC_FG_Code__c,
+                    pbe.Product2.DRC_NBC_HSN_SAC_Code__c,
+                    pbe.Product2.QuantityUnitOfMeasure,
+                    pbe.Product2.Description,
+                    pbe.UnitPrice,
+                    packing
+                ));
+            }
+        }
+
+        return results;
+    }*/
+
+    @AuraEnabled
+    public static List<ProductWrapper> searchProducts(String searchTerm, Id opportunityId) {
+        if (String.isBlank(searchTerm)) return new List<ProductWrapper>();
+        if (String.isBlank(opportunityId)) {
+            throw new AuraHandledException('Opportunity ID is required for product search.');
+        }
+
+        Opportunity opp = [
+            SELECT Id, CurrencyIsoCode, Pricebook2Id, AccountId
+            FROM   Opportunity
+            WHERE  Id = :opportunityId
+            LIMIT  1
+        ];
+
+        Id pricebookId = (opp.Pricebook2Id != null) ? opp.Pricebook2Id : getStandardPricebookId();
+        String likePattern = '%' + String.escapeSingleQuotes(searchTerm) + '%';
+
+        // ── Account-level restriction (no user filter) ────────────────────────────
+        Set<Id> restrictedProductIds = new Set<Id>();
+        for (DRC_NBC_Restricted_Product__c rp : [
+            SELECT DRC_NBC_Product__c
+            FROM   DRC_NBC_Restricted_Product__c
+            WHERE  DRC_NBC_Customer__c = :opp.AccountId
+        ]) {
+            restrictedProductIds.add(rp.DRC_NBC_Product__c);
+        }
+
+        Boolean useRestricted = !restrictedProductIds.isEmpty();
+
+        // ── Query with automatic INR fallback ────────────────────────────────────
+        List<PricebookEntry> entries = queryPricebookEntries(
+            likePattern,
+            opp.CurrencyIsoCode,
+            pricebookId,
+            restrictedProductIds,
+            useRestricted
+        );
+
+        Set<Id> product2Ids = new Set<Id>();
+        for (PricebookEntry pbe : entries) product2Ids.add(pbe.Product2Id);
+
+        Map<Id, List<PackingDetailWrapper>> productPackingMap = getPackingDetailsMap(product2Ids);
+
+        Set<Id> seen = new Set<Id>();
+        List<ProductWrapper> results = new List<ProductWrapper>();
+
+        for (PricebookEntry pbe : entries) {
+            if (!seen.contains(pbe.Product2Id)) {
+                seen.add(pbe.Product2Id);
                 List<PackingDetailWrapper> packing = productPackingMap.containsKey(pbe.Product2Id)
                     ? productPackingMap.get(pbe.Product2Id)
                     : new List<PackingDetailWrapper>();
