@@ -301,7 +301,7 @@
                         <!-- Col 1: Title Block -->
                         <td class="hcol-title">
                             <p class="oc-title">Order Confirmation</p>
-                            <p class="oc-orderno">SO-SAMPLE/2627/{!importSequence}</p>
+                            <p class="oc-orderno">{!importSequence}</p>
                             <p class="oc-date">
                                 <apex:outputText value="{0,date,dd MMMM yyyy}">
                                     <apex:param value="{!orderDate}" />
@@ -406,6 +406,7 @@
                     <tr>
                         <!-- Width redistributed: when GST hidden, remaining columns share the 10% -->
                         <th style="text-align:center;">No.</th>
+                        <th style="text-align:left;">Item Ref No.</th>
                         <th style="text-align:left;">Description</th>
                         <th style="text-align:center;">Quantity</th>
                         <apex:outputText rendered="{!isIndianBilling}">
@@ -431,6 +432,7 @@
                     <apex:repeat value="{!items}" var="item">
                         <tr>
                             <td class="center">{!rowNum}</td>
+                            <td class="left">{!item.customerProductCode}</td>
                             <td class="left">{!item.Description}</td>
                             <td class="center">{!item.quantity}</td>
                             <td class="center">{!item.unitPrice}</td>

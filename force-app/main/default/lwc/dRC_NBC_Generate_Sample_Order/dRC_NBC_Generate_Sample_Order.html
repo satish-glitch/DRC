@@ -19,7 +19,7 @@
     <div class="slds-modal__content slds-p-around_medium" style="max-height: 60vh; overflow-y: auto;">
 
         <!-- Basic Info Section -->
-        <div class={getBasicInfoClass}>
+        <div class={getBasicInfoClass}> 
             <h3 class="slds-section__title slds-theme_shade">
                 <button class="slds-button slds-button_reset slds-section__title-action" 
                         onclick={toggleBasicInfo}
@@ -60,7 +60,14 @@
                                 onchange={handleFieldChange}
                                 required>
                             </lightning-input-field>
-                        </div>                          
+                        </div> 
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field
+                                field-name="DRC_NBC_SalesPerson_Code__c"
+                                onchange={handleFieldChange}
+                                required>
+                            </lightning-input-field>
+                        </div>                   
                         <template if:true={isPaidSample}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field 

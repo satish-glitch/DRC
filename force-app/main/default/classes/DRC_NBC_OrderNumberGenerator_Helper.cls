@@ -30,7 +30,7 @@ continue;
                 String.valueOf(Date.today().addYears(1).year()).right(2);
             
             ord.DRC_NBC_Cust_Order_Number__c =
-               'SO' + type + '/' + fiscalYear + '/' + padded;
+               type + '/' + fiscalYear + '/' + padded;
             toUpdate.add(ord);
         }
         
@@ -67,7 +67,7 @@ continue;
         String fiscalYear = String.valueOf(Date.today().year()).right(2) +
             String.valueOf(Date.today().addYears(1).year()).right(2);
         
-        return 'SO' + type + '/' + fiscalYear + '/';
+        return  type + '/' + fiscalYear + '/';
     }
     
 }

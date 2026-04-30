@@ -11,6 +11,7 @@
 * 1.0   | October 22, 2025 | Satish Yadav | Initial Version
 * 1.1   | October 22, 2025 | Satish Yadav | Added additional fields
 * 1.2   | March 2026       | Satish Yadav | Dynamic currency; hide GST col for non-India billing
+* 1.3   | April 2026       | Satish Yadav | Added Customer Product Code from Account Products
 **/
 
 public class DRC_NBC_GenerateSamplePiController {
@@ -62,42 +63,35 @@ public class DRC_NBC_GenerateSamplePiController {
     public Date   ExpectedDeliveryDate { get; set; }
 
     // Contact Information
-    public String email       { get; set; }
-    public String phoneNumber { get; set; }
-    public String website     { get; set; }
-    public String Bank        { get; set; }
-    public String AccountNo   { get; set; }
+    public String  email          { get; set; }
+    public String  phoneNumber    { get; set; }
+    public String  website        { get; set; }
+    public String  Bank           { get; set; }
+    public String  AccountNo      { get; set; }
     public Decimal sampleShipping { get; set; }
 
-    // ── NEW: Currency & India flag ──────────────────────────────────────────
-    /**
-     * ISO currency code pulled from the Order record (e.g. "INR", "USD", "EUR").
-     * Displayed in the totals label as "Total INR Incl. GST", "Total USD", etc.
-     */
-    public String  currencyCode     { get; set; }
-
-    /**
-     * True when the account's billing country is India (case-insensitive).
-     * Controls visibility of the GST % column and "Incl. GST" label in the VF page.
-     */
-    public Boolean isIndianBilling  { get; set; }
-    // ────────────────────────────────────────────────────────────────────────
+    // Currency & India flag
+    public String  currencyCode    { get; set; }
+    public Boolean isIndianBilling { get; set; }
 
     // Order Items
     public List<OrderItemWrapper> items { get; set; }
 
+    // ── INNER CLASS ────────────────────────────────────────────────────────
     public class OrderItemWrapper {
-        public String  itemCode    { get; set; }
-        public String  itemName    { get; set; }
-        public String  referenceNo { get; set; }
-        public Decimal quantity    { get; set; }
-        public String  unit        { get; set; }
-        public String  HSN_SAC     { get; set; }
-        public Decimal unitPrice   { get; set; }
-        public Decimal amount      { get; set; }
-        public String  Description { get; set; }
-        public Decimal ItemGST     { get; set; }
+        public String  itemCode             { get; set; }
+        public String  itemName             { get; set; }
+        public String  referenceNo          { get; set; }
+        public String  customerProductCode  { get; set; }  // ← NEW
+        public Decimal quantity             { get; set; }
+        public String  unit                 { get; set; }
+        public String  HSN_SAC              { get; set; }
+        public Decimal unitPrice            { get; set; }
+        public Decimal amount               { get; set; }
+        public String  Description          { get; set; }
+        public Decimal ItemGST              { get; set; }
     }
+    // ──────────────────────────────────────────────────────────────────────
 
     public DRC_NBC_GenerateSamplePiController() {
 
@@ -109,7 +103,7 @@ public class DRC_NBC_GenerateSamplePiController {
             return;
         }
 
-        // Fetch order with all required fields
+        // ── Fetch Order ────────────────────────────────────────────────────
         Order ord = [
             SELECT
                 Id,
@@ -117,11 +111,12 @@ public class DRC_NBC_GenerateSamplePiController {
                 EffectiveDate,
                 OwnerId,
                 Owner.Name,
-                CurrencyIsoCode,                          // ← dynamic currency
+                CurrencyIsoCode,
+                AccountId,                                // ← needed for Account Products lookup
                 Account.Name,
                 Account.DRC_NBC_GST_Number__c,
                 Account.DRC_NBC_Customer_Number__c,
-                Account.BillingCountry,                   // ← billing country from Account
+                Account.BillingCountry,
                 DRC_NBC_Invoice_Export_Sequence_Number__c,
                 DRC_NBC_Import_Starting_Sequence__c,
                 ShippingStreet,
@@ -145,6 +140,7 @@ public class DRC_NBC_GenerateSamplePiController {
                 DRC_NBC_Delivery_status__c,
                 DRC_NBC_Courier_Number__c,
                 DRC_NBC_Inco_Terms__c,
+                DRC_NBC_Cust_Order_Number__c,
                 PoNumber
             FROM Order
             WHERE Id = :orderId
@@ -153,55 +149,53 @@ public class DRC_NBC_GenerateSamplePiController {
 
         assignOrderSequenceNumber(ord);
 
-        // ── Currency & India billing flag ───────────────────────────────────
-        // Use the Order's own CurrencyIsoCode as the display label.
+        // ── Currency & India billing flag ──────────────────────────────────
         currencyCode = String.isNotBlank(ord.CurrencyIsoCode)
             ? ord.CurrencyIsoCode
             : 'INR';
 
-        // Prefer Account.BillingCountry; fall back to Order.BillingCountry.
         String accountBillingCountry = (ord.Account != null && String.isNotBlank(ord.Account.BillingCountry))
             ? ord.Account.BillingCountry
             : (String.isNotBlank(ord.BillingCountry) ? ord.BillingCountry : '');
 
         isIndianBilling = accountBillingCountry.equalsIgnoreCase('India')
                        || accountBillingCountry.equalsIgnoreCase('IN');
-        // ────────────────────────────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────────────────
 
         // Order Information
-        orderNumber   = ord.OrderNumber;
-        orderDate     = ord.EffectiveDate;
-        SalesPerson   = ord.Owner.Name;
-        customerName  = ord.Account.Name;
+        orderNumber    = ord.OrderNumber;
+        orderDate      = ord.EffectiveDate;
+        SalesPerson    = ord.Owner.Name;
+        customerName   = ord.Account.Name;
         billToCustomer = ord.Account.DRC_NBC_Customer_Number__c;
-        customerGST   = ord.Account.DRC_NBC_GST_Number__c;
+        customerGST    = ord.Account.DRC_NBC_GST_Number__c;
         ExpectedDeliveryDate = ord.DRC_NBC_Expected_Delivery_Date__c;
-        couriernumber = ord.DRC_NBC_Courier_Number__c;
+        couriernumber  = ord.DRC_NBC_Courier_Number__c;
         deliveryStatus = ord.DRC_NBC_Delivery_status__c;
         sampleShipping = ord.DRC_NBC_Sample_Shipping_Cost__c != null
             ? ord.DRC_NBC_Sample_Shipping_Cost__c
             : 0;
 
         // Shipping Address
-        shippingAddress    = (ord.ShippingStreet     != null ? ord.ShippingStreet     : '');
-        shippingCity       = (ord.ShippingCity       != null ? ord.ShippingCity       : '');
-        shippingState      = (ord.ShippingState      != null ? ord.ShippingState      : '');
-        shippingPostalCode = (ord.ShippingPostalCode != null ? ord.ShippingPostalCode : '');
-        shippingCountry    = (ord.ShippingCountry    != null ? ord.ShippingCountry    : '');
+        shippingAddress    = ord.ShippingStreet     != null ? ord.ShippingStreet     : '';
+        shippingCity       = ord.ShippingCity       != null ? ord.ShippingCity       : '';
+        shippingState      = ord.ShippingState      != null ? ord.ShippingState      : '';
+        shippingPostalCode = ord.ShippingPostalCode != null ? ord.ShippingPostalCode : '';
+        shippingCountry    = ord.ShippingCountry    != null ? ord.ShippingCountry    : '';
 
         // Billing Address
-        billingAddress    = (ord.BillingStreet     != null ? ord.BillingStreet     : '');
-        billingCity       = (ord.BillingCity       != null ? ord.BillingCity       : '');
-        billingState      = (ord.BillingState      != null ? ord.BillingState      : '');
-        billingPostalCode = (ord.BillingPostalCode != null ? ord.BillingPostalCode : '');
-        billingCountry    = (ord.BillingCountry    != null ? ord.BillingCountry    : '');
-        PO                = (ord.PoNumber          != null ? ord.PoNumber          : '');
+        billingAddress    = ord.BillingStreet     != null ? ord.BillingStreet     : '';
+        billingCity       = ord.BillingCity       != null ? ord.BillingCity       : '';
+        billingState      = ord.BillingState      != null ? ord.BillingState      : '';
+        billingPostalCode = ord.BillingPostalCode != null ? ord.BillingPostalCode : '';
+        billingCountry    = ord.BillingCountry    != null ? ord.BillingCountry    : '';
+        PO                = ord.PoNumber          != null ? ord.PoNumber          : '';
 
         // Terms and Logistics
-        paymentTerms  = ord.DRC_NBC_Payment_Terms__c;
+        paymentTerms   = ord.DRC_NBC_Payment_Terms__c;
         shipmentMethod = ord.DRC_NBC_Inco_Terms__c;
-        SampleName    = ord.DRC_NBC_Sample_Name__c  != null ? ord.DRC_NBC_Sample_Name__c.toUpperCase()  : '';
-        sampleType    = ord.DRC_NBC_Sample_Type__c  != null ? ord.DRC_NBC_Sample_Type__c.toUpperCase()  : '';
+        SampleName     = ord.DRC_NBC_Sample_Name__c != null ? ord.DRC_NBC_Sample_Name__c.toUpperCase() : '';
+        sampleType     = ord.DRC_NBC_Sample_Type__c != null ? ord.DRC_NBC_Sample_Type__c.toUpperCase() : '';
 
         // Contact Information
         email       = Label.DRC_NBC_Email;
@@ -211,31 +205,56 @@ public class DRC_NBC_GenerateSamplePiController {
         AccountNo   = Label.DRC_NBC_AccountNo;
 
         // Sequence number
-        if (ord.Type == 'Sample Order' && ord.DRC_NBC_Sample_Sequence_Number__c != null) {
-            importSequence = String.valueOf(ord.DRC_NBC_Sample_Sequence_Number__c.intValue());
+        if (ord.Type == 'Sample Order') {
+            importSequence = ord.DRC_NBC_Cust_Order_Number__c;
         }
 
-        // Fetch Order Items
+        // ── Fetch Order Items ──────────────────────────────────────────────
         List<OrderItem> orderItems = [
             SELECT
+                Product2Id,
                 Product2.Name,
                 Product2.ProductCode,
+                Product2.DRC_NBC_FG_Code__c,
+                Product2.DRC_NBC_HSN_SAC_Code__c,
+                Product2.QuantityUnitOfMeasure,
                 Quantity,
                 UnitPrice,
                 TotalPrice,
-                Product2.QuantityUnitOfMeasure,
                 DRC_NBC_Unit_Of_Measurement__c,
-                Product2.DRC_NBC_HSN_SAC_Code__c,
-                Product2.DRC_NBC_FG_Code__c,
                 Description,
-                order.DRC_NBC_Sample_Shipping_Cost__c,
+                Order.DRC_NBC_Sample_Shipping_Cost__c,
                 DRC_NBC_Item_GST__c
             FROM OrderItem
             WHERE OrderId = :orderId
             ORDER BY CreatedDate
         ];
 
-        items          = new List<OrderItemWrapper>();
+        // ── Step 1: Collect all Product Ids ───────────────────────────────
+        Set<Id> productIds = new Set<Id>();
+        for (OrderItem oi : orderItems) {
+            productIds.add(oi.Product2Id);
+        }
+
+        // ── Step 2: Query Account Products for Customer Product Code ───────
+        Map<Id, String> productIdToCustomerCode = new Map<Id, String>();
+        if (ord.AccountId != null && !productIds.isEmpty()) {
+            for (DRC_NBC_Restricted_Product__c ap : [
+                SELECT DRC_NBC_Product__c, DRC_NBC_Customer_s_Product_code__c
+                FROM DRC_NBC_Restricted_Product__c
+                WHERE DRC_NBC_Customer__c = :ord.AccountId
+                AND   DRC_NBC_Product__c  IN :productIds
+            ]) {
+                productIdToCustomerCode.put(
+                    ap.DRC_NBC_Product__c,
+                    ap.DRC_NBC_Customer_s_Product_code__c
+                );
+            }
+        }
+        // ──────────────────────────────────────────────────────────────────
+
+        // ── Step 3: Build line item wrappers ──────────────────────────────
+        items           = new List<OrderItemWrapper>();
         totalWithoutTax = 0;
         totalItemGST    = 0;
 
@@ -243,7 +262,7 @@ public class DRC_NBC_GenerateSamplePiController {
             OrderItemWrapper wrap = new OrderItemWrapper();
             wrap.itemCode    = oi.Product2.ProductCode;
             wrap.itemName    = oi.Product2.Name;
-            wrap.referenceNo = oi.Product2.DRC_NBC_FG_Code__c;
+           // wrap.referenceNo = oi.Product2.DRC_NBC_FG_Code__c;
             wrap.quantity    = oi.Quantity;
             wrap.ItemGST     = oi.DRC_NBC_Item_GST__c;
             wrap.unit        = oi.Product2.QuantityUnitOfMeasure;
@@ -251,16 +270,23 @@ public class DRC_NBC_GenerateSamplePiController {
             wrap.amount      = oi.TotalPrice;
             wrap.HSN_SAC     = oi.Product2.DRC_NBC_HSN_SAC_Code__c;
             wrap.Description = oi.Product2.Name;
+
+            // ── Customer Product Code (from Account Products) ──────────────
+            wrap.customerProductCode = productIdToCustomerCode.containsKey(oi.Product2Id)
+                ? productIdToCustomerCode.get(oi.Product2Id)
+                : '';
+            // ──────────────────────────────────────────────────────────────
+
             totalWithoutTax += oi.TotalPrice;
             totalItemGST    += (oi.DRC_NBC_Item_GST__c != null ? oi.DRC_NBC_Item_GST__c : 0);
             items.add(wrap);
         }
 
-        // Calculate total with tax
-        // For non-India billing GST is not applicable, so totalItemGST will be 0 (no GST lines)
+        // Total with tax
         totalWithTax = totalWithoutTax + sampleShipping + (isIndianBilling ? totalItemGST : 0);
     }
 
+    // ── SEQUENCE NUMBER ASSIGNMENT ─────────────────────────────────────────
     private void assignOrderSequenceNumber(Order ord) {
         if (ord.Type != null &&
             ord.Type == 'Sample Order' &&

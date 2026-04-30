@@ -684,6 +684,8 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
             { field: 'DRC_NBC_Payment_Term_Description__c', message: 'Enter Payment Term Description.' },
             { field: 'DRC_NBC_Inco_Terms__c', message: 'Enter Inco Term.' },
             { field: 'DRC_NBC_Warehouse__c', message: 'Enter Warehouse.' },
+                { field: 'DRC_NBC_SalesPerson_Code__c', message: 'Enter Sales Person Code.' },
+
         ];
 
         for (const validation of validations) {

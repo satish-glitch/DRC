@@ -9,10 +9,12 @@ public class DRC_NBC_DomesticQuotationPDFController {
     public Decimal otherTaxAmount { get; set; }
     public Decimal tcsAmount { get; set; }
     public Decimal totalAmount { get; set; }
-
+    // ★ NEW: Dynamic fiscal year label e.g. "2526" for FY 2025-26
+    public String fiscalYearLabel { get; set; }
+    
     // ★ NEW: Full text for special instructions
     public String specialInstructions { get; set; }
-
+    
     // Existing bullets list
     public List<String> specialRequirementList { get; set; }
     
@@ -47,12 +49,37 @@ public class DRC_NBC_DomesticQuotationPDFController {
                 quoteRecord.DRC_NBC_Invoice_Export_Sequence_Number__c = generatedSequence;
             }
         }
-
+        
+        // ★ NEW — Compute fiscal year dynamically based on Quote Created Date
+        Date quoteDate = quoteRecord.CreatedDate.date();
+        Integer quoteMonth = quoteDate.month();
+        Integer quoteYear  = quoteDate.year();
+        
+        // Indian FY: April (4) to March (3)
+        // If month >= April → FY starts this year, ends next
+        // If month < April  → FY started last year, ends this year
+        Integer fyStartYear;
+        Integer fyEndYear;
+        
+        if (quoteMonth >= 4) {
+            fyStartYear = quoteYear;
+            fyEndYear   = quoteYear + 1;
+        } else {
+            fyStartYear = quoteYear - 1;
+            fyEndYear   = quoteYear;
+        }
+        
+        // Last 2 digits of each: "2025" → "25", "2026" → "26"
+        String startSuffix = String.valueOf(Math.mod(fyStartYear, 100)).leftPad(2, '0');
+        String endSuffix   = String.valueOf(Math.mod(fyEndYear,   100)).leftPad(2, '0');
+        
+        fiscalYearLabel = startSuffix + endSuffix;  // e.g. "2526"
+        
         // Fetch Quote Line Items
         quoteLineItems = [SELECT Id, Product2.Name, Quantity, UnitPrice, TotalPrice,
                           DRC_NBC_Unit_Of_Measurement__c,
                           Product2.QuantityUnitOfMeasure, Product2.DRC_NBC_HSN_SAC_Code__c, 
-                          Product2.DRC_NBC_KIND_OF_PKG__c, Product2.CurrencyIsoCode,
+                          Product2.DRC_NBC_KIND_OF_PKG__c, Product2.CurrencyIsoCode,DRC_NBC_Packing_Size__c,
                           Product2.Description
                           FROM QuoteLineItem 
                           WHERE QuoteId = :quoteId 
@@ -60,21 +87,21 @@ public class DRC_NBC_DomesticQuotationPDFController {
         
         // Calculate amounts
         calculateAmounts();
-
+        
         // ★ NEW — Full Special Instructions text with proper null/blank handling
         specialInstructions = quoteRecord.DRC_NBC_Special_Requirements__c;
-
-         if (specialInstructions == null) {
-             specialInstructions = '';
-            } else {
+        
+        if (specialInstructions == null) {
+            specialInstructions = '';
+        } else {
             specialInstructions = specialInstructions.trim();
         }
-
-
+        
+        
         // Existing — Break into bullet points
         specialRequirementList = new List<String>();
         String specialReqRaw = quoteRecord.DRC_NBC_Special_Requirements__c;
-          
+        
         if (!String.isBlank(specialReqRaw)) {
             specialReqRaw = specialReqRaw.replace('\n', ' ').replace('\r', ' ');
             for (String part : specialReqRaw.split('\\.')) {
@@ -116,37 +143,37 @@ public class DRC_NBC_DomesticQuotationPDFController {
         if (quoteRec.DRC_NBC_Type__c == 'Domestic' &&
             quoteRec.DRC_NBC_Import_Starting_Sequence__c == null) {
                 
-            AggregateResult[] result = [
-                SELECT MAX(DRC_NBC_Import_Starting_Sequence__c) maxSeq
-                FROM Quote
-                WHERE DRC_NBC_Type__c = 'Domestic'
-            ];
+                AggregateResult[] result = [
+                    SELECT MAX(DRC_NBC_Import_Starting_Sequence__c) maxSeq
+                    FROM Quote
+                    WHERE DRC_NBC_Type__c = 'Domestic'
+                ];
                 
-            Decimal maxDecimal = (result.size() > 0 && result[0].get('maxSeq') != null)
-                ? (Decimal) result[0].get('maxSeq')
-                : Decimal.valueOf(Label.DRC_NBC_Import_Starting_Sequence);
+                Decimal maxDecimal = (result.size() > 0 && result[0].get('maxSeq') != null)
+                    ? (Decimal) result[0].get('maxSeq')
+                    : Decimal.valueOf(Label.DRC_NBC_Import_Starting_Sequence);
                 
-            newSequenceNumber = maxDecimal.intValue() + 1;
-            return newSequenceNumber;
-        }
+                newSequenceNumber = maxDecimal.intValue() + 1;
+                return newSequenceNumber;
+            }
         
         // Export logic
         if (quoteRec.DRC_NBC_Type__c == 'Export' &&
             quoteRec.DRC_NBC_Invoice_Export_Sequence_Number__c == null) {
                 
-            AggregateResult[] result = [
-                SELECT MAX(DRC_NBC_Invoice_Export_Sequence_Number__c) maxSeq
-                FROM Quote
-                WHERE DRC_NBC_Type__c = 'Export'
-            ];
+                AggregateResult[] result = [
+                    SELECT MAX(DRC_NBC_Invoice_Export_Sequence_Number__c) maxSeq
+                    FROM Quote
+                    WHERE DRC_NBC_Type__c = 'Export'
+                ];
                 
-            Decimal maxDecimal = (result.size() > 0 && result[0].get('maxSeq') != null)
-                ? (Decimal) result[0].get('maxSeq')
-                : Decimal.valueOf(Label.DRC_NBC_Export_Starting_Sequence);
+                Decimal maxDecimal = (result.size() > 0 && result[0].get('maxSeq') != null)
+                    ? (Decimal) result[0].get('maxSeq')
+                    : Decimal.valueOf(Label.DRC_NBC_Export_Starting_Sequence);
                 
-            newSequenceNumber = maxDecimal.intValue() + 1;
-            return newSequenceNumber;
-        }
+                newSequenceNumber = maxDecimal.intValue() + 1;
+                return newSequenceNumber;
+            }
         
         return null;
     }

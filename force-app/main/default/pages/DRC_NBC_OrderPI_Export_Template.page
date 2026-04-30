@@ -27,6 +27,7 @@
                 padding-left: 10px;
                 }
                 
+                
                 .page-footer {
                 position: running(footer);
                 text-align: center; 
@@ -286,7 +287,7 @@
                     </tr>
                     <tr>
                         <td style="vertical-align: top; padding-right: 20px;">
-                            <p style="margin: 0; font-size: 8pt;">SOEXP/2526/{!exportSequence} DT {!formattedEffectiveDate}</p>
+                            <p style="margin: 0; font-size: 8pt;">{!exportSequence} DT {!formattedEffectiveDate}</p>
                         </td>
                         <td style="vertical-align: top; padding-left: 25px;">
                             <p style="margin: 0; font-size: 8pt;">{!orderRecord.PoNumber}</p>
@@ -342,7 +343,7 @@
             
             <!-- Consignee Bank -->
             <div style="margin-bottom: 15px;">
-                <p style="font-size: 8pt; margin: 0;"><strong>Consignee bank :</strong></p>
+                <p style="font-size: 8pt; margin: 0;"><strong>Consignee bank : {!orderRecord.DRC_NBC_Consignee_Bank_Name__c}</strong></p>
             </div>
             <div class="header-divider"></div>
             
@@ -458,7 +459,7 @@
                 <thead>
                     <tr>
                         <th style="width: 4%;">No.</th>
-                        <th style="width: 20%;">MARKS &amp; NOS.</th>
+                        <th style="width: 20%;">Item Refrence No.</th>
                         <th style="width: 20%;">DESCRIPTION OF GOODS</th>
                         <th style="width: 5%;">Hazardous</th>
                         <th style="width: 8%;">HSC Code</th>

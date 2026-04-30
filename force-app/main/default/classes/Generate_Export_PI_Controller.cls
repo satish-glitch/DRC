@@ -69,7 +69,7 @@ public class Generate_Export_PI_Controller {
                 Account.BillingPostalCode, Account.BillingCountry,
                 BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry,
                 ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry,
-                CurrencyIsoCode,
+                CurrencyIsoCode, DRC_NBC_Consignee_Bank_Name__c,
                 DRC_NBC_Payment_Terms__c,
                 DRC_NBC_Special_Instructions__c,
                 DRC_NBC_Port_Of_Loading__c,
@@ -87,7 +87,10 @@ public class Generate_Export_PI_Controller {
                 Quote.DRC_NBC_Delivery_Terms__c,
                 DRC_NBC_Type__c,
                 DRC_NBC_Invoice_Export_Sequence_Number__c,
-                DRC_NBC_Select_Bank__c
+                DRC_NBC_Select_Bank__c,
+                DRC_NBC_Consignee_Bank_Account_Number__c,
+                DRC_NBC_Cust_Order_Number__c,
+                AccountId  // ← needed to query Account Products
                 FROM Order
                 WHERE Id = :recordId
                 LIMIT 1
@@ -97,12 +100,11 @@ public class Generate_Export_PI_Controller {
             orderType = orderRecord.DRC_NBC_Type__c;
             assignOrderSequenceNumber(orderRecord);
             
-            if (orderRecord.DRC_NBC_Type__c == 'Export' &&
-                orderRecord.DRC_NBC_Invoice_Export_Sequence_Number__c != null) {
-                    
-                    exportSequence = 
-                        String.valueOf(orderRecord.DRC_NBC_Invoice_Export_Sequence_Number__c.intValue());
-                }
+            if (orderRecord.DRC_NBC_Type__c == 'Export' && orderRecord.DRC_NBC_Cust_Order_Number__c != null) {
+                    exportSequence =  orderRecord.DRC_NBC_Cust_Order_Number__c;
+            } else {
+                exportSequence = '';
+            }
             
             // Company Info
             companyName = 'D.R. COATS INK & RESINS PVT. LTD.';
@@ -113,17 +115,17 @@ public class Generate_Export_PI_Controller {
             companyWebsite = 'www.drcoats.com';
             
             // Consignee
-            consigneeName = orderRecord.Account.Name;
+            consigneeName    = orderRecord.Account.Name;
             consigneeAddress = orderRecord.BillingStreet;
-            consigneeCity = orderRecord.BillingCity;
-            consigneeState = orderRecord.BillingState;
+            consigneeCity    = orderRecord.BillingCity;
+            consigneeState   = orderRecord.BillingState;
             consigneePostalCode = orderRecord.BillingPostalCode;
             consigneeCountry = orderRecord.BillingCountry;
-            consigneePhone = orderRecord.Account.Phone;
+            consigneePhone   = orderRecord.Account.Phone;
             
-            //  Load BANK DETAILS dynamically
-            loadBankDetails();           
-            // Load items
+            // Load BANK DETAILS dynamically
+            loadBankDetails();
+            // Load items (passes AccountId for customer product code lookup)
             loadLineItems();
             // Required documents
             setRequiredDocuments();
@@ -142,28 +144,28 @@ public class Generate_Export_PI_Controller {
         try {
             if (orderRecord.DRC_NBC_Select_Bank__c == null) {
                 beneficiaryName = 'D.R. Coats Ink & Resins Pvt. Ltd.';
-                bankName = '';
-                bankAddress = '';
-                accountNumber = '';
-                swiftCode = '';
-                ifscCode = '';
+                bankName        = '';
+                bankAddress     = '';
+                accountNumber   = '';
+                swiftCode       = '';
+                ifscCode        = '';
                 return;
             }
             
             DRC_NBC_Bank_Master__mdt bank = [
                 SELECT DRC_Name_Bank_Name__c, DRC_NBC_Bank_Address__c, DRC_NBC_Account_Number__c,
-                DRC_NBC_Swift_Code__c, DRC_NBC_IFSC_Code__c
+                       DRC_NBC_Swift_Code__c, DRC_NBC_IFSC_Code__c
                 FROM DRC_NBC_Bank_Master__mdt
                 WHERE MasterLabel = :orderRecord.DRC_NBC_Select_Bank__c
                 LIMIT 1
             ];
             
             beneficiaryName = 'D.R. Coats Ink & Resins Pvt. Ltd.';
-            bankName = bank.DRC_Name_Bank_Name__c;
-            bankAddress = bank.DRC_NBC_Bank_Address__c;
-            accountNumber = bank.DRC_NBC_Account_Number__c;
-            swiftCode = bank.DRC_NBC_Swift_Code__c;
-            ifscCode = bank.DRC_NBC_IFSC_Code__c;
+            bankName        = bank.DRC_Name_Bank_Name__c;
+            bankAddress     = bank.DRC_NBC_Bank_Address__c;
+            accountNumber   = bank.DRC_NBC_Account_Number__c;
+            swiftCode       = bank.DRC_NBC_Swift_Code__c;
+            ifscCode        = bank.DRC_NBC_IFSC_Code__c;
             
         } catch (Exception e) {
             ApexPages.addMessage(
@@ -178,25 +180,67 @@ public class Generate_Export_PI_Controller {
     // =====================
     private void loadLineItems() {
         try {
+            // ── Step 1: Fetch all Order Items ──────────────────────────────────────
             List<OrderItem> orderItems = [
                 SELECT Id, Quantity, UnitPrice, TotalPrice, Description,
-                Product2.Name, Product2.ProductCode,
-                Product2.DRC_NBC_HSN_SAC_Code__c,
-                Product2.DRC_NBC_Hazardous__c,
-                Product2.DRC_NBC_MARKS_NOS__c,
-                Product2.DRC_NBC_KIND_OF_PKG__c
+                       Product2Id,
+                       Product2.Name, Product2.ProductCode,
+                       Product2.DRC_NBC_HSN_SAC_Code__c,
+                       Product2.DRC_NBC_Hazardous__c,
+                       Product2.DRC_NBC_MARKS_NOS__c,
+                       Product2.DRC_NBC_KIND_OF_PKG__c,
+                       DRC_NBC_Packing_Size__c
                 FROM OrderItem
                 WHERE OrderId = :recordId
             ];
             
+            // ── Step 2: Collect Product Ids ────────────────────────────────────────
+            Set<Id> productIds = new Set<Id>();
+            for (OrderItem oi : orderItems) {
+                productIds.add(oi.Product2Id);
+            }
+            
+            // ── Step 3: Query Account Products for Customer Product Code ──────────
+            //    Match on the Order's Account AND the products in this order
+            Map<Id, String> productIdToCustomerCode = new Map<Id, String>();
+            
+            if (orderRecord.AccountId != null && !productIds.isEmpty()) {
+                List<DRC_NBC_Restricted_Product__c> acctProducts = [
+                    SELECT DRC_NBC_Product__c, DRC_NBC_Customer_s_Product_code__c
+                    FROM DRC_NBC_Restricted_Product__c
+                    WHERE DRC_NBC_Customer__c = :orderRecord.AccountId
+                    AND   DRC_NBC_Product__c  IN :productIds
+                ];
+                
+                for (DRC_NBC_Restricted_Product__c ap : acctProducts) {
+                    // If multiple rows exist per product, last one wins — adjust if needed
+                    productIdToCustomerCode.put(
+                        ap.DRC_NBC_Product__c,
+                        ap.DRC_NBC_Customer_s_Product_code__c
+                    );
+                }
+            }
+            
+            // ── Step 4: Build line items ───────────────────────────────────────────
             totalAmount = 0;
             
             for (OrderItem oi : orderItems) {
                 ExportLineItem lineItem = new ExportLineItem();
                 
-                lineItem.marksAndNos = 
-                    oi.Product2.DRC_NBC_MARKS_NOS__c != null ? 
-                    oi.Product2.DRC_NBC_MARKS_NOS__c : oi.Product2.Name;
+                // -----------------------------------------------------------
+                // Marks & Nos priority:
+                //   1. Customer's Product Code from Account Products object
+                //   2. DRC_NBC_MARKS_NOS__c on Product
+                //   3. Product Name (fallback)
+                // -----------------------------------------------------------
+                String customerCode = productIdToCustomerCode.get(oi.Product2Id);
+                
+                if (String.isNotBlank(customerCode)) {
+                    lineItem.marksAndNos = customerCode;
+                } 
+                else {
+                    lineItem.marksAndNos = '';
+                }
                 
                 lineItem.description = 
                     oi.Description != null ? oi.Description : oi.Product2.Name;
@@ -205,19 +249,17 @@ public class Generate_Export_PI_Controller {
                 lineItem.hazardous = 
                     (hazardousValue == 'true' || hazardousValue == 'Yes') ? 'Yes' : 'No';
                 
-                lineItem.hscCode = oi.Product2.DRC_NBC_HSN_SAC_Code__c;
-                lineItem.kindOfPackage = oi.Product2.DRC_NBC_KIND_OF_PKG__c;
-                
-                lineItem.quantityKgs = oi.Quantity.setScale(2).toPlainString();
-                lineItem.rate = oi.UnitPrice.setScale(2);
-                lineItem.amount = oi.TotalPrice.setScale(2);
+                lineItem.hscCode       = oi.Product2.DRC_NBC_HSN_SAC_Code__c;
+                lineItem.kindOfPackage = oi.DRC_NBC_Packing_Size__c;
+                lineItem.quantityKgs   = oi.Quantity.setScale(2).toPlainString();
+                lineItem.rate          = oi.UnitPrice.setScale(2);
+                lineItem.amount        = oi.TotalPrice.setScale(2);
                 
                 items.add(lineItem);
                 totalAmount += oi.TotalPrice;
             }
             
-            amountInWords = 
-                convertAmountToWords(totalAmount, orderRecord.CurrencyIsoCode);
+            amountInWords = convertAmountToWords(totalAmount, orderRecord.CurrencyIsoCode);
             
         } catch (Exception e) {
             ApexPages.addMessage(
@@ -261,7 +303,7 @@ public class Generate_Export_PI_Controller {
     private String convertAmountToWords(Decimal amount, String currencies) {
         if (amount == null) return '';
         
-        Long wholePart = amount.longValue();
+        Long wholePart    = amount.longValue();
         Integer decimalPart = ((amount - wholePart) * 100).intValue();
         
         String result = convertNumberToWords(wholePart, currencies);
@@ -282,19 +324,15 @@ public class Generate_Export_PI_Controller {
     private String convertNumberToWords(Long num, String currencies) {
         if (num == 0) return 'ZERO';
         
-        String[] ones = 
-            new String[]{'', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'};
-                String[] teens = 
-                new String[]{'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN',
-                    'FIFTEEN','SIXTEEN','SEVENTEEN','EIGHTEEN','NINETEEN'};
-                        String[] tens = 
-                        new String[]{'', '', 'TWENTY','THIRTY','FORTY','FIFTY','SIXTY','SEVENTY','EIGHTY','NINETY'};
-                            
-                            String result = '';
-        Boolean isINR = currencies == 'INR';
+        String[] ones  = new String[]{'','ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE'};
+        String[] teens = new String[]{'TEN','ELEVEN','TWELVE','THIRTEEN','FOURTEEN',
+                                      'FIFTEEN','SIXTEEN','SEVENTEEN','EIGHTEEN','NINETEEN'};
+        String[] tens  = new String[]{'','','TWENTY','THIRTY','FORTY','FIFTY','SIXTY','SEVENTY','EIGHTY','NINETY'};
+        
+        String result = '';
+        Boolean isINR = (currencies == 'INR');
         
         if (!isINR) {
-            // International system: Billion, Million, Thousand
             if (num >= 1000000000) {
                 result += convertNumberToWords(num / 1000000000, currencies) + ' BILLION ';
                 num = Math.mod(num, 1000000000);
@@ -308,7 +346,6 @@ public class Generate_Export_PI_Controller {
                 num = Math.mod(num, 1000);
             }
         } else {
-            // Indian system: Crore, Lakh, Thousand
             if (num >= 10000000) {
                 result += convertNumberToWords(num / 10000000, currencies) + ' CRORE ';
                 num = Math.mod(num, 10000000);
@@ -384,27 +421,26 @@ public class Generate_Export_PI_Controller {
                     Decimal.valueOf(maxDecimal.intValue() + 1);
             }
     }
+    
     public String getFormattedEffectiveDate() {
         if (orderRecord != null && orderRecord.EffectiveDate != null) {
             DateTime dt = DateTime.newInstance(orderRecord.EffectiveDate, Time.newInstance(0, 0, 0, 0));
-            return dt.format('dd-MMM-yyyy'); // Example: 05-Feb-2026
+            return dt.format('dd-MMM-yyyy');
         }
         return '';
     }
 
-
-    
     // ======================
     // LINE ITEM CLASS
     // ======================
     public class ExportLineItem {
-        public String marksAndNos { get; set; }
-        public String description { get; set; }
-        public String hazardous { get; set; }
-        public String hscCode { get; set; }
-        public String kindOfPackage { get; set; }
-        public String quantityKgs { get; set; }
-        public Decimal rate { get; set; }
-        public Decimal amount { get; set; }
+        public String  marksAndNos    { get; set; }
+        public String  description    { get; set; }
+        public String  hazardous      { get; set; }
+        public String  hscCode        { get; set; }
+        public String  kindOfPackage  { get; set; }
+        public String  quantityKgs    { get; set; }
+        public Decimal rate           { get; set; }
+        public Decimal amount         { get; set; }
     }
 }

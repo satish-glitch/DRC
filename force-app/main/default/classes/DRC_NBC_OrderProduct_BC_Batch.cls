@@ -356,7 +356,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_Discount_Amount = lineDiscountAmount;
         payload.Inv_Discount_Amount = lineDiscountAmount;
         payload.HSN_SAC_Code = item.Product2.DRC_NBC_HSN_SAC_Code__c;
-        payload.GST_Group_Code = item.Product2.DRC_NBC_GST_Group_Code__c;
+        payload.GST_Group_Code = String.isNotBlank(item.Product2.DRC_NBC_GST_Group_Code__c) ? item.Product2.DRC_NBC_GST_Group_Code__c : '';
         payload.GST_Credit = 'Availment';
         // Packing_Details: String, default to ''
         payload.Packing_Details = String.isNotBlank(item.DRC_NBC_Packing_Size__c) ? item.DRC_NBC_Packing_Size__c : '';

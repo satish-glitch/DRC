@@ -9,7 +9,7 @@ public class DRC_NBC_AccountNumberGenerator_Helper {
         List<Account> accounts = [
             SELECT Id, BillingCountry, DRC_NBC_Customer_Number__c
             FROM Account
-            WHERE Id  =:accountIds
+            WHERE Id = :accountIds
         ];
         
         List<Account> toUpdate = new List<Account>();
@@ -20,14 +20,12 @@ public class DRC_NBC_AccountNumberGenerator_Helper {
             }
             
             String country = acc.BillingCountry != null ? acc.BillingCountry.trim().toLowerCase() : '';
-            String type = country == 'india' ? Label.DRC_NBC_Domestic_Customer : Label.DRC_NBC_Export_Customer;            
+            String type = country == 'india' ? Label.DRC_NBC_Domestic_Customer : Label.DRC_NBC_Export_Customer;
+            
             Integer nextNumber = getNextNumber(type);
             String padded = String.valueOf(100000 + nextNumber).right(5);
-            String year = String.valueOf(Date.today().year()).right(2) +
-                String.valueOf(Date.today().addYears(1).year()).right(2);
             
-            acc.DRC_NBC_Customer_Number__c = type + '/' + year + '-' + padded;
-            
+            acc.DRC_NBC_Customer_Number__c = type + padded;
             toUpdate.add(acc);
         }
         
@@ -37,31 +35,42 @@ public class DRC_NBC_AccountNumberGenerator_Helper {
     }
     
     public static Integer getNextNumber(String type) {
-        String prefix = getPrefix(type);
-        System.debug('prefix ' + prefix);
-        String pattern = prefix + '%';  
-        // Get all customer numbers that match the prefix
+        // 'type' here is the Custom Label value e.g. 'DomCust' or 'ExpCust'
+        String prefix = type; // use the label value directly as prefix
+        String queryPattern = prefix + '%';
+        
+        System.debug('Prefix used for query: ' + prefix);
+        
+        // Fetch all accounts whose customer number starts with this label prefix
         List<Account> existing = [
             SELECT DRC_NBC_Customer_Number__c
             FROM Account
-            WHERE DRC_NBC_Customer_Number__c LIKE :pattern
+            WHERE DRC_NBC_Customer_Number__c LIKE :queryPattern
         ];
         
-        Integer maxNum = 0;
         System.debug('Existing Numbers: ' + existing);
+        
+        Integer maxNum = 0;
+        Integer prefixLength = prefix.length(); // e.g. 'DomCust'.length() = 7
+        
         for (Account acc : existing) {
             if (String.isBlank(acc.DRC_NBC_Customer_Number__c)) {
                 continue;
             }
-            List<String> parts = acc.DRC_NBC_Customer_Number__c.split('-');        
-            if (parts.size() == 2) {
+            
+            String customerNum = acc.DRC_NBC_Customer_Number__c;
+            
+            // Extract only the numeric portion after the prefix
+            // e.g. 'DomCust00001' → '00001'
+            if (customerNum.length() > prefixLength) {
+                String numericPart = customerNum.substring(prefixLength);
                 try {
-                    Integer num = Integer.valueOf(parts[1]);
+                    Integer num = Integer.valueOf(numericPart);
                     if (num > maxNum) {
-                        maxNum = num;         
+                        maxNum = num;
                     }
                 } catch (Exception e) {
-                    // Skip invalid formats
+                    System.debug('Skipping invalid format: ' + customerNum);
                 }
             }
         }
@@ -71,11 +80,8 @@ public class DRC_NBC_AccountNumberGenerator_Helper {
         return maxNum + 1;
     }
     
-    
     public static String getPrefix(String type) {
-        String year = String.valueOf(Date.today().year()).right(2) +
-            String.valueOf(Date.today().addYears(1).year()).right(2);
-        
-        return type + '/' + year + '-';
+        // Returns the Custom Label value directly as the prefix
+        return type;
     }
 }

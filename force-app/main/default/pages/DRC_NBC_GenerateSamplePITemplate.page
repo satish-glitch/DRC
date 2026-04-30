@@ -316,7 +316,7 @@ so everything renders ABOVE the divider line.
                         </apex:outputText>
                     </span>
                 </p>
-                <p><strong>Order No.</strong><span>SO-SAMPLE/2627/{!importSequence}</span></p>
+                <p><strong>Order No.</strong><span>{!importSequence}</span></p>
                 <p><strong>Payment Terms</strong><span>{!paymentTerms}</span></p>
                 <p><strong>shipment Method</strong><span>{!shipmentMethod}</span></p>
                 <p><strong>Courier Number</strong><span>{!couriernumber}</span></p>
@@ -338,17 +338,18 @@ so everything renders ABOVE the divider line.
             <div style="clear: both;"></div>
             
             <!-- ITEMS TABLE -->
+            <!-- ITEMS TABLE -->
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width: 5%;">No.</th>
-                        <th style="width: 12%;">Item Reference No.</th>
-                        <th style="width: 35%;">Description</th>
-                        <th style="width: 12%;">HSN/SAC</th>
-                        <th style="width: 8%;">Quantity</th>
-                        <th style="width: 10%;">Unit of Measure</th>
+                        <th style="width: 4%;">No.</th>
+                        <th style="width: 10%;">Customer Product Code</th>
+                        <th style="width: 30%;">Description</th>
+                        <th style="width: 10%;">HSN/SAC</th>
+                        <th style="width: 7%;">Quantity</th>
+                        <th style="width: 9%;">Unit of Measure</th>
                         <th style="width: 9%;">Unit Price</th>
-                        <th style="width: 9%;">Amount</th>
+                        <th style="width: 10%;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -356,6 +357,7 @@ so everything renders ABOVE the divider line.
                     <apex:repeat value="{!items}" var="item">
                         <tr>
                             <td class="center">{!rowNum}</td>
+                            <td class="center">{!item.customerProductCode}</td>
                             <td>{!item.referenceNo}</td>
                             <td>{!item.Description}</td>
                             <td class="center">{!item.HSN_SAC}</td>

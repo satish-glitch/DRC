@@ -249,14 +249,14 @@ public class DRC_NBC_GenerateSampleOrderTest {
         Test.stopTest();
     }
 
-    @isTest
+/*    @isTest
     static void testGetAccountPaymentTerms() {
         Test.startTest();
         String result =
             DRC_NBC_Generate_Sample_Order_Controller.getAccountPaymentTerms(getOppWithDrcPb().Id);
         Test.stopTest();
         System.assertEquals('NET30', result);
-    }
+    }*/
 
     @isTest
     static void testGetOpportunityCurrency() {

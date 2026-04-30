@@ -36,7 +36,7 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
 
             // Step 2: Fetch first Contact related to Account
             List<Contact> contacts = [
-                SELECT Id, Name, Email, Phone
+                SELECT Id, Name, Email, Phone, AccountId
                 FROM Contact
                 WHERE AccountId = :ord.AccountId
                 AND Id = :ord.ShipToContactId
@@ -69,7 +69,7 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
                 apiPath,
                 'POST',
                 payload,
-                con.Id
+                con.AccountId
             );
 
             response = integration.executeAndReturnResponse();

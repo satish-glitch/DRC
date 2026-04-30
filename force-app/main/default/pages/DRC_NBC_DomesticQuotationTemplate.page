@@ -249,12 +249,13 @@
         <div class="quote-title-section">
             <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">
                 <div class="quote-title">
-                    Sales Quote : SQT/2526/{!quoteRecord.DRC_NBC_Import_Starting_Sequence__c}
+                    Sales Quote : SQT/{!fiscalYearLabel}/{!quoteRecord.DRC_NBC_Import_Starting_Sequence__c}
                 </div>
             </apex:outputPanel>
+            
             <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Export'}">
                 <div class="quote-title">
-                    Sales Quote : SQT/2526/{!quoteRecord.DRC_NBC_Invoice_Export_Sequence_Number__c}
+                    Sales Quote : SQT/{!fiscalYearLabel}/{!quoteRecord.DRC_NBC_Invoice_Export_Sequence_Number__c}
                 </div>
             </apex:outputPanel>
             <div>
@@ -335,10 +336,9 @@
                                 <apex:param value="{!item.Quantity}" />
                             </apex:outputText>
                         </td>
-                        <td>{!item.DRC_NBC_Unit_Of_Measurement__c}</td>
-                        <td>{!item.Product2.DRC_NBC_KIND_OF_PKG__c}</td>
-                        <td>{!item.Product2.DRC_NBC_HSN_SAC_Code__c}</td>
-                        <!--<td>{!item.Product2.CurrencyIsoCode}</td>-->
+                        <td>Kgs</td>
+                         <td>{!item.DRC_NBC_Packing_Size__c}</td>
+                        <td>{!item.Product2.DRC_NBC_HSN_SAC_Code__c}</td>Account
                         <td>{!quoteRecord.CurrencyIsoCode}</td>
                         <td class="amount-right">
                             <apex:outputText value="{0, number, ###,##0.00}">

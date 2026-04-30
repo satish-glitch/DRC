@@ -11,43 +11,95 @@ this.orderId = orderId;
         try {
             Order order = getOrderDetails(orderId);
             Id accountId = order.AccountId;
-            //  Check if already synced
+            
+            // Step 1: Check if already synced
             if (order.DRC_NBC_Order_Sync_To_BC__c) {
                 Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(orderId));
                 System.debug('Order BC Result → SKIPPED: Order already synced. Order Product callout enqueued.');
                 return 'Order BC Result → SKIPPED: Order already synced. Order Product callout enqueued.';
             }
             
+            // Step 2: Check ShipToContact exists in BC
+            // if (order.ShipToContactId != null) {
+            //     Boolean contactExistsInBC = checkSalespersonInBC(order.ShipToContactId);
+            //     System.debug('Contact exists in BC: ' + contactExistsInBC);
+                
+            //     if (!contactExistsInBC) {
+            //         // ✅ Call Synchronously — pass contactId & accountId directly
+            //         // No re-query inside SalesPersonCode_Callout
+            //         System.debug('Contact not in BC → Creating Synchronously...');
+                    
+            //         String salesPersonResult = DRC_NBC_SalesPerson_Sync_Callout.executeCallout(
+            //             order.ShipToContactId,  // ✅ directly from fetched Order
+            //             order.AccountId         // ✅ directly from fetched Order
+            //         );
+                    
+            //         System.debug('SalesPerson Creation Result → ' + salesPersonResult);
+                    
+            //         if (!salesPersonResult.equals('SUCCESS')) {
+            //             // ❌ Contact creation failed → Abort Order sync
+            //             System.debug('Contact creation FAILED → Aborting Order sync.');
+            //             DRC_NBC_API_Log_Handler.createApiLog(
+            //                 'DRC_NBC_Order_BC_Callout',
+            //                 orderId, null, 'POST',
+            //                 'Salesperson creation failed: ' + salesPersonResult,
+            //                 null, null, 'Error', null
+            //             );
+            //             return 'ERROR: Salesperson creation failed → ' + salesPersonResult;
+            //         }
+                    
+            //         // ✅ Contact created successfully → continue Order sync below
+            //         System.debug('Contact created in BC → Continuing Order sync...');
+                    
+            //     } else {
+            //         // ✅ Contact already exists in BC → continue directly
+            //         System.debug('Contact already in BC → Continuing Order sync.');
+            //     }
+            // }
+            
+            // Step 3: Fetch Shipping Address
+            // ✅ Reaches here in ALL cases:
+            //    a) ShipToContactId is null
+            //    b) Contact already existed in BC
+            //    c) Contact just created synchronously
             List<DRC_NBC_Addresses__c> addresses = new List<DRC_NBC_Addresses__c>();
             if (order.DRC_NBC_Shipping_Address__c != null) {
                 addresses = [
                     SELECT Id, DRC_NBC_Ship_To_Code__c
                     FROM DRC_NBC_Addresses__c
-                    WHERE Id = :order.DRC_NBC_Shipping_Address__c
-                    AND DRC_NBC_Type__c = 'Shipping'
+                    WHERE Id             = :order.DRC_NBC_Shipping_Address__c
+                    AND DRC_NBC_Type__c  = 'Shipping'
                     AND DRC_NBC_Order__c = :orderId
                     ORDER BY CreatedDate ASC
                     LIMIT 1
                 ];
             }
             
-            Boolean needsShipToCode = !addresses.isEmpty() && String.isBlank(addresses[0].DRC_NBC_Ship_To_Code__c);
+            Boolean needsShipToCode  = !addresses.isEmpty()
+                && String.isBlank(addresses[0].DRC_NBC_Ship_To_Code__c);
             Boolean needsOrderNumber = String.isBlank(order.DRC_NBC_Cust_Order_Number__c);
             
-            // If ANY DML is needed, exit and chain to DML handler
+            System.debug('needsShipToCode: '  + needsShipToCode
+                         + ' | needsOrderNumber: ' + needsOrderNumber);
+            
+            // Step 4: Route based on what is needed
             if (needsShipToCode || needsOrderNumber) {
-                System.debug('DML needed - Ship-To Code: ' + needsShipToCode + ', Order Number: ' + needsOrderNumber);
-                System.enqueueJob(new DRC_NBC_Order_DML_Handler(orderId, needsShipToCode, needsOrderNumber));
+                System.debug('DML needed - Ship-To Code: ' + needsShipToCode
+                             + ', Order Number: '             + needsOrderNumber);
+                System.enqueueJob(
+                    new DRC_NBC_Order_DML_Handler(orderId, needsShipToCode, needsOrderNumber)
+                );
                 System.debug('Order BC Result → Chained to DML handler for generation(s)');
                 return 'Order BC Result → Chained to DML handler for generation(s)';
             }
             
-            System.debug('No DML needed - chaining to Callout Handler');
+            // Step 5: Everything ready → Send Order to BC
+            System.debug('No DML needed → Chaining to Callout Handler.');
             System.enqueueJob(new DRC_NBC_Order_Callout_Handler(orderId));
-            return 'Order BC Result → Callout enqueued';
+            return 'Order BC Result → Callout enqueued.';
             
         } catch (Exception e) {
-            //logError(e.getMessage() + ' | Stack: ' + e.getStackTraceString());
+            System.debug('Exception in executeCallout: ' + e.getMessage());
             return 'ERROR: ' + e.getMessage();
         }
     }
@@ -164,7 +216,7 @@ this.orderId = orderId;
         payload.Location_Code = (warehouseMeta != null && 
                                  String.isNotBlank(warehouseMeta.DRC_NBC_Code__c)) ? 
             warehouseMeta.DRC_NBC_Code__c : '';
-      //  payload.Location_Code = 'J-51';        
+        //  payload.Location_Code = 'J-51';        
         payload.Salesperson_Code = ord.ShipToContactId;
         payload.Salesforce_So_No = ord.Id;
         payload.External_Document_No = String.isNotBlank(ord.PoNumber) ? 
@@ -174,7 +226,7 @@ this.orderId = orderId;
             : 0.00;
         payload.Salesforce_Order_Created = SalesforceOrderCreated;
         
-       // payload.Currency_Code = Ord.CurrencyIsoCode;
+        // payload.Currency_Code = Ord.CurrencyIsoCode;
         If(Ord.CurrencyIsoCode == 'INR') {
             payload.Currency_Code = '';
         }
@@ -191,8 +243,8 @@ this.orderId = orderId;
         payload.Ship_to_Address_2 = '';
         payload.Ship_to_Post_Code = '';
         payload.Ship_to_Country_Region_Code = '';
-      //  payload.Ship_to_GST_Customer_Type = '';
-       // payload.Ship_to_GST_Reg_No = '';
+        //  payload.Ship_to_GST_Customer_Type = '';
+        // payload.Ship_to_GST_Reg_No = '';
         
         // Populate shipping address if available
         if (ord.DRC_NBC_Shipping_Address__c != null) {
@@ -216,7 +268,7 @@ this.orderId = orderId;
                     ord.Account.Name : '';
                 payload.Ship_to_Name_2 = '';
                 //payload.Ship_to_GST_Customer_Type = String.isBlank(address.DRC_Shipping_Gst_Customer_Type__c) ? '' : address.DRC_Shipping_Gst_Customer_Type__c;
-               // payload.Ship_to_GST_Reg_No = String.isBlank(address.DRC_NBC_GST_Number__c) ? '' : address.DRC_NBC_GST_Number__c;
+                // payload.Ship_to_GST_Reg_No = String.isBlank(address.DRC_NBC_GST_Number__c) ? '' : address.DRC_NBC_GST_Number__c;
                 
                 // Compose full address
                 String fullAddress = '';
@@ -258,13 +310,70 @@ this.orderId = orderId;
                     payload.Ship_to_Country_Region_Code = countryCode;
                 }
                 //payload.Ship_to_GST_Customer_Type = address.DRC_Shipping_Gst_Customer_Type__c;
-              //  payload.Ship_to_GST_Reg_No = address.DRC_NBC_GST_Number__c;
+                //  payload.Ship_to_GST_Reg_No = address.DRC_NBC_GST_Number__c;
                 
                 
             }
         } 
         
         return payload;
+    }
+    public static Boolean checkSalespersonInBC(Id contactId) {
+        try {
+            // Build SOAP XML envelope with ContactId as the Code
+            String soapBody =
+                '<?xml version="1.0" encoding="utf-8"?>' +
+                '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">' +
+                '<Body>' +
+                '<Read xmlns="urn:microsoft-dynamics-schemas/page/salespersonsalesforce">' +
+                '<Code>' + String.valueOf(contactId) + '</Code>' +
+                '</Read>' +
+                '</Body>' +
+                '</Envelope>';
+            
+            System.debug('SOAP Request Body: ' + soapBody);
+            
+            String endpoint = 'https://salesforceuat.drcresins.com:2023/DR_LiveSSL/WS/D.R.%20Coats%20live/Page/SalesPersonSalesForce';
+            
+            // ✅ Build Basic Auth header
+            String username = 'Salesforce';
+            String password = 'Admin@2026';
+            String credentials = username + ':' + password;
+            String encodedCredentials = EncodingUtil.base64Encode(Blob.valueOf(credentials));
+            
+            HttpRequest req = new HttpRequest();
+            req.setEndpoint(endpoint);
+            req.setMethod('POST');
+            req.setHeader('Content-Type', 'text/xml; charset=utf-8');
+            req.setHeader('SOAPAction', '"urn:microsoft-dynamics-schemas/page/salespersonsalesforce:Read"');
+            req.setHeader('Authorization', 'Basic ' + encodedCredentials); // ✅ Basic Auth header
+            req.setBody(soapBody);
+            req.setTimeout(30000);
+            
+            Http http = new Http();
+            HttpResponse res = http.send(req);
+            
+            System.debug('SOAP READ Response Status: ' + res.getStatusCode());
+            System.debug('SOAP READ Response Body: ' + res.getBody());
+            
+            // ✅ If 200 OK → Contact exists in BC
+            if (res.getStatusCode() == 200) {
+                String responseBody = res.getBody();
+                if (String.isNotBlank(responseBody) && responseBody.contains('<Code>')) {
+                    System.debug('Salesperson found in BC for ContactId: ' + contactId);
+                    return true;
+                }
+            }
+            
+            // 404 or any error → Contact does NOT exist in BC
+            System.debug('Salesperson NOT found in BC for ContactId: ' + contactId);
+            return false;
+            
+        } catch (Exception e) {
+            System.debug('Exception in checkSalespersonInBC: ' + e.getMessage());
+            System.debug('Stack: ' + e.getStackTraceString());
+            return false;
+        }
     }
     
     private void logError(String errorMsg) {

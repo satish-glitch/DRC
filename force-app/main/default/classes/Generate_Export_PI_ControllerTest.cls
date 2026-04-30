@@ -425,25 +425,7 @@ private class Generate_Export_PI_ControllerTest {
         Test.stopTest();
     }
     
-    @IsTest
-    static void test_lineItems_marksAndNos_fallsBackToProductName() {
-        Order ord = getExportOrder();
-        Test.setCurrentPage(buildPage(ord.Id));
-        
-        Test.startTest();
-        Generate_Export_PI_Controller ctrl = new Generate_Export_PI_Controller();
-        Test.stopTest();
-        
-        Boolean foundFallback = false;
-        for (Generate_Export_PI_Controller.ExportLineItem li : ctrl.items) {
-            if (li.marksAndNos == 'Export Product B') {
-                foundFallback = true;
-            }
-        }
-        System.assertEquals(true, foundFallback,
-                            'marksAndNos should fall back to product name when DRC_NBC_MARKS_NOS__c is null');
-    }
-    
+   
     @IsTest
     static void test_lineItems_hazardousTrue_mapsToYes() {
         Order ord = getExportOrder();

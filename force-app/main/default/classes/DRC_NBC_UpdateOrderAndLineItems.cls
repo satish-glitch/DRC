@@ -1,5 +1,5 @@
 /**
-* @File Name : DRC_NBC_UpdateOrderAndLineItems.cls
+* @File Name :         .cls
 * @Description : Handles Order and Line Items sync with Business Central using SOAP
 * @Author : Satish YADAV
 * @Last Modified On : April 17, 2026
@@ -339,6 +339,26 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             System.debug('  SF Product Items: ' + orderItems.size());
             System.debug('  BC Line Items: '    + bcLineDetails.size());
             
+            // ── FULL LINE ITEMS + TAX DEBUG ───────────────────────────────────────────
+            System.debug('========== ORDER ITEMS & TAX AMOUNTS ==========');
+            System.debug('Other Tax Amount : ' + ord.DRC_NBC_Other_Tax_Amount__c);
+            System.debug('TCS Amount       : ' + ord.DRC_NBC_TCS_Amount__c);
+            System.debug('--- Order Line Items ---');
+            for (OrderItem oi : orderItems) {
+                System.debug(
+                    'Product: '       + oi.Product2.DRC_NBC_FG_Code__c +
+                    ' | Qty: '        + oi.Quantity                    +
+                    ' | UnitPrice: '  + oi.UnitPrice                   +
+                    ' | TotalPrice: ' + oi.DRC_NBC_Total_Price__c      +
+                    ' | Discount%: '  + oi.DRC_NBC_Discount__c         +
+                    ' | UOM: '        + oi.DRC_NBC_Unit_Of_Measurement__c +
+                    ' | PackSize: '   + oi.DRC_NBC_Packing_Size__c     +
+                    ' | PackQty: '    + oi.DRC_NBC_Packing_Quantity__c +
+                    ' | Desc: '       + oi.Description
+                );
+            }
+            System.debug('================================================');
+            
             // --- Separate BC product lines vs tax lines ---
             List<BCLineItem>        bcProductLines = new List<BCLineItem>();
             Map<String, BCLineItem> bcTaxLines     = new Map<String, BCLineItem>();
@@ -638,6 +658,17 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         String requestBody = buildUpdateOrderSOAPRequest(bcKey, payload, ord);
         String sfOrderId   = String.valueOf(ord.Id);
         
+        // ── FULL ORDER PAYLOAD DEBUG ──────────────────────────────────────────────
+        System.debug('========== ORDER UPDATE PAYLOAD ==========');
+        System.debug('Order Id            : ' + ord.Id);
+        System.debug('BC Customer Order No: ' + ord.DRC_NBC_Cust_Order_Number__c);
+        System.debug('BC Key              : ' + bcKey);
+        System.debug('Full Payload (JSON) : ' + JSON.serializePretty(payload));
+        System.debug('SOAP Request Body   : ' + requestBody);
+        System.debug('==========================================');
+        
+        System.debug('  Syncing Shipping Address before Order update...');
+        
         System.debug('  Syncing Shipping Address before Order update...');
         String shipSyncResult = DRC_NBC_UpdateShippingAddress.syncShippingAddress(ord.Id);
         System.debug('  Shipping Sync Result: ' + shipSyncResult);
@@ -776,7 +807,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             String requestBody = buildUpdateMultipleSOAPRequest(
                 bcOrderNo, bcLineKeys, orderItems, freshOrd, bcLineDetails);  // pass freshOrd
             String sfOrderId = String.valueOf(orderId);
-                        
+            
             try {
                 HttpRequest req = new HttpRequest();
                 req.setEndpoint(BC_LINE_ITEM_ENDPOINT);
@@ -820,7 +851,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     // SOAP REQUEST BUILDERS
     // ========================================================================
     
-    private static String buildReadSOAPRequest(String bcOrderNumber) {
+    Public static String buildReadSOAPRequest(String bcOrderNumber) {
         return
             '<?xml version="1.0" encoding="utf-8"?>' +
             '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +

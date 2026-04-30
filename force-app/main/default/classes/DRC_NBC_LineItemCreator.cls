@@ -32,6 +32,13 @@ public class DRC_NBC_LineItemCreator {
                                                          
                                                          try {
                                                              String requestBody = buildCreateMultipleSOAPRequest(bcOrderNo, orderItems, startingLineNo, ord);
+                                                             String bcLocationCode = DRC_NBC_UpdateOrderAndLineItems.buildReadSOAPRequest(bcOrderNo);
+                                                             
+                                                             System.debug('========== LOCATION CODE CHECK (Before Line Create) ==========');
+                                                        
+                                                             System.debug('BC Order Location  : ' + (String.isBlank(bcLocationCode) ? '[EMPTY/NOT FOUND]' : bcLocationCode));
+                                                            
+                                                             
                                                              
                                                              HttpRequest req = new HttpRequest();
                                                              req.setEndpoint(BC_LINE_ITEM_ENDPOINT);
@@ -43,7 +50,7 @@ public class DRC_NBC_LineItemCreator {
                                                              ));
                                                              System.debug(LoggingLevel.ERROR, 'SOAP Payload before callout: ' + requestBody);
                                                              debugLongString('SOAP Payload before callout', requestBody);
-
+                                                             
                                                              req.setBody(requestBody);
                                                              req.setTimeout(120000);
                                                              
