@@ -106,7 +106,7 @@ public class DRC_NBC_GenerateDomOrderPIController {
                    DRC_NBC_Terms_and_Conditions__c,
                    DRC_NBC_Shipment_Date__c,
                    DRC_NBC_Transport_Agent__c,
-                   DRC_NBC_Payment_Terms__c,
+                   DRC_NBC_Payment_Term_Description__c,
                    DRC_NBC_Type__c,
                    Account.DRC_NBC_Customer_Number__c,
                    Account.DRC_NBC_GST_Number__c,
@@ -153,7 +153,7 @@ public class DRC_NBC_GenerateDomOrderPIController {
         tcs = ord.DRC_NBC_TCS_Amount__c != null ? ord.DRC_NBC_TCS_Amount__c : 0;
         charges = 0;
 
-        paymentTerms = ord.DRC_NBC_Payment_Terms__c;
+        paymentTerms = ord.DRC_NBC_Payment_Term_Description__c;
         shipmentMethod = ord.DRC_NBC_Inco_Terms__c;
         transporter = ord.DRC_NBC_Transporter_Name__c != null ? ord.DRC_NBC_Transporter_Name__c.toUpperCase() : '';
         agent = ord.DRC_NBC_Transport_Agent__c != null ? ord.DRC_NBC_Transport_Agent__c.toUpperCase() : '';

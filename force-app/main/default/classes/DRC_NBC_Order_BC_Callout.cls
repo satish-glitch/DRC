@@ -139,6 +139,8 @@ this.orderId = orderId;
             Account.DRC_NBC_BC_Approval_Status__c,
             Account.BillingCity, 
             CurrencyIsoCode,
+            DRC_NBC_SalesPerson_Code__c,
+            DRC_NBC_Record_Type_Name__c,
             DRC_NBC_Type__c,
             DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
             DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c
@@ -191,7 +193,9 @@ this.orderId = orderId;
             System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
         }
         
-        Boolean sampleSales = (ord.RecordType != null && ord.RecordType.Name == 'Sample_Order');
+        Boolean sampleSales = (ord.RecordType != null && ord.DRC_NBC_Record_Type_Name__c == 'Sample Order');
+        
+        System.debug('Record type name is Sample >>> '  + sampleSales);
         
         Boolean SalesforceOrderCreated = false;
         
@@ -217,7 +221,8 @@ this.orderId = orderId;
                                  String.isNotBlank(warehouseMeta.DRC_NBC_Code__c)) ? 
             warehouseMeta.DRC_NBC_Code__c : '';
         //  payload.Location_Code = 'J-51';        
-        payload.Salesperson_Code = ord.ShipToContactId;
+       // payload.Salesperson_Code = ord.ShipToContactId;
+        payload.Salesperson_Code = ord.DRC_NBC_SalesPerson_Code__c;
         payload.Salesforce_So_No = ord.Id;
         payload.External_Document_No = String.isNotBlank(ord.PoNumber) ? 
             String.valueOf(ord.PoNumber) : '';

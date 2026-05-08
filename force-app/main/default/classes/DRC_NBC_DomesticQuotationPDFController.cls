@@ -35,7 +35,7 @@ public class DRC_NBC_DomesticQuotationPDFController {
                        DRC_NBC_Import_Starting_Sequence__c, 
                        DRC_NBC_Grand_Total__c,
                        DRC_NBC_Invoice_Export_Sequence_Number__c,
-                       DRC_NBC_Special_Requirements__c,
+                       DRC_NBC_Special_Requirements__c,DRC_NBC_Payment_Term_Description__c,
                        DRC_NBC_Other_Tax_Amount__c, DRC_NBC_TCS_Amount__c
                        FROM Quote 
                        WHERE Id = :quoteId];

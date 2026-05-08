@@ -53,7 +53,10 @@ global without sharing class DRC_NBC_CustomerCreditLimitSyncService {
             
             Account customerAcc = customerList[0];          
             customerAcc.DRC_NBC_Credit_Limit__c = payload.CreditLimit;
-            customerAcc.CurrencyIsoCode = payload.CurrencyCode;
+            //  customerAcc.CurrencyIsoCode = payload.CurrencyCode;
+            customerAcc.CurrencyIsoCode = (payload.CurrencyCode != null && String.isNotBlank(payload.CurrencyCode)) 
+                ? payload.CurrencyCode 
+                : 'INR';
             if(payload.Status != null && payload.Status == 'Approved'){
                 customerAcc.DRC_NBC_BC_Approval_Status__c = true;               
             }

@@ -178,6 +178,7 @@ insert customSetting;*/
             ShippingCountry = 'India',
             ShippingCountryCode = 'IN',
             DRC_NBC_Warehouse__c = 'CFS - JNPT',
+            DRC_NBC_SalesPerson_Code__c = 'AJITH',
             DRC_NBC_Shipping_Address__c = shippingAddress.Id
         );
         insert testOrder;
@@ -585,9 +586,9 @@ insert customSetting;*/
             Account.Type, Account.DRC_NBC_Customer_Number__c,
             EffectiveDate, PoNumber, PoDate, DRC_NBC_Warehouse__c, ShipToContactId, CurrencyIsoCode,
             DRC_NBC_Cust_Order_Number__c, Status, DRC_NBC_Payment_Terms__c, DRC_NBC_Type__c,
-            DRC_NBC_Inco_Terms__c, ShippingStreet, ShippingCity, ShippingState,
+            DRC_NBC_Inco_Terms__c, ShippingStreet, ShippingCity, ShippingState,DRC_NBC_SalesPerson_Code__c,
             ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c, DRC_NBC_Grand_Total__c,
-            DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name
+            DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name,DRC_NBC_Record_Type_Name__c
             FROM Order LIMIT 1
         ];
         

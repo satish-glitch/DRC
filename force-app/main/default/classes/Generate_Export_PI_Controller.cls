@@ -90,6 +90,8 @@ public class Generate_Export_PI_Controller {
                 DRC_NBC_Select_Bank__c,
                 DRC_NBC_Consignee_Bank_Account_Number__c,
                 DRC_NBC_Cust_Order_Number__c,
+                
+                DRC_NBC_Payment_Term_Description__c,
                 AccountId  // ← needed to query Account Products
                 FROM Order
                 WHERE Id = :recordId
