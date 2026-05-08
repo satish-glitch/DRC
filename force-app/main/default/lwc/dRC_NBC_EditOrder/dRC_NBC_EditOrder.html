@@ -89,13 +89,25 @@
                          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                             <lightning-input-field field-name="DRC_NBC_Warehouse__c" onchange={handleFieldChange} required></lightning-input-field>
                         </div>  
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                       <!-- <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                             <lightning-input-field
                                 field-name="DRC_NBC_SalesPerson_Code__c"
                                 onchange={handleFieldChange}
                                 required>
                             </lightning-input-field>
-                        </div>                              
+                        </div>-->     
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-combobox
+                                label="Sales Person Code"
+                                value={orderRec.DRC_NBC_SalesPerson_Code__c}
+                                placeholder="-- Select Sales Person --"
+                                options={salesPersonCodeOptions}
+                                data-field="DRC_NBC_SalesPerson_Code__c"
+                                onchange={handleSalesPersonCodeChange}
+                                required>
+                            </lightning-combobox>
+                        </div>        
+
                         <template if:true={isExport}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="CurrencyIsoCode" onchange={handleFieldChange} required></lightning-input-field>

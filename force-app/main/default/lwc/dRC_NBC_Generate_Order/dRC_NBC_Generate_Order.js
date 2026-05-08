@@ -9,6 +9,13 @@ import { CloseActionScreenEvent } from 'lightning/actions';
 import { loadStyle } from 'lightning/platformResourceLoader';
 import DRC_NBC_Order_Button_CSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
 
+const SALES_PERSON_CODES = [
+    'AJITPH', 'AJITVA', 'AKSHTA SAWANT', 'AMITDR',
+    'BHAVTA', 'JIGNA', 'KIRTIA', 'MANMA',
+    'NIRMAL', 'SHIRLEY', 'SHREGE', 'TANYDR',
+    'VIJYGU', 'YASHDR'
+];
+
 export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningElement) {
     @api recordId;
     @track load = false;
@@ -62,6 +69,17 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
     isProductOpen = true;
     isConsigneeBankOpen = true;
     isProcurementOpen = true;
+
+
+    // Getter: builds combobox options from the constant
+    get salesPersonCodeOptions() {
+        return SALES_PERSON_CODES.map(code => ({ label: code, value: code }));
+    }
+
+    // Handler: stores selected text value into samplingRec
+    handleSalesPersonCodeChange(event) {
+        this.samplingRec.DRC_NBC_SalesPerson_Code__c = event.detail.value;
+    }
 
     // Toggle methods
     toggleBasicInfo() {

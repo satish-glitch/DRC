@@ -171,7 +171,7 @@
                                     </lightning-record-edit-form>
                                 </div>
 
-                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                              <!--  <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                     <lightning-record-edit-form 
                                         object-api-name="Order"
                                         record-type-id={selectedRecordTypeId}>
@@ -182,6 +182,17 @@
                                             required>
                                         </lightning-input-field>
                                     </lightning-record-edit-form>
+                                </div>-->
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-combobox
+                                        label="Sales Person Code"
+                                        value={samplingRec.DRC_NBC_SalesPerson_Code__c}
+                                        placeholder="-- Select Sales Person --"
+                                        options={salesPersonCodeOptions}
+                                        data-field="DRC_NBC_SalesPerson_Code__c"
+                                        onchange={handleSalesPersonCodeChange}
+                                        required>
+                                    </lightning-combobox>
                                 </div>
                                 
                                
@@ -873,8 +884,6 @@
                         <button class="slds-button slds-button_neutral" onclick={handleCancel}>Cancel</button>
                         <button class="slds-button slds-button_brand" onclick={handleSave} disabled={disabledButton}>Create Order</button>
                     </footer>
-
-            
         </template>
     </template>
 </template>

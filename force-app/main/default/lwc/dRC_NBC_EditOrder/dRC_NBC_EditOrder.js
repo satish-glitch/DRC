@@ -12,6 +12,12 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { NavigationMixin } from 'lightning/navigation';
 import { loadStyle } from 'lightning/platformResourceLoader';
 import AddProductCSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
+const SALES_PERSON_CODES = [
+    'AJITPH', 'AJITVA', 'AKSHTA SAWANT', 'AMITDR',
+    'BHAVTA', 'JIGNA', 'KIRTIA', 'MANMA',
+    'NIRMAL', 'SHIRLEY', 'SHREGE', 'TANYDR',
+    'VIJYGU', 'YASHDR'
+];
 
 export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement) {
     @track allData = [];
@@ -166,6 +172,18 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     get getProductIcon()        { return this.isProductOpen       ? 'utility:chevrondown' : 'utility:chevronright'; }
     get hasProducts()           { return this.filteredData && this.filteredData.length > 0; }
 
+    get salesPersonCodeOptions() {
+        return SALES_PERSON_CODES.map(code => ({ label: code, value: code }));
+    }
+
+    handleSalesPersonCodeChange(event) {
+       // this.orderRec.DRC_NBC_SalesPerson_Code__c = event.detail.value;
+            this.orderRec = {
+            ...this.orderRec,
+            DRC_NBC_SalesPerson_Code__c: event.detail.value
+        };
+    }
+
     // ─── Packing helpers ─────────────────────────────────────────────────────────
 
     /**
@@ -212,7 +230,10 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     fetchOrderDetails() {
         getOrderRecord({ orderId: this.recordId })
             .then(result => {
-                this.orderRec = { ...result };
+                this.orderRec = { 
+                    ...result,
+                    DRC_NBC_SalesPerson_Code__c: result.DRC_NBC_SalesPerson_Code__c || ''
+                };
                 this.isPartiallyShipped = result.DRC_NBC_Order_PartiallyShipped__c === true;
                 if (result.DRC_NBC_Type__c === 'Domestic') {
                     this.isDomestic = true;
@@ -550,12 +571,35 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.handleFieldChange({ target: { fieldName: 'QuoteId' }, detail: { value: selectedId } });
     }
 
-    handleFieldChange(event) {
+   /* handleFieldChange(event) {
         const fieldName = event.target.fieldName || event.target.name || event.target.dataset.field;
         const value     = event.detail?.value    || event.target.value;
 
         if (fieldName) {
             this.orderRec[fieldName] = value;
+
+            if (fieldName === 'DRC_NBC_Type__c') {
+                this.isDomestic = value === 'Domestic';
+                this.isExport   = value === 'Export';
+            }
+            if (fieldName === 'DRC_NBC_Sample_Type__c') {
+                this.isSamplePaid = (value === 'Paid Sample');
+            }
+            if (fieldName === 'Status' || fieldName === 'DRC_NBC_Reject_Reason_Text__c') {
+                this.updateRejectionVisibility();
+            }
+            if (fieldName === 'CurrencyIsoCode') {
+                this.currencyCode = value;
+            }
+        }
+    }*/
+    handleFieldChange(event) {
+        const fieldName = event.target.fieldName || event.target.name || event.target.dataset.field;
+        const value     = event.detail?.value    || event.target.value;
+
+        if (fieldName) {
+            // Spread to new object so LWC reactivity triggers re-render
+            this.orderRec = { ...this.orderRec, [fieldName]: value };
 
             if (fieldName === 'DRC_NBC_Type__c') {
                 this.isDomestic = value === 'Domestic';

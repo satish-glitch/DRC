@@ -18,6 +18,12 @@ import { CloseActionScreenEvent } from 'lightning/actions';
 import { NavigationMixin } from 'lightning/navigation';
 import { loadStyle } from 'lightning/platformResourceLoader';
 import DRC_NBC_Order_Button_CSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
+const SALES_PERSON_CODES = [
+    'AJITPH', 'AJITVA', 'AKSHTA SAWANT', 'AMITDR',
+    'BHAVTA', 'JIGNA', 'KIRTIA', 'MANMA',
+    'NIRMAL', 'SHIRLEY', 'SHREGE', 'TANYDR',
+    'VIJYGU', 'YASHDR'
+];
 
 export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -109,6 +115,14 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
             label: pd.packingSize || '',
             value: pd.packingSize || ''
         }));
+    }
+
+    get salesPersonCodeOptions() {
+        return SALES_PERSON_CODES.map(code => ({ label: code, value: code }));
+    }
+
+    handleSalesPersonCodeChange(event) {
+        this.samplingRec.DRC_NBC_SalesPerson_Code__c = event.detail.value;
     }
 
     getPackingDetailsForProduct(product2Id) {
