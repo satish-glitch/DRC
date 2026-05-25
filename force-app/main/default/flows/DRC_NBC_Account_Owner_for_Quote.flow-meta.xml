@@ -61,7 +61,7 @@
         <inputAssignments>
             <field>DRC_Account_Owner_Manager__c</field>
             <value>
-                <elementReference>Get_Account.Owner.ManagerId</elementReference>
+                <elementReference>Get_Account.DRC_NBC_Owner_Manager__c</elementReference>
             </value>
         </inputAssignments>
         <inputAssignments>

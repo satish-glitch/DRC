@@ -39,6 +39,11 @@
                 <default>false</default>
                 <label>YES BANK A/C 131</label>
             </value>
+            <value>
+                <fullName>SBER BANK INR A/C 3900</fullName>
+                <default>false</default>
+                <label>SBER BANK INR A/C 3900</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

@@ -3,6 +3,10 @@
     <label>YES BANK A/C 131</label>
     <protected>false</protected>
     <values>
+        <field>Bank_Code__c</field>
+        <value xsi:type="xsd:string">BANK00009</value>
+    </values>
+    <values>
         <field>DRC_NBC_Account_Number__c</field>
         <value xsi:type="xsd:string">022463400003131</value>
     </values>

@@ -272,18 +272,23 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                 this.samplingRec.BillingStreet      = billingAddress.street      || '';
                 this.samplingRec.BillingCity        = billingAddress.city        || '';
                 this.samplingRec.BillingState       = billingAddress.state       || '';
-                this.samplingRec.BillingPostalCode  = billingAddress.postalCode  || '';
+                this.samplingRec.BillingPostalCode  = billingAddress.postalCode  || ''; 
                 this.samplingRec.BillingCountry     = billingAddress.country     || '';
                 this.samplingRec.BillingCountryCode = billingAddress.countryCode || '';
             }
 
             // Bank details
-            if (bankDetails) {
-                this.samplingRec.DRC_NBC_Consignee_Bank_Name__c           = bankDetails.bankName      || '';
-                this.samplingRec.DRC_NBC_Consignee_Bank_Account_Number__c = bankDetails.accountNumber || '';
-                this.samplingRec.DRC_NBC_Consignee_Bank_IFSC_Code__c      = bankDetails.ifscCode      || '';
-                this.samplingRec.DRC_NBC_Consignee_Bank_Address__c        = bankDetails.bankAddress   || '';
-            }
+           // REPLACE the entire bank details block with:
+                if (bankDetails) {
+                    this.samplingRec = {
+                        ...this.samplingRec,
+                        DRC_NBC_Consignee_Bank_Name__c:           bankDetails.bankName       || '',
+                        DRC_NBC_Consignee_Bank_Account_Number__c: bankDetails.accountNumber  || '',
+                        DRC_NBC_Consignee_Bank_IFSC_Code__c:      bankDetails.ifscCode       || '',
+                        DRC_NBC_Consignee_Bank_Address__c:        bankDetails.bankAddress    || '',
+                        DRC_NBC_SalesPerson_Code__c:              bankDetails.salesPersonCode || ''  // Account.SalesPerson_Code__c → Order.DRC_NBC_SalesPerson_Code__c
+                    };
+                }
 
             // Shipping address options
             this.addrDetails            = shippingAddresses || [];

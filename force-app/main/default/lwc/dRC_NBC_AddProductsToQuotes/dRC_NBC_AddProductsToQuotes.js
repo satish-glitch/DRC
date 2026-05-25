@@ -528,10 +528,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             this.showToastEvent("Error", "Payment Term Description is required.", "error");
             isValid = false;
         }
-        if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) {
-            this.showToastEvent("Error", "Payment Term Code is required.", "error");
-            isValid = false;
-        }
+        
         if (!this.quoteRec.DRC_NBC_Inco_terms__c) {
             this.showToastEvent("Error", "Inco Term is required.", "error");
             isValid = false;

@@ -127,13 +127,13 @@
             
             .product-table td {
             padding: 6px 4px;
-            border: none; /* Remove all borders */
+            border: none;
             }
             
             .amount-right {
             text-align: right !important;
             }
-            /* Totals Section - Fixed Alignment */
+
             .totals-section {
             margin-top: 20px;
             width: 100%;
@@ -162,32 +162,27 @@
             min-width: 150px;
             }
             
-            /* Ensure nested elements don't add extra spacing */
             .total-amount > div {
             margin: 0;
             padding: 0;
             }
             
-            /* For the border lines inside total-amount */
             .total-amount > div[style*="border-top"] {
             margin-top: 4px;
             margin-bottom: 4px;
             }
             
-            /* Full-width border for grand total row - only top border */
             .grand-total-only-top {
             border-top: 1px solid #000;
             padding-top: 8px;
             }
             
-            /* Single border after subtotal */
             .subtotal-border {
             border-bottom: 1px solid #000;
             padding-bottom: 4px;
             margin-bottom: 4px;
             }
             
-            /* Alternative: Add this class to the row that needs full border */
             .total-row-with-border {
             border-top: 1px solid #000;
             padding-top: 8px;
@@ -213,8 +208,6 @@
     </head>
     
     <body>
-        <!-- Header Section -->
-        <!-- <div class="page-header">-->
         <div class="header">
             <img src="{!URLFOR($Resource.DRC_NBC_DR_Logo)}" alt="Company Logo" class="company-logo"/>    
             <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">
@@ -238,12 +231,11 @@
                 </div>
             </apex:outputPanel>
         </div>
-        <!--   </div>-->
+
         <div class="page-footer">
             <p><strong>D.R. COATS INK &amp; RESINS PVT. LTD.</strong> 230, NEW SONAL LINK IND ESTATE, BLDG NO 2, LINK ROAD, MALAD W MUMBAI INDIA 400064</p>
             <p>T: 91 022 6866 0700 F: 91-22-28888189 W: www.drcoats.com</p>
         </div>
-        
         
         <!-- Quote Title and Date -->
         <div class="quote-title-section">
@@ -258,6 +250,7 @@
                     Sales Quote : SQT/{!fiscalYearLabel}/{!quoteRecord.DRC_NBC_Invoice_Export_Sequence_Number__c}
                 </div>
             </apex:outputPanel>
+
             <div>
                 <strong>Date:</strong>
                 <span class="date-box">
@@ -266,9 +259,10 @@
                     </apex:outputText>
                 </span>
             </div>
+
             <div class="customer-details">
                 <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">
-                    <strong>Customer Details:</strong> <!-- Removed <br/> -->
+                    <strong>Customer Details:</strong>
                     <div>{!quoteRecord.Account.Name}</div>
                     <div>{!quoteRecord.ShippingStreet}</div>
                     <div>{!quoteRecord.ShippingCity} {!quoteRecord.ShippingPostalCode}</div>
@@ -277,7 +271,7 @@
                     <br/>
                 </apex:outputPanel>
                 <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Export'}">
-                    <strong>Customer Details:</strong> <!-- Removed <br/> -->
+                    <strong>Customer Details:</strong>
                     <div>{!quoteRecord.Account.Name}</div>
                     <div>{!quoteRecord.ShippingStreet}</div>
                     <div>{!quoteRecord.ShippingCity} {!quoteRecord.ShippingPostalCode}</div>
@@ -306,7 +300,7 @@
                 <apex:outputPanel rendered="{!NOT(ISBLANK(quoteRecord.DRC_NBC_Payemnt_Term__c))}">
                     <div class="info-row">
                         <span class="label" style="font-weight: normal; font-size: 11px">Payment Terms:</span>
-                        <span style="font-weight: normal;">{!quoteRecord.DRC_NBC_Payemnt_Term__c}</span>
+                        <span style="font-weight: normal;">{!quoteRecord.DRC_NBC_Payment_Term_Description__c}</span>
                     </div>
                 </apex:outputPanel>  
             </div>
@@ -324,7 +318,6 @@
                     <th style="width: 5%;">Currency</th>
                     <th style="width: 10%; text-align: right;">Unit Price</th>
                     <th style="width: 15%; text-align: right;">Amount</th>
-                    
                 </tr>
             </thead>
             <tbody>
@@ -337,8 +330,8 @@
                             </apex:outputText>
                         </td>
                         <td>Kgs</td>
-                         <td>{!item.DRC_NBC_Packing_Size__c}</td>
-                        <td>{!item.Product2.DRC_NBC_HSN_SAC_Code__c}</td>Account
+                        <td>{!item.DRC_NBC_Packing_Size__c}</td>
+                        <td>{!item.Product2.DRC_NBC_HSN_SAC_Code__c}</td>
                         <td>{!quoteRecord.CurrencyIsoCode}</td>
                         <td class="amount-right">
                             <apex:outputText value="{0, number, ###,##0.00}">
@@ -368,7 +361,7 @@
             
             <apex:outputPanel rendered="{!AND(quoteRecord.DRC_NBC_Type__c == 'Domestic', quoteRecord.Contact.Account.BillingStateCode != 'MH')}">
                 <div class="total-row">
-                    <div class="total-label" style="font-weight: normal;">IGST 18% </div>
+                    <div class="total-label" style="font-weight: normal;">IGST 18%</div>
                     <div class="total-amount">
                         <apex:outputText value="{0, number, ###,##0.00}">
                             <apex:param value="{!igstAmount}" />
@@ -379,7 +372,7 @@
             
             <apex:outputPanel rendered="{!AND(quoteRecord.DRC_NBC_Type__c == 'Domestic', quoteRecord.Contact.Account.BillingStateCode == 'MH')}">
                 <div class="total-row">
-                    <div class="total-label" style="font-weight: normal;">CGST 9% </div>
+                    <div class="total-label" style="font-weight: normal;">CGST 9%</div>
                     <div class="total-amount">
                         <apex:outputText value="{0, number, ###,##0.00}">
                             <apex:param value="{!cgstAmount}" />
@@ -388,7 +381,7 @@
                 </div>
                 
                 <div class="total-row">
-                    <div class="total-label" style="font-weight: normal;">SGST 9% </div>
+                    <div class="total-label" style="font-weight: normal;">SGST 9%</div>
                     <div class="total-amount">
                         <apex:outputText value="{0, number, ###,##0.00}">
                             <apex:param value="{!sgstAmount}" />
@@ -428,8 +421,9 @@
                 </div>
             </div>         
         </div>
+
+        <!-- Terms - Domestic -->
         <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Domestic'}">      
-            <!-- Terms and Conditions -->
             <div class="terms-section">
                 <div class="terms-title">General Terms and Conditions:</div>
                 <div class="terms-content">
@@ -438,8 +432,8 @@
                     
                     2. <strong>Delivery</strong><br/>
                     2.1 The goods shall be delivered in accordance with the chosen rules under the INCOTERMS 2020 or most current version. 
-                    The goods invoiced and held at the buyer’s request at any place for whatever reason shall be at the buyer’s sole risk and responsibility.<br/>
-                    2.2 Partial shipment shall be allowed at the seller’s option. In case of partial shipment, each lot shall be regarded as a separate and independent contract.<br/>
+                    The goods invoiced and held at the buyer's request at any place for whatever reason shall be at the buyer's sole risk and responsibility.<br/>
+                    2.2 Partial shipment shall be allowed at the seller's option. In case of partial shipment, each lot shall be regarded as a separate and independent contract.<br/>
                     2.3 The date of the invoice and/or the receipt by a common carrier shall be accepted as the conclusive proof of the date of shipment / dispatch.<br/><br/>
                     
                     3. <strong>Transfer of risks and title</strong><br/>
@@ -468,7 +462,8 @@
                 </div>
             </div>
         </apex:outputPanel>
-        <!-- Special Instructions (only when not blank) -->
+
+        <!-- Special Instructions -->
         <apex:outputPanel rendered="{!LEN(specialInstructions) > 0}">
             <div class="terms-section">
                 <div class="terms-title">Special Instructions:</div>
@@ -477,9 +472,11 @@
                 </div>
             </div>
         </apex:outputPanel>
+
+        <!-- Terms - Export -->
         <apex:outputPanel rendered="{!quoteRecord.DRC_NBC_Type__c == 'Export'}">
             <div class="terms-section">
-                <apex:outputPanel rendered="{!specialRequirementList.size > 0}}">
+                <apex:outputPanel rendered="{!specialRequirementList.size > 0}">
                     <div class="terms-title">Special Requirements:</div>
                     <div class="terms-content">
                         <ol type="A">
@@ -496,8 +493,8 @@
                     2. Prices are quoted exclusive of all applicable taxes and subject to INCO TERMS 2020 or most current version. Any tax, banking charges, stamp duties, port charges and destination terminal handling charges, port congestion charges, container deposit, detention and demurrage or any other charges collected by destination delivery agent shall be paid solely by the buyer.<br/><br/>
                     
                     3. <strong>Delivery</strong><br/>
-                    3.1 The goods shall be delivered in accordance with the chosen rules under the INCOTERMS 2020 or most current version. The goods invoiced and held at the buyer’s request at any place for whatever reason shall be at the buyer’s sole risk and responsibility.<br/>
-                    3.2 Transshipment and partial shipment shall be allowed at the seller’s option. In case of partial shipment, each lot shall be regarded as a separate and independent contract.<br/>
+                    3.1 The goods shall be delivered in accordance with the chosen rules under the INCOTERMS 2020 or most current version. The goods invoiced and held at the buyer's request at any place for whatever reason shall be at the buyer's sole risk and responsibility.<br/>
+                    3.2 Transshipment and partial shipment shall be allowed at the seller's option. In case of partial shipment, each lot shall be regarded as a separate and independent contract.<br/>
                     3.3 The date of the bill of lading (or the receipt by a common carrier) shall be accepted as the conclusive proof of the date of shipment.<br/><br/>
                     
                     4. <strong>Transfer of risks and title</strong><br/>
@@ -519,7 +516,6 @@
                     8.2 Subject to the laws of India and subject to the exclusive jurisdiction of competent courts of Mumbai.
                 </div>
             </div>
-            
         </apex:outputPanel>
     </body>
 </apex:page>

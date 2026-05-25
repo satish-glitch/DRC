@@ -3,6 +3,10 @@
     <label>BANK OF BARODA INR A/C</label>
     <protected>false</protected>
     <values>
+        <field>Bank_Code__c</field>
+        <value xsi:type="xsd:string">BANK00006</value>
+    </values>
+    <values>
         <field>DRC_NBC_Account_Number__c</field>
         <value xsi:type="xsd:string">04060200001980</value>
     </values>

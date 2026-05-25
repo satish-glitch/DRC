@@ -1,11 +1,1123 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>DRC_NBC_Port_Of_Discharge__c</fullName>
-    <externalId>false</externalId>
     <label>Port Of Discharge</label>
-    <length>255</length>
     <required>false</required>
     <trackHistory>false</trackHistory>
-    <type>Text</type>
-    <unique>false</unique>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>ABIDJAN FHB AIRPORT</fullName>
+                <default>false</default>
+                <label>ABIDJAN FHB AIRPORT</label>
+            </value>
+            <value>
+                <fullName>ABIDJAN</fullName>
+                <default>false</default>
+                <label>ABIDJAN</label>
+            </value>
+            <value>
+                <fullName>ADDIS ABABA</fullName>
+                <default>false</default>
+                <label>ADDIS ABABA</label>
+            </value>
+            <value>
+                <fullName>Aden</fullName>
+                <default>false</default>
+                <label>Aden</label>
+            </value>
+            <value>
+                <fullName>AKRON, USA</fullName>
+                <default>false</default>
+                <label>AKRON, USA</label>
+            </value>
+            <value>
+                <fullName>ALEXANDRIA</fullName>
+                <default>false</default>
+                <label>ALEXANDRIA</label>
+            </value>
+            <value>
+                <fullName>ALGIERS, ALGERIA</fullName>
+                <default>false</default>
+                <label>ALGIERS, ALGERIA</label>
+            </value>
+            <value>
+                <fullName>Aliaga or Alsancak port</fullName>
+                <default>false</default>
+                <label>Aliaga or Alsancak port</label>
+            </value>
+            <value>
+                <fullName>ALMATY, KAZAKHSTAN</fullName>
+                <default>false</default>
+                <label>ALMATY, KAZAKHSTAN</label>
+            </value>
+            <value>
+                <fullName>ALTAMIRA</fullName>
+                <default>false</default>
+                <label>ALTAMIRA</label>
+            </value>
+            <value>
+                <fullName>AMBARLI</fullName>
+                <default>false</default>
+                <label>AMBARLI</label>
+            </value>
+            <value>
+                <fullName>ANTWERP</fullName>
+                <default>false</default>
+                <label>ANTWERP</label>
+            </value>
+            <value>
+                <fullName>ANY INDIAN AIR PORT</fullName>
+                <default>false</default>
+                <label>ANY INDIAN AIR PORT</label>
+            </value>
+            <value>
+                <fullName>ANY PORT OF INDIA</fullName>
+                <default>false</default>
+                <label>ANY PORT OF INDIA</label>
+            </value>
+            <value>
+                <fullName>APAPA, LAGOS</fullName>
+                <default>false</default>
+                <label>APAPA, LAGOS</label>
+            </value>
+            <value>
+                <fullName>AQABA PORT</fullName>
+                <default>false</default>
+                <label>AQABA PORT</label>
+            </value>
+            <value>
+                <fullName>ARICA</fullName>
+                <default>false</default>
+                <label>ARICA</label>
+            </value>
+            <value>
+                <fullName>ASHDOD</fullName>
+                <default>false</default>
+                <label>ASHDOD</label>
+            </value>
+            <value>
+                <fullName>Asuncion</fullName>
+                <default>false</default>
+                <label>Asuncion</label>
+            </value>
+            <value>
+                <fullName>AUCKLAND</fullName>
+                <default>false</default>
+                <label>AUCKLAND</label>
+            </value>
+            <value>
+                <fullName>BANDAR ABBAS , IRAN</fullName>
+                <default>false</default>
+                <label>BANDAR ABBAS , IRAN</label>
+            </value>
+            <value>
+                <fullName>BIRATNAGAR, NEPAL</fullName>
+                <default>false</default>
+                <label>BIRATNAGAR, NEPAL</label>
+            </value>
+            <value>
+                <fullName>BA RIA VUNG TAU</fullName>
+                <default>false</default>
+                <label>BA RIA VUNG TAU</label>
+            </value>
+            <value>
+                <fullName>BAHRAIN</fullName>
+                <default>false</default>
+                <label>BAHRAIN</label>
+            </value>
+            <value>
+                <fullName>BAKU, AZERBAIJAN</fullName>
+                <default>false</default>
+                <label>BAKU, AZERBAIJAN</label>
+            </value>
+            <value>
+                <fullName>BANDAR ABBAS</fullName>
+                <default>false</default>
+                <label>BANDAR ABBAS</label>
+            </value>
+            <value>
+                <fullName>BANGKOK, THAILAND</fullName>
+                <default>false</default>
+                <label>BANGKOK, THAILAND</label>
+            </value>
+            <value>
+                <fullName>BARCELONA, SPAIN</fullName>
+                <default>false</default>
+                <label>BARCELONA, SPAIN</label>
+            </value>
+            <value>
+                <fullName>BEIRUT PORT</fullName>
+                <default>false</default>
+                <label>BEIRUT PORT</label>
+            </value>
+            <value>
+                <fullName>BELARUS</fullName>
+                <default>false</default>
+                <label>BELARUS</label>
+            </value>
+            <value>
+                <fullName>BELDE, TURKEY</fullName>
+                <default>false</default>
+                <label>BELDE, TURKEY</label>
+            </value>
+            <value>
+                <fullName>BELLERUP</fullName>
+                <default>false</default>
+                <label>BELLERUP</label>
+            </value>
+            <value>
+                <fullName>BENAPOLE</fullName>
+                <default>false</default>
+                <label>BENAPOLE</label>
+            </value>
+            <value>
+                <fullName>BHAIRAHAWA CUSTOMS</fullName>
+                <default>false</default>
+                <label>BHAIRAHAWA CUSTOMS</label>
+            </value>
+            <value>
+                <fullName>BIRATNAGAR VIA BIRATNAGAR CUSTOM</fullName>
+                <default>false</default>
+                <label>BIRATNAGAR VIA BIRATNAGAR CUSTOM</label>
+            </value>
+            <value>
+                <fullName>Birganj Custom Office (ICP) Nepal</fullName>
+                <default>false</default>
+                <label>Birganj Custom Office (ICP) Nepal</label>
+            </value>
+            <value>
+                <fullName>BOSTAN</fullName>
+                <default>false</default>
+                <label>BOSTAN</label>
+            </value>
+            <value>
+                <fullName>Brisbane</fullName>
+                <default>false</default>
+                <label>Brisbane</label>
+            </value>
+            <value>
+                <fullName>BRITNAGAR</fullName>
+                <default>false</default>
+                <label>BRITNAGAR</label>
+            </value>
+            <value>
+                <fullName>BRUSSELS BELGIUM</fullName>
+                <default>false</default>
+                <label>BRUSSELS BELGIUM</label>
+            </value>
+            <value>
+                <fullName>BUENAVENTURA</fullName>
+                <default>false</default>
+                <label>BUENAVENTURA</label>
+            </value>
+            <value>
+                <fullName>BUENOS AIRES</fullName>
+                <default>false</default>
+                <label>BUENOS AIRES</label>
+            </value>
+            <value>
+                <fullName>BURSA AIRPORT, TURKEY</fullName>
+                <default>false</default>
+                <label>BURSA AIRPORT, TURKEY</label>
+            </value>
+            <value>
+                <fullName>BUSAN</fullName>
+                <default>false</default>
+                <label>BUSAN</label>
+            </value>
+            <value>
+                <fullName>CAI MEP PORT</fullName>
+                <default>false</default>
+                <label>CAI MEP PORT</label>
+            </value>
+            <value>
+                <fullName>CALLAO</fullName>
+                <default>false</default>
+                <label>CALLAO</label>
+            </value>
+            <value>
+                <fullName>CAPE TOWN, SOUTH AFRICA</fullName>
+                <default>false</default>
+                <label>CAPE TOWN, SOUTH AFRICA</label>
+            </value>
+            <value>
+                <fullName>CARTAGENA</fullName>
+                <default>false</default>
+                <label>CARTAGENA</label>
+            </value>
+            <value>
+                <fullName>CASABLANCA</fullName>
+                <default>false</default>
+                <label>CASABLANCA</label>
+            </value>
+            <value>
+                <fullName>Cat Lai Port, Ho Chi min city</fullName>
+                <default>false</default>
+                <label>Cat Lai Port, Ho Chi min city</label>
+            </value>
+            <value>
+                <fullName>CAUCEDO DOMINICAN REPUBLIC</fullName>
+                <default>false</default>
+                <label>CAUCEDO DOMINICAN REPUBLIC</label>
+            </value>
+            <value>
+                <fullName>CHARLESTON</fullName>
+                <default>false</default>
+                <label>CHARLESTON</label>
+            </value>
+            <value>
+                <fullName>CHARLOTTE</fullName>
+                <default>false</default>
+                <label>CHARLOTTE</label>
+            </value>
+            <value>
+                <fullName>CHATTOGRAM</fullName>
+                <default>false</default>
+                <label>CHATTOGRAM</label>
+            </value>
+            <value>
+                <fullName>CHICAGO</fullName>
+                <default>false</default>
+                <label>CHICAGO</label>
+            </value>
+            <value>
+                <fullName>CHITTAGONG</fullName>
+                <default>false</default>
+                <label>CHITTAGONG</label>
+            </value>
+            <value>
+                <fullName>CHLOORKOP</fullName>
+                <default>false</default>
+                <label>CHLOORKOP</label>
+            </value>
+            <value>
+                <fullName>Cincinnati</fullName>
+                <default>false</default>
+                <label>Cincinnati</label>
+            </value>
+            <value>
+                <fullName>CLEVELAND</fullName>
+                <default>false</default>
+                <label>CLEVELAND</label>
+            </value>
+            <value>
+                <fullName>COLOMBO</fullName>
+                <default>false</default>
+                <label>COLOMBO</label>
+            </value>
+            <value>
+                <fullName>CONAKRY</fullName>
+                <default>false</default>
+                <label>CONAKRY</label>
+            </value>
+            <value>
+                <fullName>COTONOU, BENIN</fullName>
+                <default>false</default>
+                <label>COTONOU, BENIN</label>
+            </value>
+            <value>
+                <fullName>DAKAR, SENEGAL</fullName>
+                <default>false</default>
+                <label>DAKAR, SENEGAL</label>
+            </value>
+            <value>
+                <fullName>DAMMAM</fullName>
+                <default>false</default>
+                <label>DAMMAM</label>
+            </value>
+            <value>
+                <fullName>Dar es salaam</fullName>
+                <default>false</default>
+                <label>Dar es salaam</label>
+            </value>
+            <value>
+                <fullName>DEKHEILA PORT</fullName>
+                <default>false</default>
+                <label>DEKHEILA PORT</label>
+            </value>
+            <value>
+                <fullName>DES MOINES, USA</fullName>
+                <default>false</default>
+                <label>DES MOINES, USA</label>
+            </value>
+            <value>
+                <fullName>DJIBOUTI PORT</fullName>
+                <default>false</default>
+                <label>DJIBOUTI PORT</label>
+            </value>
+            <value>
+                <fullName>DOHA</fullName>
+                <default>false</default>
+                <label>DOHA</label>
+            </value>
+            <value>
+                <fullName>DOMODEDOVO, RUSSIA</fullName>
+                <default>false</default>
+                <label>DOMODEDOVO, RUSSIA</label>
+            </value>
+            <value>
+                <fullName>DUBAI ,UAE</fullName>
+                <default>false</default>
+                <label>DUBAI ,UAE</label>
+            </value>
+            <value>
+                <fullName>DURBAN</fullName>
+                <default>false</default>
+                <label>DURBAN</label>
+            </value>
+            <value>
+                <fullName>DURBAN, CHLOORKOP</fullName>
+                <default>false</default>
+                <label>DURBAN, CHLOORKOP</label>
+            </value>
+            <value>
+                <fullName>EL DEKHEILA PORT, EGYPT</fullName>
+                <default>false</default>
+                <label>EL DEKHEILA PORT, EGYPT</label>
+            </value>
+            <value>
+                <fullName>ERNSTRODA</fullName>
+                <default>false</default>
+                <label>ERNSTRODA</label>
+            </value>
+            <value>
+                <fullName>EVYAP OR YILPORT</fullName>
+                <default>false</default>
+                <label>EVYAP OR YILPORT</label>
+            </value>
+            <value>
+                <fullName>EVYAP PORT</fullName>
+                <default>false</default>
+                <label>EVYAP PORT</label>
+            </value>
+            <value>
+                <fullName>FELIXSTOWE</fullName>
+                <default>false</default>
+                <label>FELIXSTOWE</label>
+            </value>
+            <value>
+                <fullName>GAFFNEY, USA</fullName>
+                <default>false</default>
+                <label>GAFFNEY, USA</label>
+            </value>
+            <value>
+                <fullName>GDANSK, POLAND</fullName>
+                <default>false</default>
+                <label>GDANSK, POLAND</label>
+            </value>
+            <value>
+                <fullName>GDYNIA, POLAND</fullName>
+                <default>false</default>
+                <label>GDYNIA, POLAND</label>
+            </value>
+            <value>
+                <fullName>GEBZE</fullName>
+                <default>false</default>
+                <label>GEBZE</label>
+            </value>
+            <value>
+                <fullName>GEMLIK, TURKEY</fullName>
+                <default>false</default>
+                <label>GEMLIK, TURKEY</label>
+            </value>
+            <value>
+                <fullName>GENOA, ITALY</fullName>
+                <default>false</default>
+                <label>GENOA, ITALY</label>
+            </value>
+            <value>
+                <fullName>GLASGOW, UK</fullName>
+                <default>false</default>
+                <label>GLASGOW, UK</label>
+            </value>
+            <value>
+                <fullName>GUAYAQUIL</fullName>
+                <default>false</default>
+                <label>GUAYAQUIL</label>
+            </value>
+            <value>
+                <fullName>Hai Phong</fullName>
+                <default>false</default>
+                <label>Hai Phong</label>
+            </value>
+            <value>
+                <fullName>Hajira Surat Port</fullName>
+                <default>false</default>
+                <label>Hajira Surat Port</label>
+            </value>
+            <value>
+                <fullName>HAMAD PORT</fullName>
+                <default>false</default>
+                <label>HAMAD PORT</label>
+            </value>
+            <value>
+                <fullName>HAMBURG</fullName>
+                <default>false</default>
+                <label>HAMBURG</label>
+            </value>
+            <value>
+                <fullName>ZIMBABWE</fullName>
+                <default>false</default>
+                <label>ZIMBABWE</label>
+            </value>
+            <value>
+                <fullName>HAYDARPASA</fullName>
+                <default>false</default>
+                <label>HAYDARPASA</label>
+            </value>
+            <value>
+                <fullName>HCMC PORT</fullName>
+                <default>false</default>
+                <label>HCMC PORT</label>
+            </value>
+            <value>
+                <fullName>HO CHI MINH</fullName>
+                <default>false</default>
+                <label>HO CHI MINH</label>
+            </value>
+            <value>
+                <fullName>HONG KONG</fullName>
+                <default>false</default>
+                <label>HONG KONG</label>
+            </value>
+            <value>
+                <fullName>HOUSTON</fullName>
+                <default>false</default>
+                <label>HOUSTON</label>
+            </value>
+            <value>
+                <fullName>INDONESIA</fullName>
+                <default>false</default>
+                <label>INDONESIA</label>
+            </value>
+            <value>
+                <fullName>IRAN</fullName>
+                <default>false</default>
+                <label>IRAN</label>
+            </value>
+            <value>
+                <fullName>ISTANBUL</fullName>
+                <default>false</default>
+                <label>ISTANBUL</label>
+            </value>
+            <value>
+                <fullName>ITAPOA, BRAZIL</fullName>
+                <default>false</default>
+                <label>ITAPOA, BRAZIL</label>
+            </value>
+            <value>
+                <fullName>IZMIR, TURKEY</fullName>
+                <default>false</default>
+                <label>IZMIR, TURKEY</label>
+            </value>
+            <value>
+                <fullName>IZMIT, TURKEY</fullName>
+                <default>false</default>
+                <label>IZMIT, TURKEY</label>
+            </value>
+            <value>
+                <fullName>JAKARTA</fullName>
+                <default>false</default>
+                <label>JAKARTA</label>
+            </value>
+            <value>
+                <fullName>JAPAN</fullName>
+                <default>false</default>
+                <label>JAPAN</label>
+            </value>
+            <value>
+                <fullName>JEBEL ALI</fullName>
+                <default>false</default>
+                <label>JEBEL ALI</label>
+            </value>
+            <value>
+                <fullName>JEDDAH PORT</fullName>
+                <default>false</default>
+                <label>JEDDAH PORT</label>
+            </value>
+            <value>
+                <fullName>JEDDAH AIRPORT</fullName>
+                <default>false</default>
+                <label>JEDDAH AIRPORT</label>
+            </value>
+            <value>
+                <fullName>JNPT</fullName>
+                <default>false</default>
+                <label>JNPT</label>
+            </value>
+            <value>
+                <fullName>JOHANNESBURG</fullName>
+                <default>false</default>
+                <label>JOHANNESBURG</label>
+            </value>
+            <value>
+                <fullName>KANDLA PORT</fullName>
+                <default>false</default>
+                <label>KANDLA PORT</label>
+            </value>
+            <value>
+                <fullName>KARACHI</fullName>
+                <default>false</default>
+                <label>KARACHI</label>
+            </value>
+            <value>
+                <fullName>KATHMANDU, NEPAL</fullName>
+                <default>false</default>
+                <label>KATHMANDU, NEPAL</label>
+            </value>
+            <value>
+                <fullName>KHALID PORT</fullName>
+                <default>false</default>
+                <label>KHALID PORT</label>
+            </value>
+            <value>
+                <fullName>KHALIFA BIN SALMAN PORT, BAHRAIN</fullName>
+                <default>false</default>
+                <label>KHALIFA BIN SALMAN PORT, BAHRAIN</label>
+            </value>
+            <value>
+                <fullName>Khor Fakkan</fullName>
+                <default>false</default>
+                <label>Khor Fakkan</label>
+            </value>
+            <value>
+                <fullName>KLAIPEDA</fullName>
+                <default>false</default>
+                <label>KLAIPEDA</label>
+            </value>
+            <value>
+                <fullName>Klaipedia</fullName>
+                <default>false</default>
+                <label>Klaipedia</label>
+            </value>
+            <value>
+                <fullName>Koprer (Slovenia)/Rijeka (Croatia)</fullName>
+                <default>false</default>
+                <label>Koprer (Slovenia)/Rijeka (Croatia)</label>
+            </value>
+            <value>
+                <fullName>Kosovo</fullName>
+                <default>false</default>
+                <label>Kosovo</label>
+            </value>
+            <value>
+                <fullName>KOTOKA AIRPORT</fullName>
+                <default>false</default>
+                <label>KOTOKA AIRPORT</label>
+            </value>
+            <value>
+                <fullName>LAEM CHABANG</fullName>
+                <default>false</default>
+                <label>LAEM CHABANG</label>
+            </value>
+            <value>
+                <fullName>Lagos Airport</fullName>
+                <default>false</default>
+                <label>Lagos Airport</label>
+            </value>
+            <value>
+                <fullName>LAUTOKA, FIJI</fullName>
+                <default>false</default>
+                <label>LAUTOKA, FIJI</label>
+            </value>
+            <value>
+                <fullName>LEBANON, OH</fullName>
+                <default>false</default>
+                <label>LEBANON, OH</label>
+            </value>
+            <value>
+                <fullName>LEBANON, OHIO, USA</fullName>
+                <default>false</default>
+                <label>LEBANON, OHIO, USA</label>
+            </value>
+            <value>
+                <fullName>LEKKI DRY PORT</fullName>
+                <default>false</default>
+                <label>LEKKI DRY PORT</label>
+            </value>
+            <value>
+                <fullName>LIMA PORT</fullName>
+                <default>false</default>
+                <label>LIMA PORT</label>
+            </value>
+            <value>
+                <fullName>LIVERPOOL, UK</fullName>
+                <default>false</default>
+                <label>LIVERPOOL, UK</label>
+            </value>
+            <value>
+                <fullName>LOGRONO</fullName>
+                <default>false</default>
+                <label>LOGRONO</label>
+            </value>
+            <value>
+                <fullName>LOS ANGELES</fullName>
+                <default>false</default>
+                <label>LOS ANGELES</label>
+            </value>
+            <value>
+                <fullName>LUANDA, ANGOLA</fullName>
+                <default>false</default>
+                <label>LUANDA, ANGOLA</label>
+            </value>
+            <value>
+                <fullName>LUXEMBOURG</fullName>
+                <default>false</default>
+                <label>LUXEMBOURG</label>
+            </value>
+            <value>
+                <fullName>MANCHESTER</fullName>
+                <default>false</default>
+                <label>MANCHESTER</label>
+            </value>
+            <value>
+                <fullName>MANILA NORTH, PHILIPPINES</fullName>
+                <default>false</default>
+                <label>MANILA NORTH, PHILIPPINES</label>
+            </value>
+            <value>
+                <fullName>MANILA SOUTH PORT</fullName>
+                <default>false</default>
+                <label>MANILA SOUTH PORT</label>
+            </value>
+            <value>
+                <fullName>MANILA</fullName>
+                <default>false</default>
+                <label>MANILA</label>
+            </value>
+            <value>
+                <fullName>MANZANILLO</fullName>
+                <default>false</default>
+                <label>MANZANILLO</label>
+            </value>
+            <value>
+                <fullName>MELBOURNE, AUSTRALIA</fullName>
+                <default>false</default>
+                <label>MELBOURNE, AUSTRALIA</label>
+            </value>
+            <value>
+                <fullName>MEMPHIS, USA</fullName>
+                <default>false</default>
+                <label>MEMPHIS, USA</label>
+            </value>
+            <value>
+                <fullName>MEXICO</fullName>
+                <default>false</default>
+                <label>MEXICO</label>
+            </value>
+            <value>
+                <fullName>MILAN AIRPORT</fullName>
+                <default>false</default>
+                <label>MILAN AIRPORT</label>
+            </value>
+            <value>
+                <fullName>MINA SALMAN</fullName>
+                <default>false</default>
+                <label>MINA SALMAN</label>
+            </value>
+            <value>
+                <fullName>MINSK, BELARUS</fullName>
+                <default>false</default>
+                <label>MINSK, BELARUS</label>
+            </value>
+            <value>
+                <fullName>MISSISSAUGA, CANADA</fullName>
+                <default>false</default>
+                <label>MISSISSAUGA, CANADA</label>
+            </value>
+            <value>
+                <fullName>MODJO/COMMET DRY PORT VIA DJIBOUTI PORT</fullName>
+                <default>false</default>
+                <label>MODJO/COMMET DRY PORT VIA DJIBOUTI PORT</label>
+            </value>
+            <value>
+                <fullName>MOMBASA PORT</fullName>
+                <default>false</default>
+                <label>MOMBASA PORT</label>
+            </value>
+            <value>
+                <fullName>MONTREAL, CANADA</fullName>
+                <default>false</default>
+                <label>MONTREAL, CANADA</label>
+            </value>
+            <value>
+                <fullName>MOSCOW</fullName>
+                <default>false</default>
+                <label>MOSCOW</label>
+            </value>
+            <value>
+                <fullName>MUMBAI</fullName>
+                <default>false</default>
+                <label>MUMBAI</label>
+            </value>
+            <value>
+                <fullName>MUMBAI AIRPORT</fullName>
+                <default>false</default>
+                <label>MUMBAI AIRPORT</label>
+            </value>
+            <value>
+                <fullName>NSICT/JNPT/GTI</fullName>
+                <default>false</default>
+                <label>NSICT/JNPT/GTI</label>
+            </value>
+            <value>
+                <fullName>NHAVA SHEVA, INDIA</fullName>
+                <default>false</default>
+                <label>NHAVA SHEVA, INDIA</label>
+            </value>
+            <value>
+                <fullName>NAGOYA</fullName>
+                <default>false</default>
+                <label>NAGOYA</label>
+            </value>
+            <value>
+                <fullName>NANSHA</fullName>
+                <default>false</default>
+                <label>NANSHA</label>
+            </value>
+            <value>
+                <fullName>NAVEGANTES, BRAZIL</fullName>
+                <default>false</default>
+                <label>NAVEGANTES, BRAZIL</label>
+            </value>
+            <value>
+                <fullName>NDOLA</fullName>
+                <default>false</default>
+                <label>NDOLA</label>
+            </value>
+            <value>
+                <fullName>NEPAL</fullName>
+                <default>false</default>
+                <label>NEPAL</label>
+            </value>
+            <value>
+                <fullName>NEWARK</fullName>
+                <default>false</default>
+                <label>NEWARK</label>
+            </value>
+            <value>
+                <fullName>NEW ORLEANS, USA</fullName>
+                <default>false</default>
+                <label>NEW ORLEANS, USA</label>
+            </value>
+            <value>
+                <fullName>NEWYORK, USA</fullName>
+                <default>false</default>
+                <label>NEWYORK, USA</label>
+            </value>
+            <value>
+                <fullName>NHAVA-SHEVA,INDIA</fullName>
+                <default>false</default>
+                <label>NHAVA-SHEVA,INDIA</label>
+            </value>
+            <value>
+                <fullName>New Jersey Port</fullName>
+                <default>false</default>
+                <label>New Jersey Port</label>
+            </value>
+            <value>
+                <fullName>Novorossiysk, RUSSIA</fullName>
+                <default>false</default>
+                <label>Novorossiysk, RUSSIA</label>
+            </value>
+            <value>
+                <fullName>NEWYORK</fullName>
+                <default>false</default>
+                <label>NEWYORK</label>
+            </value>
+            <value>
+                <fullName>ONNE SEAPORT</fullName>
+                <default>false</default>
+                <label>ONNE SEAPORT</label>
+            </value>
+            <value>
+                <fullName>ORAN, ALGERIA</fullName>
+                <default>false</default>
+                <label>ORAN, ALGERIA</label>
+            </value>
+            <value>
+                <fullName>OSAKA</fullName>
+                <default>false</default>
+                <label>OSAKA</label>
+            </value>
+            <value>
+                <fullName>PAKISTAN</fullName>
+                <default>false</default>
+                <label>PAKISTAN</label>
+            </value>
+            <value>
+                <fullName>PARAGUAY</fullName>
+                <default>false</default>
+                <label>PARAGUAY</label>
+            </value>
+            <value>
+                <fullName>PARANAGUA</fullName>
+                <default>false</default>
+                <label>PARANAGUA</label>
+            </value>
+            <value>
+                <fullName>PASIR GUDANG, JOHOR, MALAYSIA</fullName>
+                <default>false</default>
+                <label>PASIR GUDANG, JOHOR, MALAYSIA</label>
+            </value>
+            <value>
+                <fullName>Philippines</fullName>
+                <default>false</default>
+                <label>Philippines</label>
+            </value>
+            <value>
+                <fullName>Pine Bluff, OH</fullName>
+                <default>false</default>
+                <label>Pine Bluff, OH</label>
+            </value>
+            <value>
+                <fullName>Piraeus, Greece</fullName>
+                <default>false</default>
+                <label>Piraeus, Greece</label>
+            </value>
+            <value>
+                <fullName>PORT KLANG</fullName>
+                <default>false</default>
+                <label>PORT KLANG</label>
+            </value>
+            <value>
+                <fullName>PORT LOUIS</fullName>
+                <default>false</default>
+                <label>PORT LOUIS</label>
+            </value>
+            <value>
+                <fullName>Portharcourt (Area 1)</fullName>
+                <default>false</default>
+                <label>Portharcourt (Area 1)</label>
+            </value>
+            <value>
+                <fullName>PRESCOTT, CANADA</fullName>
+                <default>false</default>
+                <label>PRESCOTT, CANADA</label>
+            </value>
+            <value>
+                <fullName>QINGDAO, CHINA</fullName>
+                <default>false</default>
+                <label>QINGDAO, CHINA</label>
+            </value>
+            <value>
+                <fullName>QUETZAL</fullName>
+                <default>false</default>
+                <label>QUETZAL</label>
+            </value>
+            <value>
+                <fullName>RADES, TUNISIA</fullName>
+                <default>false</default>
+                <label>RADES, TUNISIA</label>
+            </value>
+            <value>
+                <fullName>RIYADH DRY PORT</fullName>
+                <default>false</default>
+                <label>RIYADH DRY PORT</label>
+            </value>
+            <value>
+                <fullName>Rotterdam</fullName>
+                <default>false</default>
+                <label>Rotterdam</label>
+            </value>
+            <value>
+                <fullName>RZESZOW (RZE) Airport, POLAND</fullName>
+                <default>false</default>
+                <label>RZESZOW (RZE) Airport, POLAND</label>
+            </value>
+            <value>
+                <fullName>SOUTH AFRICA</fullName>
+                <default>false</default>
+                <label>SOUTH AFRICA</label>
+            </value>
+            <value>
+                <fullName>SAN ANTONIO</fullName>
+                <default>false</default>
+                <label>SAN ANTONIO</label>
+            </value>
+            <value>
+                <fullName>SOUTH MANILA</fullName>
+                <default>false</default>
+                <label>SOUTH MANILA</label>
+            </value>
+            <value>
+                <fullName>SAUDI ARABIA</fullName>
+                <default>false</default>
+                <label>SAUDI ARABIA</label>
+            </value>
+            <value>
+                <fullName>SAHAB</fullName>
+                <default>false</default>
+                <label>SAHAB</label>
+            </value>
+            <value>
+                <fullName>SALALAH AIRPORT, OMAN</fullName>
+                <default>false</default>
+                <label>SALALAH AIRPORT, OMAN</label>
+            </value>
+            <value>
+                <fullName>SANTO DOMINGO PORT</fullName>
+                <default>false</default>
+                <label>SANTO DOMINGO PORT</label>
+            </value>
+            <value>
+                <fullName>SANTOS</fullName>
+                <default>false</default>
+                <label>SANTOS</label>
+            </value>
+            <value>
+                <fullName>SAO PAULO</fullName>
+                <default>false</default>
+                <label>SAO PAULO</label>
+            </value>
+            <value>
+                <fullName>SFAX</fullName>
+                <default>false</default>
+                <label>SFAX</label>
+            </value>
+            <value>
+                <fullName>SHANGHAI, CHINA</fullName>
+                <default>false</default>
+                <label>SHANGHAI, CHINA</label>
+            </value>
+            <value>
+                <fullName>SHARJAH</fullName>
+                <default>false</default>
+                <label>SHARJAH</label>
+            </value>
+            <value>
+                <fullName>SHEREMETYEVO</fullName>
+                <default>false</default>
+                <label>SHEREMETYEVO</label>
+            </value>
+            <value>
+                <fullName>SINGAPORE</fullName>
+                <default>false</default>
+                <label>SINGAPORE</label>
+            </value>
+            <value>
+                <fullName>SOHAR</fullName>
+                <default>false</default>
+                <label>SOHAR</label>
+            </value>
+            <value>
+                <fullName>SOKHNA, EGYPT</fullName>
+                <default>false</default>
+                <label>SOKHNA, EGYPT</label>
+            </value>
+            <value>
+                <fullName>SOUTHAMPTON</fullName>
+                <default>false</default>
+                <label>SOUTHAMPTON</label>
+            </value>
+            <value>
+                <fullName>SRILANKA</fullName>
+                <default>false</default>
+                <label>SRILANKA</label>
+            </value>
+            <value>
+                <fullName>ST. PETERSBURG</fullName>
+                <default>false</default>
+                <label>ST. PETERSBURG</label>
+            </value>
+            <value>
+                <fullName>SURABAYA PORT</fullName>
+                <default>false</default>
+                <label>SURABAYA PORT</label>
+            </value>
+            <value>
+                <fullName>SYDNEY, AUSTRALIA</fullName>
+                <default>false</default>
+                <label>SYDNEY, AUSTRALIA</label>
+            </value>
+            <value>
+                <fullName>THERAN IRAN</fullName>
+                <default>false</default>
+                <label>THERAN IRAN</label>
+            </value>
+            <value>
+                <fullName>TAN CANG CAI MEP</fullName>
+                <default>false</default>
+                <label>TAN CANG CAI MEP</label>
+            </value>
+            <value>
+                <fullName>TANJUNG PRIOK PORT, JAKARTA</fullName>
+                <default>false</default>
+                <label>TANJUNG PRIOK PORT, JAKARTA</label>
+            </value>
+            <value>
+                <fullName>Tashkent</fullName>
+                <default>false</default>
+                <label>Tashkent</label>
+            </value>
+            <value>
+                <fullName>TEMA, GHANA</fullName>
+                <default>false</default>
+                <label>TEMA, GHANA</label>
+            </value>
+            <value>
+                <fullName>THAILAND</fullName>
+                <default>false</default>
+                <label>THAILAND</label>
+            </value>
+            <value>
+                <fullName>TIN CAN ISLAND SEAPORT , LAGOS</fullName>
+                <default>false</default>
+                <label>TIN CAN ISLAND SEAPORT , LAGOS</label>
+            </value>
+            <value>
+                <fullName>TORONTO, CANADA</fullName>
+                <default>false</default>
+                <label>TORONTO, CANADA</label>
+            </value>
+            <value>
+                <fullName>TUNISIA</fullName>
+                <default>false</default>
+                <label>TUNISIA</label>
+            </value>
+            <value>
+                <fullName>TURKEY</fullName>
+                <default>false</default>
+                <label>TURKEY</label>
+            </value>
+            <value>
+                <fullName>USA</fullName>
+                <default>false</default>
+                <label>USA</label>
+            </value>
+            <value>
+                <fullName>VALDIVO</fullName>
+                <default>false</default>
+                <label>VALDIVO</label>
+            </value>
+            <value>
+                <fullName>VALDIVOSTOK</fullName>
+                <default>false</default>
+                <label>VALDIVOSTOK</label>
+            </value>
+            <value>
+                <fullName>VALENCIA, SPAIN</fullName>
+                <default>false</default>
+                <label>VALENCIA, SPAIN</label>
+            </value>
+            <value>
+                <fullName>VNUKOVO AIRPORT, MOS</fullName>
+                <default>false</default>
+                <label>VNUKOVO AIRPORT, MOS</label>
+            </value>
+            <value>
+                <fullName>XINGANG, CHINA</fullName>
+                <default>false</default>
+                <label>XINGANG, CHINA</label>
+            </value>
+            <value>
+                <fullName>YOKKAICHI, JAPAN</fullName>
+                <default>false</default>
+                <label>YOKKAICHI, JAPAN</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
 </CustomField>

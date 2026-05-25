@@ -4,6 +4,7 @@
     <columns>NAME</columns>
     <columns>DRC_NBC_Product__c</columns>
     <columns>DRC_NBC_Customer__c</columns>
+    <columns>DRC_NBC_Customer_s_Product_code__c</columns>
     <filterScope>Everything</filterScope>
     <label>All</label>
 </ListView>

@@ -623,11 +623,6 @@ export default class DRC_NBC_CloneQuote extends NavigationMixin(LightningElement
             isValid = false;
         }
 
-        // Validate Financial Fields
-        if (!this.quoteRec.DRC_NBC_Payemnt_Term__c) {
-            this.showToastEvent("Error", "Payment Term  Code is required", "error");
-            isValid = false;
-        }
 
          if (!this.quoteRec.DRC_NBC_Payment_Term_Description__c) {
             this.showToastEvent("Error", "Payment Term  Description is required", "error");

@@ -6,12 +6,14 @@ import getOrderRecord from '@salesforce/apex/DRC_NBC_OrderController.getOrderRec
 import getAccountAddresses from '@salesforce/apex/DRC_NBC_OrderController.getAccountAddresses';
 import getOpportunitiesByAccount from '@salesforce/apex/DRC_NBC_OrderController.getOpportunitiesByAccount';
 import getQuotesByOpportunity from '@salesforce/apex/DRC_NBC_OrderController.getQuotesByOpportunity';
+import getPicklistValues from '@salesforce/apex/DRC_NBC_OrderController.getPicklistValues';
 import { CloseActionScreenEvent } from 'lightning/actions';
 import { CurrentPageReference } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { NavigationMixin } from 'lightning/navigation';
 import { loadStyle } from 'lightning/platformResourceLoader';
 import AddProductCSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
+
 const SALES_PERSON_CODES = [
     'AJITPH', 'AJITVA', 'AKSHTA SAWANT', 'AMITDR',
     'BHAVTA', 'JIGNA', 'KIRTIA', 'MANMA',
@@ -49,6 +51,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     @track isProcurementOpen = true;
     @track isCustomerOpen = true;
     @track isAddressOpen = true;
+    @track isConsigneeBankOpen = true;
 
     // Order type flags
     @track isDomestic = false;
@@ -76,6 +79,8 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     @track filteredShipToContacts = [];
     @track showBillToContactDropdown = false;
     @track showShipToContactDropdown = false;
+
+    // Opportunity / Quote
     @track opportunityName = '';
     @track quoteName = '';
     @track allOpportunities = [];
@@ -86,14 +91,40 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     @track showQuoteDropdown = false;
     @track isQuoteDisabled = true;
 
-    // Address options
+    // Address
     @track billToAddressFormatted = '';
     @track shipToAddressOptions = [];
     @track selectedShipToAddressId = '';
 
+    // ── Searchable picklist fields ─────────────────────────────────────────────
+    // Transport Agent (Domestic)
+    @track allTransportAgentOptions = [];
+    @track filteredTransportAgentOptions = [];
+    @track showTransportAgentDropdown = false;
+    @track transportAgentName = '';
+
+    // Port of Loading (Export)
+    @track allPortOfLoadingOptions = [];
+    @track filteredPortOfLoadingOptions = [];
+    @track showPortOfLoadingDropdown = false;
+    @track portOfLoadingName = '';
+
+    // Port of Discharge (Export)
+    @track allPortOfDischargeOptions = [];
+    @track filteredPortOfDischargeOptions = [];
+    @track showPortOfDischargeDropdown = false;
+    @track portOfDischargeName = '';
+
+    // Final Destination (Export)
+    @track allFinalDestinationOptions = [];
+    @track filteredFinalDestinationOptions = [];
+    @track showFinalDestinationDropdown = false;
+    @track finalDestinationName = '';
+
     // Packing details map: Product2Id → List of { packingSize, packingQuantity }
-    // packingQuantity = raw DRC_NBC_Packing_Qauntity__c value (used for display & validation)
     packingDetailsMap = {};
+
+    // ─── Wire / Init ─────────────────────────────────────────────────────────
 
     @wire(CurrentPageReference)
     getStateParameters(currentPageReference) {
@@ -109,8 +140,8 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                     console.error('Error decoding inContextOfRef:', error);
                 }
             }
-
             if (this.recordId) {
+                this.fetchPicklistValues();
                 this.fetchOrderDetails();
                 this.fetchOrderLineItems();
             }
@@ -127,18 +158,142 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     handleDocumentClick(event) {
-        const billToInput      = this.template.querySelector('#billToContact');
-        const shipToInput      = this.template.querySelector('#shipToContact');
-        const opportunityInput = this.template.querySelector('#opportunitySearch');
-        const quoteInput       = this.template.querySelector('#quoteSearch');
-
-        if (billToInput      && !billToInput.contains(event.target))      this.showBillToContactDropdown = false;
-        if (shipToInput      && !shipToInput.contains(event.target))      this.showShipToContactDropdown = false;
-        if (opportunityInput && !opportunityInput.contains(event.target)) this.showOpportunityDropdown   = false;
-        if (quoteInput       && !quoteInput.contains(event.target))       this.showQuoteDropdown         = false;
+        const closeIfOutside = (selector, prop) => {
+            const el = this.template.querySelector(selector);
+            if (el && !el.contains(event.target)) this[prop] = false;
+        };
+        closeIfOutside('#billToContact',          'showBillToContactDropdown');
+        closeIfOutside('#shipToContact',          'showShipToContactDropdown');
+        closeIfOutside('#opportunitySearch',      'showOpportunityDropdown');
+        closeIfOutside('#quoteSearch',            'showQuoteDropdown');
+        closeIfOutside('#transportAgentSearch',   'showTransportAgentDropdown');
+        closeIfOutside('#portOfLoadingSearch',    'showPortOfLoadingDropdown');
+        closeIfOutside('#portOfDischargeSearch',  'showPortOfDischargeDropdown');
+        closeIfOutside('#finalDestinationSearch', 'showFinalDestinationDropdown');
     }
 
     addCustomCss() { loadStyle(this, AddProductCSS); }
+
+    // ─── Picklist fetch ───────────────────────────────────────────────────────
+
+    fetchPicklistValues() {
+        getPicklistValues()
+            .then(result => {
+                if (result.DRC_NBC_Transport_Agent__c) {
+                    this.allTransportAgentOptions      = result.DRC_NBC_Transport_Agent__c.map(v => ({ label: v, value: v }));
+                    this.filteredTransportAgentOptions = [...this.allTransportAgentOptions];
+                }
+                if (result.DRC_NBC_Port_of_Loading__c) {
+                    this.allPortOfLoadingOptions      = result.DRC_NBC_Port_of_Loading__c.map(v => ({ label: v, value: v }));
+                    this.filteredPortOfLoadingOptions = [...this.allPortOfLoadingOptions];
+                }
+                if (result.DRC_NBC_Port_Of_Discharge__c) {
+                    this.allPortOfDischargeOptions      = result.DRC_NBC_Port_Of_Discharge__c.map(v => ({ label: v, value: v }));
+                    this.filteredPortOfDischargeOptions = [...this.allPortOfDischargeOptions];
+                }
+                if (result.DRC_NBC_Final_Destination__c) {
+                    this.allFinalDestinationOptions      = result.DRC_NBC_Final_Destination__c.map(v => ({ label: v, value: v }));
+                    this.filteredFinalDestinationOptions = [...this.allFinalDestinationOptions];
+                }
+            })
+            .catch(() => {
+                this.showToastEvent('Error', 'Failed to load picklist values', 'error');
+            });
+    }
+
+    // ─── Transport Agent handlers ─────────────────────────────────────────────
+
+    handleTransportAgentFocus(event) {
+        event.stopPropagation();
+        this.filteredTransportAgentOptions = [...this.allTransportAgentOptions];
+        this.showTransportAgentDropdown    = true;
+    }
+    handleTransportAgentSearch(event) {
+        const term = event.target.value.toLowerCase();
+        this.transportAgentName = event.target.value;
+        this.filteredTransportAgentOptions = term.length === 0
+            ? [...this.allTransportAgentOptions]
+            : this.allTransportAgentOptions.filter(o => o.label.toLowerCase().includes(term));
+        this.showTransportAgentDropdown = true;
+    }
+    handleTransportAgentSelect(event) {
+        event.stopPropagation();
+        const val = event.currentTarget.dataset.value;
+        this.transportAgentName = val;
+        this.orderRec = { ...this.orderRec, DRC_NBC_Transport_Agent__c: val };
+        this.showTransportAgentDropdown = false;
+    }
+
+    // ─── Port of Loading handlers ─────────────────────────────────────────────
+
+    handlePortOfLoadingFocus(event) {
+        event.stopPropagation();
+        this.filteredPortOfLoadingOptions = [...this.allPortOfLoadingOptions];
+        this.showPortOfLoadingDropdown    = true;
+    }
+    handlePortOfLoadingSearch(event) {
+        const term = event.target.value.toLowerCase();
+        this.portOfLoadingName = event.target.value;
+        this.filteredPortOfLoadingOptions = term.length === 0
+            ? [...this.allPortOfLoadingOptions]
+            : this.allPortOfLoadingOptions.filter(o => o.label.toLowerCase().includes(term));
+        this.showPortOfLoadingDropdown = true;
+    }
+    handlePortOfLoadingSelect(event) {
+        event.stopPropagation();
+        const val = event.currentTarget.dataset.value;
+        this.portOfLoadingName = val;
+        this.orderRec = { ...this.orderRec, DRC_NBC_Port_of_Loading__c: val };
+        this.showPortOfLoadingDropdown = false;
+    }
+
+    // ─── Port of Discharge handlers ───────────────────────────────────────────
+
+    handlePortOfDischargeFocus(event) {
+        event.stopPropagation();
+        this.filteredPortOfDischargeOptions = [...this.allPortOfDischargeOptions];
+        this.showPortOfDischargeDropdown    = true;
+    }
+    handlePortOfDischargeSearch(event) {
+        const term = event.target.value.toLowerCase();
+        this.portOfDischargeName = event.target.value;
+        this.filteredPortOfDischargeOptions = term.length === 0
+            ? [...this.allPortOfDischargeOptions]
+            : this.allPortOfDischargeOptions.filter(o => o.label.toLowerCase().includes(term));
+        this.showPortOfDischargeDropdown = true;
+    }
+    handlePortOfDischargeSelect(event) {
+        event.stopPropagation();
+        const val = event.currentTarget.dataset.value;
+        this.portOfDischargeName = val;
+        this.orderRec = { ...this.orderRec, DRC_NBC_Port_Of_Discharge__c: val };
+        this.showPortOfDischargeDropdown = false;
+    }
+
+    // ─── Final Destination handlers ───────────────────────────────────────────
+
+    handleFinalDestinationFocus(event) {
+        event.stopPropagation();
+        this.filteredFinalDestinationOptions = [...this.allFinalDestinationOptions];
+        this.showFinalDestinationDropdown    = true;
+    }
+    handleFinalDestinationSearch(event) {
+        const term = event.target.value.toLowerCase();
+        this.finalDestinationName = event.target.value;
+        this.filteredFinalDestinationOptions = term.length === 0
+            ? [...this.allFinalDestinationOptions]
+            : this.allFinalDestinationOptions.filter(o => o.label.toLowerCase().includes(term));
+        this.showFinalDestinationDropdown = true;
+    }
+    handleFinalDestinationSelect(event) {
+        event.stopPropagation();
+        const val = event.currentTarget.dataset.value;
+        this.finalDestinationName = val;
+        this.orderRec = { ...this.orderRec, DRC_NBC_Final_Destination__c: val };
+        this.showFinalDestinationDropdown = false;
+    }
+
+    // ─── Section toggles ──────────────────────────────────────────────────────
 
     toggleOrderDetails()  { this.isOrderDetailsOpen  = !this.isOrderDetailsOpen;  }
     toggleDomestic()      { this.isDomesticOpen       = !this.isDomesticOpen;       }
@@ -148,13 +303,13 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     toggleCustomer()      { this.isCustomerOpen       = !this.isCustomerOpen;       }
     toggleAddress()       { this.isAddressOpen        = !this.isAddressOpen;        }
     toggleProduct()       { this.isProductOpen        = !this.isProductOpen;        }
+    toggleConsigneeBank() { this.isConsigneeBankOpen  = !this.isConsigneeBankOpen;  }
 
-    isConsigneeBankOpen = true;
-    toggleConsigneeBank() { this.isConsigneeBankOpen = !this.isConsigneeBankOpen; }
+    // ─── Getters ──────────────────────────────────────────────────────────────
 
     get getConsigneeBankClass() { return `slds-section slds-m-top_medium ${this.isConsigneeBankOpen ? 'slds-is-open' : ''}`; }
-    get getConsigneeBankIcon()  { return this.isConsigneeBankOpen ? 'utility:chevrondown' : 'utility:chevronright'; }
-    get getOrderDetailsClass()  { return `slds-section ${this.isOrderDetailsOpen ? 'slds-is-open' : ''}`; }
+    get getConsigneeBankIcon()  { return this.isConsigneeBankOpen  ? 'utility:chevrondown' : 'utility:chevronright'; }
+    get getOrderDetailsClass()  { return `slds-section ${this.isOrderDetailsOpen   ? 'slds-is-open' : ''}`; }
     get getDomesticClass()      { return `slds-section slds-m-top_medium ${this.isDomesticOpen    ? 'slds-is-open' : ''}`; }
     get getExportClass()        { return `slds-section slds-m-top_medium ${this.isExportOpen      ? 'slds-is-open' : ''}`; }
     get getSampleClass()        { return `slds-section slds-m-top_medium ${this.isSampleOpen      ? 'slds-is-open' : ''}`; }
@@ -176,65 +331,46 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         return SALES_PERSON_CODES.map(code => ({ label: code, value: code }));
     }
 
+    // ─── Sales Person ─────────────────────────────────────────────────────────
+
     handleSalesPersonCodeChange(event) {
-       // this.orderRec.DRC_NBC_SalesPerson_Code__c = event.detail.value;
-            this.orderRec = {
-            ...this.orderRec,
-            DRC_NBC_SalesPerson_Code__c: event.detail.value
-        };
+        this.orderRec = { ...this.orderRec, DRC_NBC_SalesPerson_Code__c: event.detail.value };
     }
 
-    // ─── Packing helpers ─────────────────────────────────────────────────────────
+    // ─── Packing helpers ──────────────────────────────────────────────────────
 
-    /**
-     * Builds combobox options from the packing details list for a product.
-     */
     buildPackingSizeOptions(packingDetailsList) {
         if (!packingDetailsList || packingDetailsList.length === 0) return [];
-        return packingDetailsList.map(pd => ({
-            label: pd.packingSize || '',
-            value: pd.packingSize || ''
-        }));
+        return packingDetailsList.map(pd => ({ label: pd.packingSize || '', value: pd.packingSize || '' }));
     }
 
-    /**
-     * Returns packing detail records for a given Product2Id from the cached map.
-     */
     getPackingDetailsForProduct(product2Id) {
         if (!product2Id || !this.packingDetailsMap) return [];
         return this.packingDetailsMap[product2Id] || [];
     }
 
-    /**
-     * Validates that the entered quantity is a positive multiple of rawPackingQuantity.
-     * Returns null if valid (or no packing size selected), or an error message string.
-     *
-     * Examples (rawPackingQuantity = 100):
-     *   100 → valid
-     *   200 → valid
-     *   150 → invalid  ("Quantity must be a multiple of 100")
-     */
     _validateQuantityMultiple(rowData) {
         const rawPkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
-        if (rawPkgQty <= 0 || !rowData.selectedPackingSize) return null; // no validation needed
+        if (rawPkgQty <= 0 || !rowData.selectedPackingSize) return null;
         const qty = parseFloat(rowData.Quantity) || 0;
-        if (qty <= 0) return null; // let required-field validation catch zero/empty
+        if (qty <= 0) return null;
         if (qty % rawPkgQty !== 0) {
             return `Quantity must be a multiple of ${rawPkgQty} (packing quantity). Allowed values: ${rawPkgQty}, ${rawPkgQty * 2}, ${rawPkgQty * 3}, …`;
         }
         return null;
     }
 
-    // ─── Order data fetching ─────────────────────────────────────────────────────
+    // ─── Order data fetching ──────────────────────────────────────────────────
 
     fetchOrderDetails() {
         getOrderRecord({ orderId: this.recordId })
             .then(result => {
-                this.orderRec = { 
+                this.orderRec = {
                     ...result,
                     DRC_NBC_SalesPerson_Code__c: result.DRC_NBC_SalesPerson_Code__c || ''
                 };
                 this.isPartiallyShipped = result.DRC_NBC_Order_PartiallyShipped__c === true;
+
                 if (result.DRC_NBC_Type__c === 'Domestic') {
                     this.isDomestic = true;
                     this.isExport   = false;
@@ -243,50 +379,42 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                     this.isExport   = true;
                 } else if (result.Type === 'Sample Order') {
                     this.isSample   = true;
-                    if (result.DRC_NBC_Sample_Type__c === 'Paid Sample') {
-                        this.isSamplePaid = true;
-                    }
+                    if (result.DRC_NBC_Sample_Type__c === 'Paid Sample') this.isSamplePaid = true;
                     this.isDomestic = false;
                     this.isExport   = false;
                 }
 
-                this.billToContactId   = result.BillToContactId        || '';
-                this.billToContactName = result.BillToContact?.Name    || '';
+                this.billToContactId   = result.BillToContactId          || '';
+                this.billToContactName = result.BillToContact?.Name      || '';
                 this.billToAccountId   = result.BillToContact?.AccountId || '';
                 this.billToAccountName = result.BillToContact?.Account?.Name || '';
-
-                this.shipToContactId   = result.ShipToContactId        || '';
-                this.shipToContactName = result.ShipToContact?.Name    || '';
+                this.shipToContactId   = result.ShipToContactId          || '';
+                this.shipToContactName = result.ShipToContact?.Name      || '';
                 this.shipToAccountId   = result.ShipToContact?.AccountId || '';
                 this.shipToAccountName = result.ShipToContact?.Account?.Name || '';
+                this.accountOptions    = [{ label: this.billToAccountName, value: this.billToAccountId }];
+                this.opportunityName   = result.Opportunity?.Name || '';
+                this.quoteName         = result.Quote?.Name       || '';
 
-                this.accountOptions  = [{ label: this.billToAccountName, value: this.billToAccountId }];
-                this.opportunityName = result.Opportunity?.Name || '';
-                this.quoteName       = result.Quote?.Name       || '';
-
-                // ── Auto-set order currency from linked Opportunity (v1.3) ──────────
-                // If the order already has a linked opportunity, adopt its currency so
-                // the order currency stays in sync without the user having to set it
-                // manually.  The user can still override it via the CurrencyIsoCode field.
                 if (result.Opportunity?.CurrencyIsoCode && !this.orderRec.CurrencyIsoCode) {
                     this.orderRec.CurrencyIsoCode = result.Opportunity.CurrencyIsoCode;
                 }
 
+                // Pre-populate searchable picklist display values from saved record
+                this.transportAgentName   = result.DRC_NBC_Transport_Agent__c   || '';
+                this.portOfLoadingName    = result.DRC_NBC_Port_of_Loading__c   || '';
+                this.portOfDischargeName  = result.DRC_NBC_Port_Of_Discharge__c || '';
+                this.finalDestinationName = result.DRC_NBC_Final_Destination__c || '';
+
                 this.fetchContacts(this.billToAccountId);
-
                 this.billToAddressFormatted = this.formatAddress({
-                    street:     result.BillingStreet,
-                    city:       result.BillingCity,
-                    state:      result.BillingState,
-                    postalCode: result.BillingPostalCode,
-                    country:    result.BillingCountry
+                    street: result.BillingStreet, city: result.BillingCity,
+                    state: result.BillingState, postalCode: result.BillingPostalCode,
+                    country: result.BillingCountry
                 });
-
                 this.selectedShipToAddressId = result.DRC_NBC_Shipping_Address__c || '';
-
-                if (this.shipToAccountId)  this.fetchShipToAddresses();
-                if (this.billToAccountId)  this.fetchOpportunities(this.billToAccountId);
-
+                if (this.shipToAccountId) this.fetchShipToAddresses();
+                if (this.billToAccountId) this.fetchOpportunities(this.billToAccountId);
                 this.updateRejectionVisibility();
             })
             .catch(error => {
@@ -331,22 +459,17 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             .then(data => {
                 this.productsMasterList  = data.productsList;
                 this.filteredProductList = [...data.productsList];
-
-                // Build the packing details map from the list returned by Apex.
-                this.packingDetailsMap = {};
-                const packingList = data.packingDetailsList || [];
+                this.packingDetailsMap   = {};
+                const packingList        = data.packingDetailsList || [];
                 packingList.forEach(item => {
-                    if (item.product2Id) {
-                        this.packingDetailsMap[item.product2Id] = item.packingDetails || [];
-                    }
+                    if (item.product2Id) this.packingDetailsMap[item.product2Id] = item.packingDetails || [];
                 });
-
                 if (data.olis.length > 0) {
                     this.result = data;
                     this.getOrganizedData();
                 } else {
-                    let newRow    = this.getBaseRecordData().olis;
-                    newRow.OrderId   = this.recordId;
+                    let newRow        = this.getBaseRecordData().olis;
+                    newRow.OrderId    = this.recordId;
                     newRow.showSearch = true;
                     this.filteredData = [{ recordData: newRow }];
                 }
@@ -360,53 +483,45 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     getOrganizedData() {
         const data = this.result.olis;
         for (let item of data) {
-            let record = this.getBaseRecordData().olis;
-
+            let record               = this.getBaseRecordData().olis;
             const originalUnitPrice  = item.UnitPrice || 0;
             const savedModifiedPrice = item.UnitPrice  || originalUnitPrice;
-
-            // Get packing details from cached map for this product
             const packingDetails     = this.getPackingDetailsForProduct(item.Product2Id);
-            const packingSizeOptions  = this.buildPackingSizeOptions(packingDetails);
-
-            // Restore rawPackingQuantity (= DRC_NBC_Packing_Qauntity__c) for the saved packing size.
-            // This is the raw divisor value that is ALSO shown in the Packing Quantity column.
-            const savedPackingSize = item.DRC_NBC_Packing_Size__c    || '';
-            const savedPackingQty  = item.DRC_NBC_Packing_Quantity__c || '';
-            let rawPackingQuantity = '';
+            const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
+            const savedPackingSize   = item.DRC_NBC_Packing_Size__c    || '';
+            const savedPackingQty    = item.DRC_NBC_Packing_Quantity__c || '';
+            let rawPackingQuantity   = '';
             if (savedPackingSize) {
                 const matchedDetail = packingDetails.find(pd => pd.packingSize === savedPackingSize);
                 rawPackingQuantity  = matchedDetail ? (matchedDetail.packingQuantity || '') : '';
             }
-
             Object.assign(record, {
-                Id:                     item.Id,
-                Name:                   item.Product2?.Name || '',
-                PricebookEntryId:       item.PricebookEntryId,
-                Description:            item.Description || '',
-                Product2Id:             item.Product2Id,
-                Quantity:               item.Quantity || 1,
-                UnitPrice:              originalUnitPrice,
-                OriginalUnitPrice:      originalUnitPrice,
-                DRC_NBC_FG_Code__c:     item.Product2?.DRC_NBC_FG_Code__c     || '-',
-                DRC_NBC_HSN_SAC_Code__c:item.Product2?.DRC_NBC_HSN_SAC_Code__c || '-',
-                UOM:                    item.Product2?.QuantityUnitOfMeasure   || '-',
-                showSearch:             false,
-                modifiedPrice:          savedModifiedPrice,
-                packingDetails:         packingDetails,
-                packingSizeOptions:     packingSizeOptions,
-                selectedPackingSize:    savedPackingSize,
-                rawPackingQuantity:     rawPackingQuantity,  // raw DRC_NBC_Packing_Qauntity__c
-                // Packing Quantity column shows the raw value, not a ceil() calculation
-                packingQuantity:        rawPackingQuantity || savedPackingQty,
-                quantityError:          ''
+                Id:                      item.Id,
+                Name:                    item.Product2?.Name || '',
+                PricebookEntryId:        item.PricebookEntryId,
+                Description:             item.Description || '',
+                Product2Id:              item.Product2Id,
+                Quantity:                item.Quantity || 1,
+                UnitPrice:               originalUnitPrice,
+                OriginalUnitPrice:       originalUnitPrice,
+                DRC_NBC_FG_Code__c:      item.Product2?.DRC_NBC_FG_Code__c      || '-',
+                DRC_NBC_HSN_SAC_Code__c: item.Product2?.DRC_NBC_HSN_SAC_Code__c || '-',
+                UOM:                     item.Product2?.QuantityUnitOfMeasure    || '-',
+                showSearch:              false,
+                modifiedPrice:           savedModifiedPrice,
+                packingDetails:          packingDetails,
+                packingSizeOptions:      packingSizeOptions,
+                selectedPackingSize:     savedPackingSize,
+                rawPackingQuantity:      rawPackingQuantity,
+                packingQuantity:         rawPackingQuantity || savedPackingQty,
+                quantityError:           ''
             });
             this.allData.push({ recordData: record });
         }
         this.filteredData = [...this.allData];
     }
 
-    // ─── Contact / address / opportunity handlers ─────────────────────────────────
+    // ─── Contact handlers ─────────────────────────────────────────────────────
 
     handleBillToContactFocus(event) {
         event.stopPropagation();
@@ -414,16 +529,14 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.showBillToContactDropdown = true;
         this.showShipToContactDropdown = false;
     }
-
     handleBillToContactSearch(event) {
-        const searchTerm = event.target.value.toLowerCase();
+        const term = event.target.value.toLowerCase();
         this.billToContactName = event.target.value;
-        this.filteredBillToContacts = searchTerm.length === 0
+        this.filteredBillToContacts = term.length === 0
             ? [...this.allBillToContacts]
-            : this.allBillToContacts.filter(c => c.label.toLowerCase().includes(searchTerm));
+            : this.allBillToContacts.filter(c => c.label.toLowerCase().includes(term));
         this.showBillToContactDropdown = true;
     }
-
     handleBillToContactSelect(event) {
         event.stopPropagation();
         this.billToContactId   = event.currentTarget.dataset.id;
@@ -431,23 +544,20 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.showBillToContactDropdown = false;
         this.handleFieldChange({ target: { fieldName: 'BillToContactId' }, detail: { value: this.billToContactId } });
     }
-
     handleShipToContactFocus(event) {
         event.stopPropagation();
         this.filteredShipToContacts    = [...this.allShipToContacts];
         this.showShipToContactDropdown = true;
         this.showBillToContactDropdown = false;
     }
-
     handleShipToContactSearch(event) {
-        const searchTerm = event.target.value.toLowerCase();
+        const term = event.target.value.toLowerCase();
         this.shipToContactName = event.target.value;
-        this.filteredShipToContacts = searchTerm.length === 0
+        this.filteredShipToContacts = term.length === 0
             ? [...this.allShipToContacts]
-            : this.allShipToContacts.filter(c => c.label.toLowerCase().includes(searchTerm));
+            : this.allShipToContacts.filter(c => c.label.toLowerCase().includes(term));
         this.showShipToContactDropdown = true;
     }
-
     handleShipToContactSelect(event) {
         event.stopPropagation();
         this.shipToContactId   = event.currentTarget.dataset.id;
@@ -456,9 +566,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.handleFieldChange({ target: { fieldName: 'ShipToContactId' }, detail: { value: this.shipToContactId } });
     }
 
-    handleAddressChange(event) {
-        this.selectedShipToAddressId = event.detail.value;
-    }
+    handleAddressChange(event) { this.selectedShipToAddressId = event.detail.value; }
+
+    // ─── Opportunity / Quote handlers ─────────────────────────────────────────
 
     fetchOpportunities(accountId) {
         getOpportunitiesByAccount({ accountId })
@@ -466,15 +576,11 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 this.allOpportunities      = result.map(opp => ({ label: opp.Name, value: opp.Id, currencyIsoCode: opp.CurrencyIsoCode }));
                 this.filteredOpportunities = [...this.allOpportunities];
                 this.opportunityOptions    = [...this.allOpportunities];
-
                 if (this.orderRec.OpportunityId) {
-                    const selectedOpp = this.allOpportunities.find(o => o.value === this.orderRec.OpportunityId);
-                    if (selectedOpp) {
-                        this.opportunityName = selectedOpp.label;
-                        // ── Set currency from already-linked opportunity (v1.3) ───────
-                        if (selectedOpp.currencyIsoCode) {
-                            this.orderRec = { ...this.orderRec, CurrencyIsoCode: selectedOpp.currencyIsoCode };
-                        }
+                    const sel = this.allOpportunities.find(o => o.value === this.orderRec.OpportunityId);
+                    if (sel) {
+                        this.opportunityName = sel.label;
+                        if (sel.currencyIsoCode) this.orderRec = { ...this.orderRec, CurrencyIsoCode: sel.currencyIsoCode };
                     }
                     this.fetchQuotes(this.orderRec.OpportunityId);
                 }
@@ -485,14 +591,13 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     fetchQuotes(opportunityId) {
         getQuotesByOpportunity({ opportunityId })
             .then(result => {
-                this.allQuotes       = result.map(quote => ({ label: quote.Name, value: quote.Id }));
+                this.allQuotes       = result.map(q => ({ label: q.Name, value: q.Id }));
                 this.filteredQuotes  = [...this.allQuotes];
                 this.quoteOptions    = [...this.allQuotes];
                 this.isQuoteDisabled = false;
-
                 if (this.orderRec.QuoteId) {
-                    const selectedQuote = this.allQuotes.find(q => q.value === this.orderRec.QuoteId);
-                    if (selectedQuote) this.quoteName = selectedQuote.label;
+                    const sel = this.allQuotes.find(q => q.value === this.orderRec.QuoteId);
+                    if (sel) this.quoteName = sel.label;
                 }
             })
             .catch(() => { this.showToastEvent('Error', 'Failed to fetch quotes', 'error'); });
@@ -506,41 +611,27 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.showBillToContactDropdown = false;
         this.showShipToContactDropdown = false;
     }
-
     handleOpportunitySearch(event) {
-        const searchTerm     = event.target.value.toLowerCase();
+        const term = event.target.value.toLowerCase();
         this.opportunityName = event.target.value;
-        this.filteredOpportunities = searchTerm.length === 0
+        this.filteredOpportunities = term.length === 0
             ? [...this.allOpportunities]
-            : this.allOpportunities.filter(o => o.label.toLowerCase().includes(searchTerm));
+            : this.allOpportunities.filter(o => o.label.toLowerCase().includes(term));
         this.showOpportunityDropdown = true;
     }
-
     handleOpportunitySelect(event) {
         event.stopPropagation();
         const selectedId   = event.currentTarget.dataset.id;
         const selectedName = event.currentTarget.dataset.name;
-
         this.orderRec.OpportunityId  = selectedId;
         this.opportunityName         = selectedName;
         this.showOpportunityDropdown = false;
-
-        // ── Auto-set order currency from selected opportunity (v1.3) ─────────────
-        const selectedOpp = this.allOpportunities.find(o => o.value === selectedId);
-        if (selectedOpp && selectedOpp.currencyIsoCode) {
-            this.orderRec = { ...this.orderRec, CurrencyIsoCode: selectedOpp.currencyIsoCode };
-        }
-
-        this.orderRec.QuoteId = '';
-        this.quoteName        = '';
-        this.allQuotes        = [];
-        this.filteredQuotes   = [];
-        this.isQuoteDisabled  = true;
-
+        const sel = this.allOpportunities.find(o => o.value === selectedId);
+        if (sel && sel.currencyIsoCode) this.orderRec = { ...this.orderRec, CurrencyIsoCode: sel.currencyIsoCode };
+        this.orderRec.QuoteId = ''; this.quoteName = ''; this.allQuotes = []; this.filteredQuotes = []; this.isQuoteDisabled = true;
         this.handleFieldChange({ target: { fieldName: 'OpportunityId' }, detail: { value: selectedId } });
         if (selectedId) this.fetchQuotes(selectedId);
     }
-
     handleQuoteFocus(event) {
         event.stopPropagation();
         if (!this.isQuoteDisabled) {
@@ -551,16 +642,14 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             this.showShipToContactDropdown = false;
         }
     }
-
     handleQuoteSearch(event) {
-        const searchTerm = event.target.value.toLowerCase();
-        this.quoteName   = event.target.value;
-        this.filteredQuotes = searchTerm.length === 0
+        const term = event.target.value.toLowerCase();
+        this.quoteName = event.target.value;
+        this.filteredQuotes = term.length === 0
             ? [...this.allQuotes]
-            : this.allQuotes.filter(q => q.label.toLowerCase().includes(searchTerm));
+            : this.allQuotes.filter(q => q.label.toLowerCase().includes(term));
         this.showQuoteDropdown = true;
     }
-
     handleQuoteSelect(event) {
         event.stopPropagation();
         const selectedId   = event.currentTarget.dataset.id;
@@ -571,53 +660,21 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.handleFieldChange({ target: { fieldName: 'QuoteId' }, detail: { value: selectedId } });
     }
 
-   /* handleFieldChange(event) {
-        const fieldName = event.target.fieldName || event.target.name || event.target.dataset.field;
-        const value     = event.detail?.value    || event.target.value;
+    // ─── Generic field change ─────────────────────────────────────────────────
 
-        if (fieldName) {
-            this.orderRec[fieldName] = value;
-
-            if (fieldName === 'DRC_NBC_Type__c') {
-                this.isDomestic = value === 'Domestic';
-                this.isExport   = value === 'Export';
-            }
-            if (fieldName === 'DRC_NBC_Sample_Type__c') {
-                this.isSamplePaid = (value === 'Paid Sample');
-            }
-            if (fieldName === 'Status' || fieldName === 'DRC_NBC_Reject_Reason_Text__c') {
-                this.updateRejectionVisibility();
-            }
-            if (fieldName === 'CurrencyIsoCode') {
-                this.currencyCode = value;
-            }
-        }
-    }*/
     handleFieldChange(event) {
         const fieldName = event.target.fieldName || event.target.name || event.target.dataset.field;
         const value     = event.detail?.value    || event.target.value;
-
         if (fieldName) {
-            // Spread to new object so LWC reactivity triggers re-render
             this.orderRec = { ...this.orderRec, [fieldName]: value };
-
-            if (fieldName === 'DRC_NBC_Type__c') {
-                this.isDomestic = value === 'Domestic';
-                this.isExport   = value === 'Export';
-            }
-            if (fieldName === 'DRC_NBC_Sample_Type__c') {
-                this.isSamplePaid = (value === 'Paid Sample');
-            }
-            if (fieldName === 'Status' || fieldName === 'DRC_NBC_Reject_Reason_Text__c') {
-                this.updateRejectionVisibility();
-            }
-            if (fieldName === 'CurrencyIsoCode') {
-                this.currencyCode = value;
-            }
+            if (fieldName === 'DRC_NBC_Type__c')           { this.isDomestic = value === 'Domestic'; this.isExport = value === 'Export'; }
+            if (fieldName === 'DRC_NBC_Sample_Type__c')    { this.isSamplePaid = (value === 'Paid Sample'); }
+            if (fieldName === 'Status' || fieldName === 'DRC_NBC_Reject_Reason_Text__c') { this.updateRejectionVisibility(); }
+            if (fieldName === 'CurrencyIsoCode')           { this.currencyCode = value; }
         }
     }
 
-    // ─── Product table handlers ───────────────────────────────────────────────────
+    // ─── Product table handlers ───────────────────────────────────────────────
 
     handleValueChange(event) {
         const index = event.target.dataset.index;
@@ -625,108 +682,63 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         const value = event.target.value;
         this.filteredData[index].recordData[field] = value;
 
-        // ── Product search is now by name only — NOT filtered by currency (v1.3) ──
-       /* if (field === 'ProductName' && value.length >= 2) {
-            const matches = this.productsMasterList.filter(product =>
-                product.Product2.Name.toLowerCase().includes(value.toLowerCase())
-            );
+        if (field === 'ProductName' && value.length >= 2) {
+            const selectedProduct2Ids = this.filteredData
+                .filter((_, i) => i !== parseInt(index))
+                .map(row => row.recordData.Product2Id)
+                .filter(Boolean)
+                .map(id => String(id));
+            const matches = this.productsMasterList.filter(product => {
+                const product2Id  = String(product.Product2Id || product.Product2?.Id || '');
+                const nameMatch   = product.Product2.Name.toLowerCase().includes(value.toLowerCase());
+                const notSelected = !selectedProduct2Ids.includes(product2Id);
+                return nameMatch && notSelected;
+            });
             this.filteredData[index].recordData.searchResults  = matches;
             this.filteredData[index].recordData.noResultsFound = matches.length === 0;
         } else if (field === 'ProductName') {
             this.filteredData[index].recordData.searchResults  = [];
             this.filteredData[index].recordData.noResultsFound = false;
-        }*/
-
-      if (field === 'ProductName' && value.length >= 2) {
-        // Collect Product2Ids already selected in OTHER rows
-        // Convert all to String to avoid Id-vs-String type mismatch in includes()
-        const selectedProduct2Ids = this.filteredData
-            .filter((_, i) => i !== parseInt(index))
-            .map(row => row.recordData.Product2Id)
-            .filter(Boolean)
-            .map(id => String(id));
-
-        const matches = this.productsMasterList.filter(product => {
-            // PricebookEntry has Product2Id as direct field
-            const product2Id = String(product.Product2Id || product.Product2?.Id || '');
-            const nameMatch  = product.Product2.Name.toLowerCase().includes(value.toLowerCase());
-            const notSelected = !selectedProduct2Ids.includes(product2Id);
-            return nameMatch && notSelected;
-        });
-
-        this.filteredData[index].recordData.searchResults  = matches;
-        this.filteredData[index].recordData.noResultsFound = matches.length === 0;
-    } else if (field === 'ProductName') {
-        this.filteredData[index].recordData.searchResults  = [];
-        this.filteredData[index].recordData.noResultsFound = false;
-    }
-        if (field === 'Quantity') {
-            this.handleQuantityChange(event);
         }
+        if (field === 'Quantity') { this.handleQuantityChange(event); }
     }
 
-    /**
-     * Handle packing size selection:
-     * - stores the raw packing qty (DRC_NBC_Packing_Qauntity__c) as rawPackingQuantity
-     * - displays that raw value directly in the Packing Quantity column
-     * - clears any existing quantity error (user may need to re-enter qty)
-     */
     handlePackingSizeChange(event) {
         const index        = parseInt(event.target.dataset.index);
         const selectedSize = event.detail.value;
-
         this.filteredData[index].recordData.selectedPackingSize = selectedSize;
-
-        // Find the matching child record to get the raw divisor
         const packingDetails = this.filteredData[index].recordData.packingDetails || [];
         const matchedDetail  = packingDetails.find(pd => pd.packingSize === selectedSize);
-
         if (matchedDetail && matchedDetail.packingQuantity != null && matchedDetail.packingQuantity !== '') {
-            // Store raw value — used both for display and quantity validation
             this.filteredData[index].recordData.rawPackingQuantity = String(matchedDetail.packingQuantity);
-            // Packing Quantity column = raw DRC_NBC_Packing_Qauntity__c value
             this.filteredData[index].recordData.packingQuantity    = String(matchedDetail.packingQuantity);
         } else {
             this.filteredData[index].recordData.rawPackingQuantity = '';
             this.filteredData[index].recordData.packingQuantity    = '';
         }
-
-        // Re-validate quantity with the new packing size
         const qtyError = this._validateQuantityMultiple(this.filteredData[index].recordData);
         this.filteredData[index].recordData.quantityError = qtyError || '';
-
         this.filteredData = [...this.filteredData];
     }
 
-    /**
-     * When the user changes quantity:
-     * - validate that it is a multiple of rawPackingQuantity (if a packing size is selected)
-     * - show inline error if not; clear error if valid
-     * The Packing Quantity column always shows the raw DRC_NBC_Packing_Qauntity__c value,
-     * not a calculated value, so no recalculation is needed here.
-     */
     handleQuantityChange(event) {
         const index    = parseInt(event.target.dataset.index);
         const quantity = parseFloat(event.target.value) || 0;
-
         this.filteredData[index].recordData.Quantity = quantity;
-
-        // Validate quantity is a multiple of rawPackingQuantity
         const qtyError = this._validateQuantityMultiple(this.filteredData[index].recordData);
         this.filteredData[index].recordData.quantityError = qtyError || '';
-
         this.updateTotal(index);
         this.filteredData = [...this.filteredData];
     }
 
     handleAddRow() {
-        let newRow = this.getBaseRecordData().olis;
+        let newRow            = this.getBaseRecordData().olis;
         newRow.Id             = null;
         newRow.showSearch     = true;
         newRow.searchResults  = [];
         newRow.noResultsFound = false;
-        this.filteredData = [...this.filteredData, { recordData: newRow }];
-        this.showAddProducts = false;
+        this.filteredData     = [...this.filteredData, { recordData: newRow }];
+        this.showAddProducts  = false;
     }
 
     handleRemoveRow(event) {
@@ -752,17 +764,14 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     handleProductSelect(event) {
-        const index      = parseInt(event.target.dataset.index);
-        const selectedId = event.target.dataset.id;
+        const index           = parseInt(event.target.dataset.index);
+        const selectedId      = event.target.dataset.id;
         const selectedProduct = this.productsMasterList.find(p => p.Id === selectedId);
-
         if (selectedProduct) {
-            const unitPrice = selectedProduct.UnitPrice || 0;
-
+            const unitPrice          = selectedProduct.UnitPrice || 0;
             const product2Id         = selectedProduct.Product2Id || selectedProduct.Product2?.Id;
             const packingDetails     = this.getPackingDetailsForProduct(product2Id);
-            const packingSizeOptions  = this.buildPackingSizeOptions(packingDetails);
-
+            const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
             this.filteredData[index].recordData = {
                 ...this.filteredData[index].recordData,
                 showSearch:          false,
@@ -776,8 +785,8 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 PricebookEntryId:    selectedProduct.Id,
                 UOM:                 selectedProduct.Product2.QuantityUnitOfMeasure,
                 modifiedPrice:       unitPrice,
-                packingDetails:      packingDetails,
-                packingSizeOptions:  packingSizeOptions,
+                packingDetails,
+                packingSizeOptions,
                 selectedPackingSize: '',
                 rawPackingQuantity:  '',
                 packingQuantity:     '',
@@ -790,117 +799,66 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         }
     }
 
+    // ─── Save ─────────────────────────────────────────────────────────────────
+
     handleSave() {
         this.showLoading = true;
-        let isValid = true;
+        let isValid  = true;
         let rowCount = 0;
 
         for (let record of this.filteredData) {
             rowCount++;
             const row = record.recordData;
-
-            if (!row.ProductName && !row.Product2Id) {
-                this.showToastEvent("Error", `Product Name is required for row ${rowCount}`, 'error');
-                isValid = false;
-            }
-            if (!row.Quantity) {
-                this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error');
-                isValid = false;
-            }
-
-            // ── Quantity-multiple validation (v1.3) ───────────────────────────────
+            if (!row.ProductName && !row.Product2Id) { this.showToastEvent("Error", `Product Name is required for row ${rowCount}`, 'error'); isValid = false; }
+            if (!row.Quantity)                        { this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error'); isValid = false; }
             const qtyError = this._validateQuantityMultiple(row);
-            if (qtyError) {
-                this.showToastEvent("Error", `Row ${rowCount}: ${qtyError}`, 'error');
-                isValid = false;
-            }
+            if (qtyError) { this.showToastEvent("Error", `Row ${rowCount}: ${qtyError}`, 'error'); isValid = false; }
         }
 
-        if (this.isPartiallyShipped) {
-            this.showToastEvent(
-                'Error',
-                'Order cannot be modified because the order is partially shipped.',
-                'error'
-            );
-            isValid = false;
-        }
-
-        if (!this.orderRec?.EffectiveDate) {
-            this.showToastEvent("Error", "Effective Date is required", "error");
-            isValid = false;
-        }
-        if (!this.orderRec?.EndDate) {
-            this.showToastEvent("Error", "End Date is required", "error");
-            isValid = false;
-        }
-
-        if (!this.orderRec?.DRC_NBC_Warehouse__c) {
-            this.showToastEvent("Error", "Warehouse is required", "error");
-            isValid = false;
-        }
-
-        if (!this.orderRec?.DRC_NBC_SalesPerson_Code__c) {
-            this.showToastEvent("Error", "Sales Person Code is required", "error");
-            isValid = false;
-        }
+        if (this.isPartiallyShipped)          { this.showToastEvent('Error', 'Order cannot be modified because the order is partially shipped.', 'error'); isValid = false; }
+        if (!this.orderRec?.EffectiveDate)    { this.showToastEvent("Error", "Effective Date is required", "error"); isValid = false; }
+        if (!this.orderRec?.EndDate)          { this.showToastEvent("Error", "End Date is required", "error"); isValid = false; }
+        if (!this.orderRec?.DRC_NBC_Warehouse__c)         { this.showToastEvent("Error", "Warehouse is required", "error"); isValid = false; }
+        if (!this.orderRec?.DRC_NBC_SalesPerson_Code__c)  { this.showToastEvent("Error", "Sales Person Code is required", "error"); isValid = false; }
 
         if (this.orderRec?.EndDate) {
-            const endDate = new Date(this.orderRec.EndDate);
-            endDate.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (endDate <= today) {
-                this.showToastEvent('Error', 'End Date must be greater than today.', 'error');
+            const endDate = new Date(this.orderRec.EndDate); endDate.setHours(0,0,0,0);
+            const today   = new Date(); today.setHours(0,0,0,0);
+            if (endDate <= today) { this.showToastEvent('Error', 'End Date must be greater than today.', 'error'); isValid = false; }
+        }
+
+        if (!this.billToContactId)         { this.showToastEvent("Error", "Bill To Contact is required",  "error"); isValid = false; }
+        if (!this.shipToContactId)         { this.showToastEvent("Error", "Ship To Contact is required",  "error"); isValid = false; }
+        if (!this.selectedShipToAddressId) { this.showToastEvent("Error", "Ship To Address is required",  "error"); isValid = false; }
+
+        const dateChecks = [
+            ['DRC_NBC_Expected_Delivery_Date__c', 'Expected Delivery Date'],
+            ['DRC_NBC_Courier_date__c',            'Courier date'],
+            ['DRC_NBC_Shipment_Date__c',           'Shipment Date'],
+            ['NBC_DRC_Dispatch_Date__c',            'Dispatch Date'],
+            ['PoDate',                             'PO Date']
+        ];
+        dateChecks.forEach(([field, label]) => {
+            if (this.orderRec[field] && this.orderRec.EndDate && new Date(this.orderRec[field]) > new Date(this.orderRec.EndDate)) {
+                this.showToastEvent('Error', `${label} must be less than End Date.`, 'error');
                 isValid = false;
             }
-        }
-
-        if (!this.billToContactId)        { this.showToastEvent("Error", "Bill To Contact is required",  "error"); isValid = false; }
-        if (!this.shipToContactId)        { this.showToastEvent("Error", "Ship To Contact is required",  "error"); isValid = false; }
-        if (!this.selectedShipToAddressId){ this.showToastEvent("Error", "Ship To Address is required",  "error"); isValid = false; }
-
-        if (this.orderRec.DRC_NBC_Expected_Delivery_Date__c && this.orderRec.EndDate) {
-            if (new Date(this.orderRec.DRC_NBC_Expected_Delivery_Date__c) > new Date(this.orderRec.EndDate)) {
-                this.showToastEvent('Error', 'Expected Delivery Date must be less than End Date.', 'error'); isValid = false;
-            }
-        }
-        if (this.orderRec.DRC_NBC_Courier_date__c && this.orderRec.EndDate) {
-            if (new Date(this.orderRec.DRC_NBC_Courier_date__c) > new Date(this.orderRec.EndDate)) {
-                this.showToastEvent('Error', 'Courier date must be less than End Date.', 'error'); isValid = false;
-            }
-        }
-        if (this.orderRec.DRC_NBC_Shipment_Date__c && this.orderRec.EndDate) {
-            if (new Date(this.orderRec.DRC_NBC_Shipment_Date__c) > new Date(this.orderRec.EndDate)) {
-                this.showToastEvent('Error', 'Shipment Date must be less than End Date.', 'error'); isValid = false;
-            }
-        }
-        if (this.orderRec.NBC_DRC_Dispatch_Date__c && this.orderRec.EndDate) {
-            if (new Date(this.orderRec.NBC_DRC_Dispatch_Date__c) > new Date(this.orderRec.EndDate)) {
-                this.showToastEvent('Error', 'Dispatch Date must be less than End Date.', 'error'); isValid = false;
-            }
-        }
-        if (this.orderRec.PoDate && this.orderRec.EndDate) {
-            if (new Date(this.orderRec.PoDate) > new Date(this.orderRec.EndDate)) {
-                this.showToastEvent('Error', 'PO Date must be less than End Date.', 'error'); isValid = false;
-            }
-        }
+        });
 
         if (!isValid) { this.showLoading = false; return; }
 
         const recordsToSave = this.filteredData.map(row => {
             const r = row.recordData;
             return {
-                Id:               r.Id || null,
-                Product2Id:       r.Product2Id,
-                Quantity:         r.Quantity,
-                UnitPrice:        parseFloat(r.modifiedPrice) || parseFloat(r.UnitPrice) || 0,
-                OrderId:          this.recordId,
-                PricebookEntryId: r.PricebookEntryId,
-                Description:      r.Description,
-                // Save selected packing size
-                DRC_NBC_Packing_Size__c:     r.selectedPackingSize || '',
-                // Save raw DRC_NBC_Packing_Qauntity__c value (not a calculated value)
-                DRC_NBC_Packing_Quantity__c: r.rawPackingQuantity  || ''
+                Id:                         r.Id || null,
+                Product2Id:                 r.Product2Id,
+                Quantity:                   r.Quantity,
+                UnitPrice:                  parseFloat(r.modifiedPrice) || parseFloat(r.UnitPrice) || 0,
+                OrderId:                    this.recordId,
+                PricebookEntryId:           r.PricebookEntryId,
+                Description:                r.Description,
+                DRC_NBC_Packing_Size__c:    r.selectedPackingSize || '',
+                DRC_NBC_Packing_Quantity__c: r.rawPackingQuantity || ''
             };
         });
 
@@ -946,7 +904,6 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             updatedOrder.DRC_NBC_Prepayment_Method__c = this.orderRec.DRC_NBC_Prepayment_Method__c;
             updatedOrder.DRC_NBC_Shipment_Date__c     = this.orderRec.DRC_NBC_Shipment_Date__c;
         }
-
         if (this.isExport) {
             updatedOrder.DRC_NBC_Country_of_Origin__c            = this.orderRec.DRC_NBC_Country_of_Origin__c;
             updatedOrder.DRC_NBC_Country_of_Final_Destination__c = this.orderRec.DRC_NBC_Country_of_Final_Destination__c;
@@ -962,7 +919,6 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             updatedOrder.DRC_NBC_Final_Destination__c            = this.orderRec.DRC_NBC_Final_Destination__c;
             updatedOrder.DRC_NBC_Required_Documents__c           = this.orderRec.DRC_NBC_Required_Documents__c;
         }
-
         if (this.isSample) {
             updatedOrder.DRC_NBC_Sample_Name__c            = this.orderRec.DRC_NBC_Sample_Name__c;
             updatedOrder.DRC_NBC_Sample_Type__c            = this.orderRec.DRC_NBC_Sample_Type__c;
@@ -976,14 +932,10 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             updatedOrder.DRC_NBC_Sample_Amount__c          = this.orderRec.DRC_NBC_Sample_Amount__c;
             updatedOrder.DRC_NBC_Rejection_Reason__c       = this.orderRec.DRC_NBC_Rejection_Reason__c;
             updatedOrder.DRC_NBC_Remarks__c                = this.orderRec.DRC_NBC_Remarks__c;
-            updatedOrder.Type = 'Sample Order';
+            updatedOrder.Type                              = 'Sample Order';
         }
 
-        saveOrderLineItems({
-            oliList:          recordsToSave,
-            oliIdsToDelete:   this.oliIdsToDelete,
-            orderData:        updatedOrder
-        })
+        saveOrderLineItems({ oliList: recordsToSave, oliIdsToDelete: this.oliIdsToDelete, orderData: updatedOrder })
             .then(() => {
                 this.showToastEvent("Success", "Order and Line Items saved successfully", "success");
                 this.showLoading = false;
@@ -994,13 +946,15 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 let message = error?.body?.message || error?.message || 'Unknown error occurred';
                 if (!message && error?.body?.pageErrors?.length > 0) message = error.body.pageErrors[0].message;
                 if (!message && error?.body?.fieldErrors) {
-                    const fieldErrors = Object.values(error.body.fieldErrors).flat();
-                    if (fieldErrors.length > 0) message = fieldErrors[0].message;
+                    const fe = Object.values(error.body.fieldErrors).flat();
+                    if (fe.length > 0) message = fe[0].message;
                 }
                 this.showToastEvent("Error", message, "error");
                 this.showLoading = false;
             });
     }
+
+    // ─── Utilities ────────────────────────────────────────────────────────────
 
     showToastEvent(title, error, variant) {
         let message = typeof error === 'string' ? error : (error?.body?.message || 'Unknown error');
@@ -1010,37 +964,20 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     getBaseRecordData() {
         return {
             olis: {
-                Id:                    '',
-                Name:                  '',
-                PricebookEntryId:      '',
-                Description:           '',
-                Product2Id:            '',
-                Quantity:              1,
-                UnitPrice:             0,
-                OriginalUnitPrice:     0,
-                ProductName:           '',
-                DRC_NBC_FG_Code__c:    '',
-                DRC_NBC_HSN_SAC_Code__c: '',
-                UOM:                   '',
-                modifiedPrice:         0,
-                totalAmount:           0,
-                showSearch:            true,
-                searchResults:         [],
-                noResultsFound:        false,
-                packingDetails:        [],
-                packingSizeOptions:    [],
-                selectedPackingSize:   '',
-                rawPackingQuantity:    '',  // raw DRC_NBC_Packing_Qauntity__c — divisor & display value
-                packingQuantity:       '',  // shown in Packing Quantity column = rawPackingQuantity
-                quantityError:         ''   // inline error when qty is not a multiple
+                Id: '', Name: '', PricebookEntryId: '', Description: '', Product2Id: '',
+                Quantity: 1, UnitPrice: 0, OriginalUnitPrice: 0, ProductName: '',
+                DRC_NBC_FG_Code__c: '', DRC_NBC_HSN_SAC_Code__c: '', UOM: '',
+                modifiedPrice: 0, totalAmount: 0, showSearch: true,
+                searchResults: [], noResultsFound: false,
+                packingDetails: [], packingSizeOptions: [],
+                selectedPackingSize: '', rawPackingQuantity: '',
+                packingQuantity: '', quantityError: ''
             }
         };
     }
 
     updateTotal(index) {
-        let record          = this.filteredData[index].recordData;
-        const modifiedPrice = parseFloat(record.modifiedPrice) || 0;
-        const quantity      = parseFloat(record.Quantity)      || 0;
-        record.totalAmount  = modifiedPrice * quantity;
+        let record = this.filteredData[index].recordData;
+        record.totalAmount = (parseFloat(record.modifiedPrice) || 0) * (parseFloat(record.Quantity) || 0);
     }
 }

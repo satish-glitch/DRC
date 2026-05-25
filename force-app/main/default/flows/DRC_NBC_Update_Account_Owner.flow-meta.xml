@@ -53,7 +53,7 @@
         <inputAssignments>
             <field>DRC_Account_Owner_Manager__c</field>
             <value>
-                <elementReference>$Record.Account.Owner.ManagerId</elementReference>
+                <elementReference>Get_Records_1.DRC_NBC_Owner_Manager__c</elementReference>
             </value>
         </inputAssignments>
         <inputAssignments>

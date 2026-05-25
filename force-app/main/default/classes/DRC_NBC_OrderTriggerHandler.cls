@@ -1,6 +1,6 @@
 public class DRC_NBC_OrderTriggerHandler {
     private static Boolean isRunning = false;
-
+    
     public static void handleAfter(
         List<Order> newList,
         Map<Id, Order> oldMap,
@@ -9,40 +9,40 @@ public class DRC_NBC_OrderTriggerHandler {
     ) {
         if (isRunning) return;
         isRunning = true;
-
+        
         try {
             List<Order> toProcess = new List<Order>();
             Map<Id, String> statusTransitions = new Map<Id, String>();
-
+            
             for (Order o : newList) {
-
+                
                 if (isInsert) {
                     if (o.DRC_NBC_Shipping_Address__c != null &&
                         (o.DRC_NBC_Warehouse__c != null || o.DRC_NBC_Inco_Terms__c != null)) {
-                        toProcess.add(o);
-                    }
+                            toProcess.add(o);
+                        }
                 }
-
+                
                 if (isUpdate) {
                     Order oldO = oldMap.get(o.Id);
-
+                    
                     Boolean whChanged =
                         o.DRC_NBC_Warehouse__c != oldO.DRC_NBC_Warehouse__c;
-
+                    
                     Boolean incoChanged =
                         o.DRC_NBC_Inco_Terms__c != oldO.DRC_NBC_Inco_Terms__c;
-
+                    
                     Boolean shippingAddressChanged =
                         o.DRC_NBC_Shipping_Address__c != oldO.DRC_NBC_Shipping_Address__c;
-
+                    
                     if ((whChanged || incoChanged || shippingAddressChanged) &&
                         o.DRC_NBC_Shipping_Address__c != null) {
-                        toProcess.add(o);
-                    }
-
+                            toProcess.add(o);
+                        }
+                    
                     String oldStatus = oldO.Status;
                     String newStatus = o.Status;
-
+                    
                     if (oldStatus == 'Accepted' && newStatus == 'Released') {
                         statusTransitions.put(o.Id, 'A2R');
                     } else if (oldStatus == 'Released' && newStatus == 'Accepted') {
@@ -50,38 +50,42 @@ public class DRC_NBC_OrderTriggerHandler {
                     }
                 }
             }
-
+            /* if (isInsert) {
+setAccountOwnerManager(newList);
+}*/
+            
             // Call once, outside loop
             if (!toProcess.isEmpty()) {
                 updateRelatedAddresses(toProcess);
             }
-
+            
             // Call once, outside loop
             if (!statusTransitions.isEmpty()) {
                 sendStatusChangeEmails(statusTransitions);
             }
-
+            
+            
         } finally {
             isRunning = false;
         }
     }
-
+    
     private static void updateRelatedAddresses(List<Order> orders) {
         Set<Id> addressIds = new Set<Id>();
         Map<Id, Id> addressIdToOrderId = new Map<Id, Id>();
-
+        
         for (Order o : orders) {
             if (o.DRC_NBC_Shipping_Address__c != null) {
                 addressIds.add(o.DRC_NBC_Shipping_Address__c);
                 addressIdToOrderId.put(o.DRC_NBC_Shipping_Address__c, o.Id);
             }
         }
-
+        
         if (addressIds.isEmpty()) return;
-
+        
         Map<Id, Order> orderMap = new Map<Id, Order>(orders);
         List<DRC_NBC_Addresses__c> addrToUpdate = new List<DRC_NBC_Addresses__c>();
-
+        
         for (DRC_NBC_Addresses__c a : [
             SELECT Id, DRC_NBC_Warehouse__c, DRC_Inco_Term__c
             FROM DRC_NBC_Addresses__c
@@ -89,35 +93,35 @@ public class DRC_NBC_OrderTriggerHandler {
         ]) {
             Id orderId = addressIdToOrderId.get(a.Id);
             Order o = orderMap.get(orderId);
-
+            
             if (o != null) {
                 a.DRC_NBC_Warehouse__c = o.DRC_NBC_Warehouse__c;
                 a.DRC_Inco_Term__c = o.DRC_NBC_Inco_Terms__c;
                 addrToUpdate.add(a);
             }
         }
-
+        
         if (!addrToUpdate.isEmpty()) {
             update addrToUpdate;
         }
     }
-
+    
     private static void sendStatusChangeEmails(Map<Id, String> statusTransitions) {
         List<Order> ords = [
             SELECT Id, OrderNumber, Status, OwnerId, DRC_NBC_Cust_Order_Number__c
             FROM Order
             WHERE Id IN :statusTransitions.keySet()
         ];
-
+        
         List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
-
+        
         for (Order o : ords) {
             String transition = statusTransitions.get(o.Id);
-
+            
             Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
             mail.setTargetObjectId(o.OwnerId);
             mail.setSaveAsActivity(false);
-
+            
             if (transition == 'A2R') {
                 mail.setSubject('Order ' + o.DRC_NBC_Cust_Order_Number__c + ' order arrived');
                 mail.setPlainTextBody(
@@ -139,12 +143,49 @@ public class DRC_NBC_OrderTriggerHandler {
             } else {
                 continue;
             }
-
+            
             emails.add(mail);
         }
-
+        
         if (!emails.isEmpty()) {
             Messaging.sendEmail(emails);
         }
     }
+    
+    /* private static void setAccountOwnerManager(List<Order> orders) {
+Set<Id> accountIds = new Set<Id>();
+
+for (Order o : orders) {
+if (o.AccountId != null) {
+accountIds.add(o.AccountId);
+}
+}
+
+if (accountIds.isEmpty()) return;
+
+Map<Id, Account> accountMap = new Map<Id, Account>([
+SELECT Id, DRC_NBC_Owner_Manager__c
+FROM Account
+WHERE Id IN :accountIds
+]);
+
+List<Order> ordersToUpdate = new List<Order>();
+
+for (Order o : orders) {
+if (o.AccountId != null && accountMap.containsKey(o.AccountId)) {
+Account acc = accountMap.get(o.AccountId);
+
+if (acc.DRC_NBC_Owner_Manager__c != null) {
+ordersToUpdate.add(new Order(
+Id = o.Id,
+DRC_Account_Owner_Manager__c = acc.DRC_NBC_Owner_Manager__c
+));
+}
+}
+}
+
+if (!ordersToUpdate.isEmpty()) {
+update ordersToUpdate;
+}
+}*/
 }

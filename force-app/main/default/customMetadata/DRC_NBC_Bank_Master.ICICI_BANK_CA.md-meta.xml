@@ -3,6 +3,10 @@
     <label>ICICI BANK CA</label>
     <protected>false</protected>
     <values>
+        <field>Bank_Code__c</field>
+        <value xsi:type="xsd:string">BANK00001</value>
+    </values>
+    <values>
         <field>DRC_NBC_Account_Number__c</field>
         <value xsi:type="xsd:string">015805013849</value>
     </values>

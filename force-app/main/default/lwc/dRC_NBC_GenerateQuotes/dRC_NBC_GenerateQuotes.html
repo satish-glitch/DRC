@@ -57,26 +57,20 @@
                                 <lightning-input-field field-name="DRC_NBC_Inco_terms__c" onchange={handleFieldChange} required></lightning-input-field>
                             </div>-->
 
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input
-                                    label="Payment Term Description"
+                           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-input-field 
+                                    field-name="DRC_NBC_Payment_Term_Description__c" 
                                     value={quoteRec.DRC_NBC_Payment_Term_Description__c}
-                                    disabled>
-                                </lightning-input> 
+                                    onchange={handleFieldChange}>
+                                </lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input
-                                    label="Payment Term"
-                                    value={quoteRec.DRC_NBC_Payemnt_Term__c}
-                                    disabled>
-                                </lightning-input>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input
-                                    label="Inco Terms"
+                           
+                           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-input-field 
+                                    field-name="DRC_NBC_Inco_terms__c"
                                     value={quoteRec.DRC_NBC_Inco_terms__c}
-                                    disabled>
-                                </lightning-input>
+                                    onchange={handleFieldChange}>
+                                </lightning-input-field>
                             </div>
                             <!-- Currency is read-only — always driven by the Opportunity -->
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">

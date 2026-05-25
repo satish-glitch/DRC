@@ -314,6 +314,7 @@
                         </td>
                         <td style="vertical-align: top; padding-top: 5px; padding-left: 25px;">
                             <p style="margin: 0; font-size: 8pt;"><strong>TO SHIPPED</strong></p>
+                             <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!consigneeName}</p>
                             <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!orderRecord.ShippingStreet}</p>
                             <p style="margin: 0; font-size: 8pt;">{!orderRecord.ShippingCity}</p>
                             <p style="margin: 0; font-size: 8pt;">{!orderRecord.ShippingState} {!orderRecord.ShippingPostalCode} {!orderRecord.ShippingCountry}</p>
@@ -429,7 +430,7 @@
                 <!-- Row 4: Values -->
                 <tr>
                     <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
-                        {!orderRecord.DRC_NBC_Payment_Terms__c}
+                        {!orderRecord.DRC_NBC_Payment_Term_Description__c}
                     </td>
                     <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
                         {!orderRecord.DRC_NBC_Inco_Terms__c}
@@ -465,8 +466,8 @@
                         <th style="width: 8%;">HSC Code</th>
                         <th style="width: 8%;">KIND OF PKG</th>
                         <th style="width: 10%;">QUANTITY IN KGS</th>
-                        <th style="width: 9%;">RATE CIF {!orderRecord.CurrencyIsoCode}</th>
-                        <th style="width: 10%;">AMOUNT CIF {!orderRecord.CurrencyIsoCode}</th>
+                        <th style="width: 9%;">RATE {!Inco} {!orderRecord.CurrencyIsoCode}</th>
+                        <th style="width: 10%;">AMOUNT {!Inco} {!orderRecord.CurrencyIsoCode}</th>
                     </tr>
                 </thead>
                 <tbody>

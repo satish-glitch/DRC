@@ -659,6 +659,34 @@ public class DRC_NBC_OrderController {
         }
     }
 
+    @AuraEnabled(cacheable=true)
+    public static Map<String, List<String>> getPicklistValues() {
+        Map<String, List<String>> result = new Map<String, List<String>>();
+        
+        List<String> fieldNames = new List<String>{
+            'DRC_NBC_Transport_Agent__c',
+            'DRC_NBC_Port_of_Loading__c',
+            'DRC_NBC_Port_Of_Discharge__c',
+            'DRC_NBC_Final_Destination__c'
+        };
+        
+        Schema.SObjectType orderType = Schema.getGlobalDescribe().get('Order');
+        Map<String, Schema.SObjectField> fieldMap = orderType.getDescribe().fields.getMap();
+        
+        for (String fieldName : fieldNames) {
+            List<String> values = new List<String>();
+            if (fieldMap.containsKey(fieldName)) {
+                for (Schema.PicklistEntry entry : fieldMap.get(fieldName).getDescribe().getPicklistValues()) {
+                    if (entry.isActive()) {
+                        values.add(entry.getLabel());
+                    }
+                }
+            }
+            result.put(fieldName, values);
+        }
+        return result;
+    }
+
     public class oliWrapper {
         @AuraEnabled public List<OrderItem>             olis;
         @AuraEnabled public List<PricebookEntry>        productsList;

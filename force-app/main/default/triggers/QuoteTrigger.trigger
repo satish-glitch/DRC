@@ -1,3 +1,5 @@
-trigger QuoteTrigger on Quote (after update) {
-    DRC_NBC_QuoteSyncHandler.updateSyncedQuoteId(Trigger.new, Trigger.oldMap);
+trigger QuoteTrigger on Quote (after insert) {
+    if (Trigger.isAfter && Trigger.isInsert) {
+        QuoteTriggerHandler.updateQuoteOwnerManagerFromAccount(Trigger.new);
+    }
 }

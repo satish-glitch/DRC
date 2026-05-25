@@ -151,6 +151,10 @@
                 <behavior>Edit</behavior>
                 <field>DRC_NBC_SalesPerson_Code__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Readonly</behavior>
+                <field>Account_Sales_Person__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

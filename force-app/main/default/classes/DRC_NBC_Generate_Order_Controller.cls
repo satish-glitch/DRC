@@ -41,6 +41,19 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         }
     }
 
+    /**
+     * NEW: Generic method to fetch picklist values for any Object + Field.
+     * Used by LWC to get picklist options for searchable dropdowns.
+     */
+    @AuraEnabled
+    public static List<OptionsWrapper> getFieldPicklistValues(String objectName, String fieldName) {
+        try {
+            return fieldPicklistValue(objectName, fieldName);
+        } catch (Exception e) {
+            throw new AuraHandledException('Error retrieving picklist for ' + fieldName + ': ' + e.getMessage());
+        }
+    }
+
     @AuraEnabled
     public static OrderDefaults getDefaultValues(String quoteID){
         try {
@@ -50,7 +63,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                 AccountId,
                 Pricebook2Id,
                 OpportunityId,
-                DRC_NBC_Payemnt_Term__c,
+                DRC_NBC_Payment_Terms__c,
                 DRC_NBC_Payment_Term_Description__c,
                 DRC_NBC_Inco_terms__c,
                 DRC_NBC_I_GST__c,
@@ -81,6 +94,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     DRC_NBC_Consignee_Bank_Name__c,
                     DRC_NBC_Consignee_Bank_Address__c,
                     DRC_NBC_Special_Instructions__c,
+                    SalesPerson_Code__c,
                     (
                         SELECT
                             ID,
@@ -113,7 +127,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                 WHERE AccountID = :ord.acc[0].Id
             ];
             ord.customerContacts = customerContacts;
-            ord.paymentTerm = quoteObj.DRC_NBC_Payemnt_Term__c;
+            ord.paymentTerm = quoteObj.DRC_NBC_Payment_Terms__c;
             ord.paymentTermDes = quoteObj.DRC_NBC_Payment_Term_Description__c;
             ord.incoTerm = quoteObj.DRC_NBC_Inco_terms__c;
             ord.igst = quoteObj.DRC_NBC_I_GST__c;
@@ -123,6 +137,9 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             ord.sgst = quoteObj.DRC_NBC_S_GST__c;
             ord.tcsAmount = quoteObj.DRC_NBC_TCS_Amount__c;
             ord.otherTaxAmount = quoteObj.DRC_NBC_Other_Tax_Amount__c;
+            
+            // Sales Person Code from Account
+            ord.salesPersonCode = ord.acc[0].SalesPerson_Code__c;
             
             // Add Account Billing Address
             ord.BillingStreet = quoteObj.Account.BillingStreet;
@@ -324,7 +341,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         @AuraEnabled 
         public String paymentTerm;
 
-         @AuraEnabled 
+        @AuraEnabled 
         public String paymentTermDes;
         @AuraEnabled 
         public String incoTerm;
@@ -344,6 +361,10 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         public Decimal tcsAmount;
         @AuraEnabled 
         public Decimal otherTaxAmount;
+
+        // Sales Person Code from Account
+        @AuraEnabled
+        public String salesPersonCode;
         
         // Billing Address from Account
         @AuraEnabled public String BillingStreet;
@@ -382,7 +403,6 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     oiw.UnitPrice          = qli.UnitPrice;
                     oiw.PriceBookEntryId   = qli.PriceBookEntryId;
                     oiw.Product2Id         = qli.Product2Id;
-                    // Using actual field API names as they exist in Salesforce org
                     oiw.DRC_NBC_Packing_Size     = qli.DRC_NBC_Packing_Size__c;
                     oiw.DRC_NBC_Packing_Quantity = qli.DRC_NBC_Packing_Qauntity__c;
                     
