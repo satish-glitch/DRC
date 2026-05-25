@@ -83,34 +83,33 @@ return acc;
         Order ord = [SELECT DRC_NBC_Integration_Status__c FROM Order WHERE Id = :orderId];
         return ord.DRC_NBC_Integration_Status__c;
     }
-    @AuraEnabled
-    public static DRC_NBC_API_Log__c getLatestLog(Id orderId, String afterDateTime) {
-        if (orderId == null) return null;
-        
-        Order ord = [SELECT AccountId FROM Order WHERE Id = :orderId LIMIT 1];
-        
-        // Convert ISO string from LWC to Apex DateTime
-        DateTime filterDt = String.isNotBlank(afterDateTime)
-            ? (DateTime) JSON.deserialize('"' + afterDateTime + '"', DateTime.class)
-            : System.now().addMinutes(-2); // safe fallback
-        
-        List<DRC_NBC_API_Log__c> logs = [
-            SELECT DRC_NBC_Log_Type__c,
-            DRC_NBC_Response_Body__c,
-            DRC_NBC_Timestamp__c,
-            DRC_NBC_Error_Message__c,
-            DRC_NBC_Created_Updated_SF_Id__c
-            FROM   DRC_NBC_API_Log__c
-            WHERE  (
-                DRC_NBC_Created_Updated_SF_Id__c = :orderId        // ✅ Order log
-                OR DRC_NBC_Created_Updated_SF_Id__c = :ord.AccountId  // ✅ Account log
-            )
-            AND  DRC_NBC_Timestamp__c >= :filterDt                      // ✅ only THIS sync's logs
-            ORDER BY DRC_NBC_Timestamp__c DESC
-            LIMIT 1
-        ];
-        
-        return logs.isEmpty() ? null : logs[0];
-    }
-    
+@AuraEnabled
+public static DRC_NBC_API_Log__c getLatestLog(Id orderId, String afterDateTime) {
+    if (orderId == null) return null;
+
+    Order ord = [SELECT AccountId FROM Order WHERE Id = :orderId LIMIT 1];
+
+    DateTime filterDt = String.isNotBlank(afterDateTime)
+        ? (DateTime) JSON.deserialize('"' + afterDateTime + '"', DateTime.class)
+        : System.now().addMinutes(-2);
+
+    List<DRC_NBC_API_Log__c> allLogs = [
+        SELECT DRC_NBC_Log_Type__c,
+               DRC_NBC_Response_Body__c,
+               DRC_NBC_Timestamp__c,
+               DRC_NBC_Error_Message__c,
+               DRC_NBC_Created_Updated_SF_Id__c
+        FROM   DRC_NBC_API_Log__c
+        WHERE  (
+                   DRC_NBC_Created_Updated_SF_Id__c = :orderId
+                   OR DRC_NBC_Created_Updated_SF_Id__c = :ord.AccountId
+               )
+        AND    DRC_NBC_Timestamp__c >= :filterDt
+        AND    CreatedById = :UserInfo.getUserId()
+        ORDER BY DRC_NBC_Timestamp__c DESC
+        LIMIT 1  // ✅ Just fetch the single latest log — no looping needed
+    ];
+
+    return allLogs.isEmpty() ? null : allLogs[0];
+}
 }

@@ -83,10 +83,11 @@
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="Description" onchange={handleFieldChange}></lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field
-                                    label="Special Requirements"
-                                    value={quoteRec.DRC_NBC_Special_Requirements__c}>
+                                    field-name="DRC_NBC_Special_Requirements__c"
+                                    value={quoteRec.DRC_NBC_Special_Requirements__c}
+                                    onchange={handleFieldChange}>
                                 </lightning-input-field>
                             </div>
                         </div>

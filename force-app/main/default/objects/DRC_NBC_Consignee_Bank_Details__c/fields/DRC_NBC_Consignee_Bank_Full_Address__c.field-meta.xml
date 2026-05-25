@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>DRC_NBC_Consignee_Bank_Full_Address__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(
+    ISBLANK(DRC_NBC_Consignee_Bank_Address__Street__s),
+    &apos;&apos;,
+    DRC_NBC_Consignee_Bank_Address__Street__s &amp; &apos;, &apos;
+) &amp;
+IF(
+    ISBLANK(DRC_NBC_Consignee_Bank_Address__City__s),
+    &apos;&apos;,
+    DRC_NBC_Consignee_Bank_Address__City__s &amp; &apos;, &apos;
+) &amp;
+IF(
+    ISPICKVAL(DRC_NBC_Consignee_Bank_Address__StateCode__s, &apos;&apos;),
+    &apos;&apos;,
+    TEXT(DRC_NBC_Consignee_Bank_Address__StateCode__s) &amp; &apos;, &apos;
+) &amp;
+IF(
+    ISBLANK(DRC_NBC_Consignee_Bank_Address__PostalCode__s),
+    &apos;&apos;,
+    DRC_NBC_Consignee_Bank_Address__PostalCode__s &amp; &apos;, &apos;
+) &amp;
+IF(
+    ISPICKVAL(DRC_NBC_Consignee_Bank_Address__CountryCode__s, &apos;&apos;),
+    &apos;&apos;,
+    TEXT(DRC_NBC_Consignee_Bank_Address__CountryCode__s)
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Consignee Bank Full Address</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

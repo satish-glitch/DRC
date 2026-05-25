@@ -476,27 +476,7 @@ private class DRC_NBC_Order_BC_Callout_Test {
         System.debug('T16 Sell_to_Address_2: ' + payload.Sell_to_Address_2);
     }
 
-    // T17: Shipping address fields in payload
-    @isTest
-    static void testMapOrderToBCPayload_ShippingAddress() {
-        Order ord = DRC_NBC_Order_BC_Callout.getOrderDetails(getTestOrder().Id);
-
-        Test.startTest();
-        DRC_NBC_Integration_Payload.OrderPayload payload =
-            DRC_NBC_Order_BC_Callout.mapOrderToBCPayload(ord);
-        Test.stopTest();
-
-        System.debug('T17 Ship_to_Code: ' + payload.Ship_to_Code);
-        System.debug('T17 Ship_to_Name: ' + payload.Ship_to_Name);
-        System.debug('T17 Ship_to_Name_2: ' + payload.Ship_to_Name_2);
-        System.debug('T17 Ship_to_Address: ' + payload.Ship_to_Address);
-        System.debug('T17 Ship_to_Address_2: ' + payload.Ship_to_Address_2);
-        System.debug('T17 Ship_to_Post_Code: ' + payload.Ship_to_Post_Code);
-        System.debug('T17 Ship_to_Country_Region_Code: ' + payload.Ship_to_Country_Region_Code);
-        System.debug('T17 Ship_to_GST_Reg_No: ' + payload.Ship_to_GST_Reg_No);
-        System.debug('T17 Ship_to_GST_Customer_Type: ' + payload.Ship_to_GST_Customer_Type);
-    }
-
+    
     // T18: Country code IN → IND normalisation
     @isTest
     static void testMapOrderToBCPayload_CountryCodeNormalisation() {

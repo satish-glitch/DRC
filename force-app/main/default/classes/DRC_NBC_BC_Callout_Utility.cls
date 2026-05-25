@@ -19,7 +19,9 @@ public class DRC_NBC_BC_Callout_Utility {
             DRC_NBC_Shipping_Address_Endpoint__c,
             DRC_NBC_Token_Generated_Time__c,
             DRC_NBC_SendOrderLineEndpoint__c,
-            DRC_NBC_SalesPerson_Code__c
+            DRC_NBC_SalesPerson_Code__c,
+            DRC_NBC_Customer_Items_Endpoint__c,
+            DRC_NBC_Consignee_Bank_Endpoint__c
             FROM 
             DRC_NBC_BC_Integration__c
             WHERE 

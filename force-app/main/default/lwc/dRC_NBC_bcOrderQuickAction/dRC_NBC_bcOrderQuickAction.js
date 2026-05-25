@@ -11,7 +11,7 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
     _pollCount            = 0;
     _maxPolls             = 6;
     _pollInterval         = 5000;
-    _integrationStartTime = null; // ✅ timestamp captured before trigger fires
+    _integrationStartTime = null;
 
     connectedCallback() {
         const url = window.location.href;
@@ -24,13 +24,13 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
             return;
         }
 
-        // ✅ Capture NOW before the callout — ensures we never read logs older than this sync
+        // Capture timestamp before trigger fires — ensures no stale logs are read
         this._integrationStartTime = new Date().toISOString();
 
         triggerBCIntegration({ orderId: this.recordId })
             .then((integrationResult) => {
 
-                // ── HARD FAILURE returned synchronously ────────────────────
+                // Hard failure returned synchronously
                 if (
                     integrationResult == null ||
                     integrationResult?.startsWith('FAILURE') ||
@@ -40,10 +40,8 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                     this.showToast('Error', integrationResult || 'Integration returned no result.', 'error');
                     this.closeAction();
 
-                // ── ALL OTHER PATHS ────────────────────────────────────────
-                // Account sync, Order push, Order update, Queued
-                // Always poll the latest log — covers both Account and Order logs
                 } else {
+                    // All other paths — poll the log
                     this._pollCount = 0;
                     const delay = integrationResult?.startsWith('QUEUED') ? this._pollInterval : 3000;
                     setTimeout(() => this.pollLog(), delay);
@@ -56,20 +54,9 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
             });
     }
 
-    /**
-     * Polls the latest DRC_NBC_API_Log__c record scoped to this Order.
-     * Passes orderId + afterDateTime so Apex only returns a log that:
-     *   - belongs to this Order OR its related Account (via DRC_NBC_Created_Updated_SF_Id__c)
-     *   - was created AFTER this integration was triggered (no stale logs)
-     * Parses JSON/SOAP response body to extract a human-readable message.
-     * ERROR   → parsed message from Response Body
-     * SUCCESS → parsed message from Response Body
-     * Retries up to _maxPolls times if no log found yet.
-     */
     pollLog() {
         this._pollCount++;
 
-        // ✅ Pass orderId + startTime — Apex filters by sfId AND timestamp
         getLatestLog({
             orderId       : this.recordId,
             afterDateTime : this._integrationStartTime
@@ -77,40 +64,54 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
             .then((log) => {
                 if (log) {
                     this.isLoading = false;
-                    const logType = (log.DRC_NBC_Log_Type__c || '').toUpperCase();
-                    const parsed  = this.extractMessage(
-                        log.DRC_NBC_Response_Body__c,
-                        log.DRC_NBC_Error_Message__c
-                    );
 
-                    if (logType.includes('ERROR')) {
-                        this.showToast('Error', parsed, 'error');
+                    // DRC_NBC_Log_Type__c has two values: 'Error' or 'Success'
+                    const logType = (log.DRC_NBC_Log_Type__c || '').trim().toLowerCase();
 
-                    } else if (logType.includes('SUCCESS')) {
-                        let successMessage = 'Successfully synced';
+                    if (logType === 'error') {
+                        // Parse BC response body for a human-readable error message
+                        const errorMessage = this.extractMessage(
+                            log.DRC_NBC_Response_Body__c,
+                            log.DRC_NBC_Error_Message__c
+                        );
+                        this.showToast('Error', errorMessage, 'error');
 
-                        if (logType.includes('ACCOUNT')) {
-                            successMessage = 'Account successfully synced';
-                        } else if (logType.includes('ORDER')) {
-                            successMessage = 'Order successfully synced';
-                        }
-
-                        this.showToast('Success', successMessage, 'success');
+                    } else if (logType === 'success') {
+                        // Parse BC response body for success message
+                        const successMessage = this.extractMessage(
+                            log.DRC_NBC_Response_Body__c,
+                            null
+                        );
+                        // If BC returns a meaningful message use it, else show generic
+                        this.showToast(
+                            'Success',
+                            successMessage || 'Successfully synced to Business Central.',
+                            'success'
+                        );
 
                     } else {
-                        this.showToast('Info', 'Order sync in progress, please refresh after a few minutes.', 'info');
+                        // Unexpected log type value — treat as in-progress
+                        this.showToast(
+                            'Info',
+                            'Sync in progress, please refresh after a few minutes.',
+                            'info'
+                        );
                     }
 
                     this.closeAction();
 
                 } else if (this._pollCount < this._maxPolls) {
-                    // Log not written yet — still running, retry after interval
+                    // Log not written yet — still running, retry
                     setTimeout(() => this.pollLog(), this._pollInterval);
 
                 } else {
                     // Timed out after all retries
                     this.isLoading = false;
-                    this.showToast('Warning', 'Read timeout — order sync in progress, please refresh after a few minutes.', 'warning');
+                    this.showToast(
+                        'Warning',
+                        'Read timeout — sync in progress, please refresh after a few minutes.',
+                        'warning'
+                    );
                     this.closeAction();
                 }
             })
@@ -124,36 +125,30 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
     /**
      * Parses the BC response body and extracts a clean readable message.
      *
-     * Handles these response shapes:
+     * Handles:
+     *   SOAP/XML  → extracts <faultstring> text
+     *   JSON      → {"error": {"message": "..."}}
+     *              {"message": "..."}
+     *              {"Message": "..."}   BC capitalised variant
+     *   Plain string → returned as-is
      *
-     *   SOAP/XML  → extracts <faultstring> text from SOAP Fault envelope
-     *
-     *   JSON:
-     *     {"error": {"code": "...", "message": "Actual error text"}}
-     *     {"message": "..."}
-     *     {"Message": "..."}   ← BC sometimes capitalises
-     *
-     *   Plain non-JSON/non-XML string (returned as-is)
-     *
-     * Falls back to errorMsg field, then a generic message if both are empty.
+     * Falls back to errorMsg field, then generic message.
      */
     extractMessage(responseBody, errorMsg) {
         if (responseBody) {
 
-            // ── SOAP / XML response ────────────────────────────────────────
+            // SOAP / XML response
             if (responseBody.trim().startsWith('<')) {
                 try {
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(responseBody, 'text/xml');
 
-                    // Use querySelector to handle namespace-prefixed tags (s:Fault, s:Body etc.)
                     const faultString = xmlDoc.querySelector('Fault faultstring')
                                      || xmlDoc.querySelector('faultstring');
                     if (faultString?.textContent) {
                         return faultString.textContent;
                     }
 
-                    // Fallback: <detail><string>
                     const detailString = xmlDoc.querySelector('detail string')
                                       || xmlDoc.querySelector('string');
                     if (detailString?.textContent) {
@@ -161,16 +156,16 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                     }
 
                 } catch (e) {
-                    // XML parse failed — fall through and return raw body
+                    // XML parse failed — fall through
                 }
                 return responseBody;
             }
 
-            // ── JSON response ──────────────────────────────────────────────
+            // JSON response
             try {
                 const parsed = JSON.parse(responseBody);
 
-                // {"error": {"message": "..."}}  — most common BC error shape
+                // {"error": {"message": "..."}} — most common BC error shape
                 if (parsed.error?.message) {
                     return parsed.error.message;
                 }
@@ -178,15 +173,15 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                 if (parsed.message) {
                     return parsed.message;
                 }
-                // {"Message": "..."}  — BC capitalised variant
+                // {"Message": "..."} — BC capitalised variant
                 if (parsed.Message) {
                     return parsed.Message;
                 }
-                // Parsed successfully but no known message field
+                // Parsed but no known message field — stringify
                 return JSON.stringify(parsed);
 
             } catch (e) {
-                // Not JSON — return plain string as-is
+                // Not JSON — return plain string
                 return responseBody;
             }
         }

@@ -2,7 +2,7 @@
  * @File Name : DRC_NBC_SalesPersonCode_Callout_Test.cls
  * @Description : Test class for DRC_NBC_SalesPersonCode_Callout and DRC_NBC_SalesPerson_BC_Integration
  * @Author : Satish
- * @Last Modified On : May 08, 2026
+ * @Last Modified On : May 25, 2026
 **/
 @isTest(SeeAllData=true)
 private class DRC_NBC_SalesPersonCode_Callout_Test {
@@ -25,51 +25,51 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         }
     }
 
-    // ─── Helper: fetch a real MDT record's MasterLabel (SeeAllData=true allows this) ───
+    // ─── Helper: fetch a real MDT record's Name__c (SeeAllData=true allows this) ───
     private static String getValidSalesPersonCode() {
         List<SalesPerson_Code__mdt> mdtList = [
-            SELECT MasterLabel
+            SELECT Name__c
             FROM SalesPerson_Code__mdt
             LIMIT 1
         ];
-        return mdtList.isEmpty() ? null : mdtList[0].MasterLabel;
+        return mdtList.isEmpty() ? null : mdtList[0].Name__c;
     }
 
-    // ─── Create Account WITH SalesPerson_Code__c matching an MDT MasterLabel ───
+    // ─── Create Account WITH SalesPerson_Code__c ───
     private static Account createTestAccount(String salesPersonCode) {
         Account acc = new Account(
-            Name                                    = 'Test Account',
-            DRC_NBC_Customer_Number__c              = 'CUST12345',
-            CurrencyIsoCode                         = 'INR',
-            Phone                                   = '1234567890',
-            AccountNumber                           = 'A123',
-            DRC_NBC_PAN_No__c                       = 'AWVPY9594J',
-            DRC_NBC_GST_Number__c                   = '27AWVPY9594J1ZY',
-            DRC_NBC_Payment_Term_Code__c            = 'PDC90',
-            DRC_NBC_Account_Email_Email__c          = 'test@example.com',
-            BillingStreet                           = '123 Street',
-            BillingCity                             = 'City',
-            BillingCountry                          = 'India',
-            BillingCountryCode                      = 'IN',
-            BillingPostalCode                       = '462002',
-            BillingState                            = 'Maharashtra',
-            BillingStateCode                        = 'MH',
-            DRC_NBC_Volume__c                       = 70,
-            DRC_NBC_Credit_Limit__c                 = 123456787,
-            DRC_NBC_Value__c                        = 900,
+            Name                                     = 'Test Account',
+            DRC_NBC_Customer_Number__c               = 'CUST12345',
+            CurrencyIsoCode                          = 'INR',
+            Phone                                    = '1234567890',
+            AccountNumber                            = 'A123',
+            DRC_NBC_PAN_No__c                        = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c                    = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c             = 'PDC90',
+            DRC_NBC_Account_Email_Email__c           = 'test@example.com',
+            BillingStreet                            = '123 Street',
+            BillingCity                              = 'City',
+            BillingCountry                           = 'India',
+            BillingCountryCode                       = 'IN',
+            BillingPostalCode                        = '462002',
+            BillingState                             = 'Maharashtra',
+            BillingStateCode                         = 'MH',
+            DRC_NBC_Volume__c                        = 70,
+            DRC_NBC_Credit_Limit__c                  = 123456787,
+            DRC_NBC_Value__c                         = 900,
             DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
-            DRC_NBC_Consignee_Bank_Address__c       = 'Barhi 483775',
-            DRC_NBC_Consignee_Bank_IFSC_Code__c     = 'PUNB01391000',
-            DRC_NBC_Consignee_Bank_Name__c          = 'Punjab National bank',
-            Industry                                = 'Chemicals Construction',
-            Type                                    = 'Analyst',
-            SalesPerson_Code__c                     = salesPersonCode  // NEW: links to MDT
+            DRC_NBC_Consignee_Bank_Address__c        = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c      = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c           = 'Punjab National bank',
+            Industry                                 = 'Chemicals Construction',
+            Type                                     = 'Analyst',
+            SalesPerson_Code__c                      = 'Ajit Vasudevan'
         );
         insert acc;
         return acc;
     }
 
-    // ─── Create Order WITHOUT ShipToContactId (Contact removed) ───
+    // ─── Create Order ───
     private static Order createTestOrder(Id accountId) {
         Order ord = new Order(
             Name                               = 'Test Order',
@@ -82,7 +82,7 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         return ord;
     }
 
-    // ─── Helper: build a dummy MDT-style payload for Integration tests ───
+    // ─── Helper: build a dummy payload for Integration tests ───
     private static String buildDummyPayload() {
         Map<String, Object> payloadMap = new Map<String, Object>{
             'Name'     => 'Test SalesPerson',
@@ -137,7 +137,7 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  executeCallout — SUCCESS PATHS
+    //  SUCCESS PATHS
     // ═══════════════════════════════════════════════════════════════
 
     @isTest
@@ -149,7 +149,7 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(200, '{"message": "Success"}'));
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
@@ -162,7 +162,7 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(201, '{"message": "Created"}'));
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
@@ -175,12 +175,12 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(204, ''));
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  executeCallout — FAILURE / HTTP ERROR PATHS
+    //  FAILURE / HTTP ERROR PATHS
     // ═══════════════════════════════════════════════════════════════
 
     @isTest
@@ -192,7 +192,7 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(500, '{"error": "Server error"}'));
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
@@ -205,7 +205,7 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(400, '{"error": "Bad Request"}'));
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
@@ -218,7 +218,7 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(404, '{"error": "Not Found"}'));
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
@@ -231,57 +231,55 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(401, '{"error": "Unauthorized"}'));
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  executeCallout — EDGE / NEGATIVE PATHS
+    //  EDGE / NEGATIVE PATHS
     // ═══════════════════════════════════════════════════════════════
 
-    // Account has NO SalesPerson_Code__c → throws AuraHandledException
+    // Account has NO SalesPerson_Code__c → skips callout, chains to Account sync
     @isTest
     static void test_ExecuteCallout_NoSalesPersonCode() {
-        Account acc = createTestAccount(null); // null → blank SalesPerson_Code__c
+        Account acc = createTestAccount(null);
         Order ord   = createTestOrder(acc.Id);
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
-    // Account SalesPerson_Code__c has a value that does NOT match any MDT MasterLabel
+    // SalesPerson_Code__c has a value that does NOT match any MDT record
     @isTest
     static void test_ExecuteCallout_NoMatchingMetadata() {
-        Account acc = createTestAccount('NIRMAL');
+        Account acc = createTestAccount('NIRMAL_INVALID_CODE');
         Order ord   = createTestOrder(acc.Id);
 
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(ord.Id);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(ord.Id));
         Test.stopTest();
     }
 
-    // Order has no AccountId
+    // Invalid Order Id → triggers catch block in execute()
     @isTest
     static void test_ExecuteCallout_NoAccountOnOrder() {
-        // Insert order without account is not possible (required field),
-        // so we test with an invalid Order Id to trigger exception path
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout('801000000000000AAA');
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout('801000000000000AAA'));
         Test.stopTest();
     }
 
     @isTest
     static void test_ExecuteCallout_InvalidOrderId() {
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout('801000000000000AAA');
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout('801000000000000AAA'));
         Test.stopTest();
     }
 
     @isTest
     static void test_ExecuteCallout_NullOrderId() {
         Test.startTest();
-        String result = DRC_NBC_SalesPersonCode_Callout.executeCallout(null);
+        System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(null));
         Test.stopTest();
     }
 
@@ -291,8 +289,8 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
 
     @isTest
     static void test_Integration_PrepareRequest() {
-        Account acc = createTestAccount(null);
-        String payload = buildDummyPayload();
+        Account acc     = createTestAccount(null);
+        String payload  = buildDummyPayload();
 
         DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
             'test-endpoint',
@@ -379,6 +377,24 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
     }
 
     @isTest
+    static void test_Integration_ProcessResponse_Error404() {
+        Account acc    = createTestAccount(null);
+        String payload = buildDummyPayload();
+
+        DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
+            'test-endpoint', 'POST', payload, acc.Id
+        );
+
+        HttpResponse errorResp = new HttpResponse();
+        errorResp.setStatusCode(404);
+        errorResp.setBody('{"error":"Not Found"}');
+
+        Test.startTest();
+        integration.processResponse(errorResp);
+        Test.stopTest();
+    }
+
+    @isTest
     static void test_Integration_ExecuteAndReturnResponse() {
         Account acc    = createTestAccount(null);
         String payload = buildDummyPayload();
@@ -391,7 +407,24 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
 
         Test.startTest();
         HttpResponse response = integration.executeAndReturnResponse();
-        Test.stopTest();    }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void test_Integration_ExecuteAndReturnResponse_Failure() {
+        Account acc    = createTestAccount(null);
+        String payload = buildDummyPayload();
+
+        Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(500, '{"error": "Server Error"}'));
+
+        DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
+            'test-endpoint', 'POST', payload, acc.Id
+        );
+
+        Test.startTest();
+        HttpResponse response = integration.executeAndReturnResponse();
+        Test.stopTest();
+    }
 
     @isTest
     static void test_PayloadStructure() {
@@ -399,6 +432,5 @@ private class DRC_NBC_SalesPersonCode_Callout_Test {
         String payload = buildDummyPayload();
         Map<String, Object> deserialized = (Map<String, Object>) JSON.deserializeUntyped(payload);
         Test.stopTest();
-
     }
 }

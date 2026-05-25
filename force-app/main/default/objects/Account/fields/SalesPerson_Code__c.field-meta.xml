@@ -4,21 +4,76 @@
     <label>SalesPerson Code</label>
     <required>false</required>
     <trackFeedHistory>false</trackFeedHistory>
-    <trackHistory>false</trackHistory>
+    <trackHistory>true</trackHistory>
     <type>Picklist</type>
     <valueSet>
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
             <value>
-                <fullName>AJITPH</fullName>
+                <fullName>Ajit Phadke</fullName>
                 <default>false</default>
-                <label>AJITPH</label>
+                <label>Ajit Phadke</label>
             </value>
             <value>
-                <fullName>AJITVA</fullName>
+                <fullName>Ajit Vasudevan</fullName>
                 <default>false</default>
-                <label>AJITVA</label>
+                <label>Ajit Vasudevan</label>
+            </value>
+            <value>
+                <fullName>Amit Drolia</fullName>
+                <default>false</default>
+                <label>Amit Drolia</label>
+            </value>
+            <value>
+                <fullName>Bhavesh Tambe</fullName>
+                <default>false</default>
+                <label>Bhavesh Tambe</label>
+            </value>
+            <value>
+                <fullName>Jigna Shah</fullName>
+                <default>false</default>
+                <label>Jigna Shah</label>
+            </value>
+            <value>
+                <fullName>Kirit Acharya</fullName>
+                <default>false</default>
+                <label>Kirit Acharya</label>
+            </value>
+            <value>
+                <fullName>Manali Maniyar</fullName>
+                <default>false</default>
+                <label>Manali Maniyar</label>
+            </value>
+            <value>
+                <fullName>Nirmal Mansukhani</fullName>
+                <default>false</default>
+                <label>Nirmal Mansukhani</label>
+            </value>
+            <value>
+                <fullName>Shirley D&apos;silva</fullName>
+                <default>false</default>
+                <label>Shirley D&apos;silva</label>
+            </value>
+            <value>
+                <fullName>Shekhar Rege</fullName>
+                <default>false</default>
+                <label>Shekhar Rege</label>
+            </value>
+            <value>
+                <fullName>Tanay Drolia</fullName>
+                <default>false</default>
+                <label>Tanay Drolia</label>
+            </value>
+            <value>
+                <fullName>Vijay Gurnani</fullName>
+                <default>false</default>
+                <label>Vijay Gurnani</label>
+            </value>
+            <value>
+                <fullName>Yash Drolia</fullName>
+                <default>false</default>
+                <label>Yash Drolia</label>
             </value>
             <value>
                 <fullName>AKSHTA SAWANT</fullName>
@@ -26,58 +81,87 @@
                 <label>AKSHTA SAWANT</label>
             </value>
             <value>
+                <fullName>AJITPH</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>AJITPH</label>
+            </value>
+            <value>
+                <fullName>AJITVA</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>AJITVA</label>
+            </value>
+            <value>
                 <fullName>AMITDR</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>AMITDR</label>
+            </value>
+            <value>
+                <fullName>Akhta Sawant</fullName>
+                <default>false</default>
+                <isActive>false</isActive>
+                <label>Akhta Sawant</label>
             </value>
             <value>
                 <fullName>BHAVTA</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>BHAVTA</label>
             </value>
             <value>
                 <fullName>JIGNA</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>JIGNA</label>
             </value>
             <value>
                 <fullName>KIRTIA</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>KIRTIA</label>
             </value>
             <value>
                 <fullName>MANMA</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>MANMA</label>
             </value>
             <value>
                 <fullName>NIRMAL</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>NIRMAL</label>
             </value>
             <value>
                 <fullName>SHIRLEY</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>SHIRLEY</label>
             </value>
             <value>
                 <fullName>SHREGE</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>SHREGE</label>
             </value>
             <value>
                 <fullName>TANYDR</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>TANYDR</label>
             </value>
             <value>
                 <fullName>VIJYGU</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>VIJYGU</label>
             </value>
             <value>
                 <fullName>YASHDR</fullName>
                 <default>false</default>
+                <isActive>false</isActive>
                 <label>YASHDR</label>
             </value>
         </valueSetDefinition>

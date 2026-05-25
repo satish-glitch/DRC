@@ -1,11 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>DRC_NBC_SalesPerson_Code__c</fullName>
-    <externalId>false</externalId>
     <label>SalesPerson Code</label>
-    <length>50</length>
     <required>false</required>
     <trackHistory>false</trackHistory>
-    <type>Text</type>
-    <unique>false</unique>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Ajit Phadke</fullName>
+                <default>false</default>
+                <label>Ajit Phadke</label>
+            </value>
+            <value>
+                <fullName>Ajit Vasudevan</fullName>
+                <default>false</default>
+                <label>Ajit Vasudevan</label>
+            </value>
+            <value>
+                <fullName>AKSHTA SAWANT</fullName>
+                <default>false</default>
+                <label>AKSHTA SAWANT</label>
+            </value>
+            <value>
+                <fullName>Amit Drolia</fullName>
+                <default>false</default>
+                <label>Amit Drolia</label>
+            </value>
+            <value>
+                <fullName>Bhavesh Tambe</fullName>
+                <default>false</default>
+                <label>Bhavesh Tambe</label>
+            </value>
+            <value>
+                <fullName>Jigna Shah</fullName>
+                <default>false</default>
+                <label>Jigna Shah</label>
+            </value>
+            <value>
+                <fullName>Kirit Acharya</fullName>
+                <default>false</default>
+                <label>Kirit Acharya</label>
+            </value>
+            <value>
+                <fullName>Manali Maniyar</fullName>
+                <default>false</default>
+                <label>Manali Maniyar</label>
+            </value>
+            <value>
+                <fullName>Nirmal Mansukhani</fullName>
+                <default>false</default>
+                <label>Nirmal Mansukhani</label>
+            </value>
+            <value>
+                <fullName>Shekhar Rege</fullName>
+                <default>false</default>
+                <label>Shekhar Rege</label>
+            </value>
+            <value>
+                <fullName>Shirley D&apos;silva</fullName>
+                <default>false</default>
+                <label>Shirley D&apos;silva</label>
+            </value>
+            <value>
+                <fullName>Tanay Drolia</fullName>
+                <default>false</default>
+                <label>Tanay Drolia</label>
+            </value>
+            <value>
+                <fullName>Vijay Gurnani</fullName>
+                <default>false</default>
+                <label>Vijay Gurnani</label>
+            </value>
+            <value>
+                <fullName>Yash Drolia</fullName>
+                <default>false</default>
+                <label>Yash Drolia</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
 </CustomField>

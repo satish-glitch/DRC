@@ -5,6 +5,7 @@
     <columns>PRODUCT2.CUSTOMER_PRODUCT_ID</columns>
     <columns>PRODUCT2.DESCRIPTION</columns>
     <columns>PRODUCT2.FAMILY</columns>
+    <columns>DRC_NBC_Packing_Size__c</columns>
     <filterScope>Everything</filterScope>
     <label>All Products</label>
 </ListView>

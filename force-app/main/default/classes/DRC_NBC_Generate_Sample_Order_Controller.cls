@@ -504,7 +504,8 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
                 SELECT Account.DRC_NBC_Consignee_Bank_Name__c,
                        Account.DRC_NBC_Consignee_Bank_Account_Number__c,
                        Account.DRC_NBC_Consignee_Bank_IFSC_Code__c,
-                       Account.DRC_NBC_Consignee_Bank_Address__c
+                       Account.DRC_NBC_Consignee_Bank_Address__c,
+                       Account.SalesPerson_Code__c 
                 FROM Opportunity
                 WHERE Id = :oppId
                 LIMIT 1
@@ -513,27 +514,29 @@ public with sharing class DRC_NBC_Generate_Sample_Order_Controller {
                 opp.Account.DRC_NBC_Consignee_Bank_Name__c,
                 opp.Account.DRC_NBC_Consignee_Bank_Account_Number__c,
                 opp.Account.DRC_NBC_Consignee_Bank_IFSC_Code__c,
-                opp.Account.DRC_NBC_Consignee_Bank_Address__c
+                opp.Account.DRC_NBC_Consignee_Bank_Address__c,
+                opp.Account.SalesPerson_Code__c  
             );
         } catch (Exception e) {
             throw new AuraHandledException('Error fetching bank details: ' + e.getMessage());
         }
     }
 
-    public class AccountBankDetailsWrapper {
+   public class AccountBankDetailsWrapper {
         @AuraEnabled public String bankName;
         @AuraEnabled public String accountNumber;
         @AuraEnabled public String ifscCode;
         @AuraEnabled public String bankAddress;
+        @AuraEnabled public String salesPersonCode;   // ← ADD THIS
 
-        public AccountBankDetailsWrapper(String bn, String an, String ifc, String ba) {
-            this.bankName      = bn;
-            this.accountNumber = an;
-            this.ifscCode      = ifc;
-            this.bankAddress   = ba;
+        public AccountBankDetailsWrapper(String bn, String an, String ifc, String ba, String sp) {
+            this.bankName       = bn;
+            this.accountNumber  = an;
+            this.ifscCode       = ifc;
+            this.bankAddress    = ba;
+            this.salesPersonCode = sp;                // ← ADD THIS
         }
     }
-
     // ─── createSampleOrder ───────────────────────────────────────────────────────
 
     @AuraEnabled

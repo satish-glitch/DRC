@@ -58,6 +58,10 @@
                 <behavior>Readonly</behavior>
                 <field>DRC_NBC_Payment_Terms__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Readonly</behavior>
+                <field>Converted_INR_Amount__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

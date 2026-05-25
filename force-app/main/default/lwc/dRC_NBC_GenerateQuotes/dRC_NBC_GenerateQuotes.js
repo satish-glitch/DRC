@@ -565,7 +565,6 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         if (!this.selectedContactId)    { this.showToast('Error', 'Please select a contact.', 'error');                     return false; }
         if (!this.selectedContactEmail) { this.showToast('Error', 'Selected contact must have an email address.', 'error'); return false; }
         if (!this.selectedContactPhone) { this.showToast('Error', 'Selected contact must have a phone number.', 'error');   return false; }
-        if (!this.quoteRec.DRC_NBC_Payemnt_Term__c)             { this.showToast('Error', 'Payment Term Code is required.', 'error');        return false; }
         if (!this.quoteRec.DRC_NBC_Payment_Term_Description__c) { this.showToast('Error', 'Payment Term Description is required.', 'error'); return false; }
         if (!this.quoteRec.DRC_NBC_Inco_terms__c)               { this.showToast('Error', 'Inco Term is required.', 'error');                return false; }
         if (!this.quoteRec.DRC_NBC_Type__c)                     { this.showToast('Error', 'Type is required.', 'error');                     return false; }

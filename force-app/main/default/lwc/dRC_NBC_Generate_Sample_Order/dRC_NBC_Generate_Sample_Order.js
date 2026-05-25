@@ -19,11 +19,13 @@ import { NavigationMixin } from 'lightning/navigation';
 import { loadStyle } from 'lightning/platformResourceLoader';
 import DRC_NBC_Order_Button_CSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
 const SALES_PERSON_CODES = [
-    'AJITPH', 'AJITVA', 'AKSHTA SAWANT', 'AMITDR',
-    'BHAVTA', 'JIGNA', 'KIRTIA', 'MANMA',
-    'NIRMAL', 'SHIRLEY', 'SHREGE', 'TANYDR',
-    'VIJYGU', 'YASHDR'
+    'Ajit Phadke', 'Ajit Vasudevan', 'Akhta Sawant', 'Amit Drolia',
+    'Bhabesh Tambe', 'Jigna Shah', 'Kirit Acharya', 'Manali Maniyar',
+    'Nirmal Mansukhani', 'Shirley D\'silva', 'Shekhar Rege', 'Tanay Drolia',
+    'Vijay Gurnani', 'Yash Drolia'
 ];
+
+
 
 export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -43,6 +45,8 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
     @track addrDetails = [];
     @track selectedShippingId;
     @track currencyCode = '';
+    @track salesPersonCodeOptions = SALES_PERSON_CODES.map(code => ({ label: code, value: code }));
+
 
     @track samplingRec = {};
     @track isBasicInfoOpen = true;
@@ -117,9 +121,9 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         }));
     }
 
-    get salesPersonCodeOptions() {
+  /*  get salesPersonCodeOptions() {
         return SALES_PERSON_CODES.map(code => ({ label: code, value: code }));
-    }
+    }*/
 
     handleSalesPersonCodeChange(event) {
         this.samplingRec.DRC_NBC_SalesPerson_Code__c = event.detail.value;
@@ -286,7 +290,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                         DRC_NBC_Consignee_Bank_Account_Number__c: bankDetails.accountNumber  || '',
                         DRC_NBC_Consignee_Bank_IFSC_Code__c:      bankDetails.ifscCode       || '',
                         DRC_NBC_Consignee_Bank_Address__c:        bankDetails.bankAddress    || '',
-                        DRC_NBC_SalesPerson_Code__c:              bankDetails.salesPersonCode || ''  // Account.SalesPerson_Code__c → Order.DRC_NBC_SalesPerson_Code__c
+                        DRC_NBC_SalesPerson_Code__c:              bankDetails.salesPersonCode || ''
                     };
                 }
 
@@ -655,13 +659,13 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                 const step = matchedDetail ? (matchedDetail.packingQuantity || null) : null;
 
                 // Warn if existing quantity is not a valid multiple of the new step
-                if (step && !this._isValidPackingQuantity(prod.Quantity, step)) {
+               /* if (step && !this._isValidPackingQuantity(prod.Quantity, step)) {
                     this.showToast(
                         'Warning',
                         `Quantity must be a multiple of ${step} for packing size "${selectedSize}". Please update the quantity.`,
                         'warning'
                     );
-                }
+                }*/
 
                 return {
                     ...prod,
@@ -695,7 +699,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                 const step = prod.packingStep || null;
 
                 // If a packing size is selected, enforce the step multiplier
-                if (step && prod.SelectedPackingSize) {
+            /*    if (step && prod.SelectedPackingSize) {
                     if (!this._isValidPackingQuantity(value, step)) {
                         this.showToast(
                             'Error',
@@ -706,7 +710,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                         // Revert to the last valid quantity; PackingQuantity unchanged
                         return prod;
                     }
-                }
+                }*/
 
                 // Only update Quantity; PackingQuantity stays as the raw DRC_NBC_Packing_Qauntity__c value
                 return { ...prod, Quantity: value };
@@ -913,7 +917,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
         }
 
         // Validate packing quantity constraints for all selected products
-        for (const prod of this.selectedProducts) {
+       /* for (const prod of this.selectedProducts) {
             if (prod.SelectedPackingSize && prod.packingStep) {
                 if (!this._isValidPackingQuantity(prod.Quantity, prod.packingStep)) {
                     this.showToast(
@@ -925,7 +929,7 @@ export default class DRC_NBC_Generate_Sample_Order extends NavigationMixin(Light
                     return false;
                 }
             }
-        }
+        }*/
 
         return true;
     }

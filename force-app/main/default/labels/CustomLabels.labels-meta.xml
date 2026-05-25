@@ -138,7 +138,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>DRC UAT</shortDescription>
-        <value>Company(\&apos;DRC UAT 05032024\&apos;)/SalesOrderLineSalesForce</value>
+        <value>Company(&apos;DRC UAT 05032024&apos;)/SalesOrderLineSalesForce</value>
     </labels>
     <labels>
         <fullName>DRC_NBC_DOM_OrderNumber</fullName>

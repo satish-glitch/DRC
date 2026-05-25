@@ -19,6 +19,7 @@ public class DRC_NBC_Shipping_BC_Integration extends DRC_NBC_Base_API_Integratio
 
         req.setEndpoint(fullEndpoint);
         req.setMethod(this.httpMethod);
+        req.setTimeout(120000);
         DRC_NBC_BC_Callout_Utility.prepareRequest(req);
         req.setBody(payload);
 

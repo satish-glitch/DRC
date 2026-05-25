@@ -667,6 +667,7 @@ public class DRC_NBC_OrderController {
             'DRC_NBC_Transport_Agent__c',
             'DRC_NBC_Port_of_Loading__c',
             'DRC_NBC_Port_Of_Discharge__c',
+            'DRC_NBC_SalesPerson_Code__c',
             'DRC_NBC_Final_Destination__c'
         };
         

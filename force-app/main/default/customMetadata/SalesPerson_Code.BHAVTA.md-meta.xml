@@ -8,7 +8,7 @@
     </values>
     <values>
         <field>Name__c</field>
-        <value xsi:type="xsd:string">Bhabesh Tambe</value>
+        <value xsi:type="xsd:string">Bhavesh Tambe</value>
     </values>
     <values>
         <field>Phone__c</field>
@@ -16,6 +16,6 @@
     </values>
     <values>
         <field>Salesforce_UserName__c</field>
-        <value xsi:nil="true"/>
+        <value xsi:type="xsd:string">bhaveshtambe@drcresins.com.nbcdev</value>
     </values>
 </CustomMetadata>

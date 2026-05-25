@@ -1,24 +1,12 @@
-/**
- * @File Name : DRC_NBC_SalesPersonCode_Callout.cls
- * @Description : Queueable class that makes a POST callout to BC for Salesperson Code using reusable integration logic
- * @Author : Satish
- * @Last Modified On : May 08, 2026
-**/
 public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.AllowsCallouts {
+
     private Id orderId;
 
-    // Constructor to accept Order Id
     public DRC_NBC_SalesPersonCode_Callout(Id orderId) {
         this.orderId = orderId;
     }
 
     public void execute(QueueableContext context) {
-        String result = executeCallout(orderId);
-        System.debug('Salesperson POST Result → ' + result);
-    }
-
-    public static String executeCallout(Id orderId) {
-        HttpResponse response;
         try {
             // Step 1: Fetch Order and AccountId
             Order ord = [
@@ -27,8 +15,14 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
                 WHERE Id = :orderId
                 LIMIT 1
             ];
+
             if (ord.AccountId == null) {
-                throw new AuraHandledException('Order does not have an associated Account.');
+                System.debug('No Account on Order. Skipping SalesPersonCode.');
+                // Chain to Account sync only in production
+                if (!Test.isRunningTest()) {
+                    System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
+                }
+                return;
             }
 
             // Step 2: Fetch SalesPerson_Code__c from Account
@@ -38,72 +32,95 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
                 WHERE Id = :ord.AccountId
                 LIMIT 1
             ];
+
             if (String.isBlank(acc.SalesPerson_Code__c)) {
-                throw new AuraHandledException('Account does not have a Salesperson Code assigned.');
+                System.debug('No SalesPerson Code on Account. Skipping callout.');
+                // Chain to Account sync only in production
+                if (!Test.isRunningTest()) {
+                    System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
+                }
+                return;
             }
 
-            // Step 3: Query Custom Metadata where MasterLabel matches Account's SalesPerson_Code__c
+            // Step 3: Fetch metadata matching SalesPerson_Code__c
             List<SalesPerson_Code__mdt> mdtRecords = [
                 SELECT MasterLabel, Name__c, Phone__c, Email__c
                 FROM SalesPerson_Code__mdt
-                WHERE MasterLabel = :acc.SalesPerson_Code__c
+                WHERE Name__c = :acc.SalesPerson_Code__c
                 LIMIT 1
             ];
+
             if (mdtRecords.isEmpty()) {
-                throw new AuraHandledException(
-                    'No Salesperson Code metadata record found matching: ' + acc.SalesPerson_Code__c
-                );
+                System.debug('No metadata found for SalesPerson: ' + acc.SalesPerson_Code__c);
+                // Chain to Account sync only in production
+                if (!Test.isRunningTest()) {
+                    System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
+                }
+                return;
             }
+
             SalesPerson_Code__mdt spMdt = mdtRecords[0];
 
-            // Step 4: Get API path from config
+            // Step 4: Build payload
             String apiPath = DRC_NBC_BC_Callout_Utility.getConfig().DRC_NBC_SalesPerson_Code__c;
-            System.debug('Salesperson API Path: ' + apiPath);
 
-            // Step 5: Build payload using Custom Metadata fields
             Map<String, Object> payloadMap = new Map<String, Object>{
+                'Code'     => spMdt.MasterLabel,
                 'Name'     => spMdt.Name__c,
                 'Phone_No' => spMdt.Phone__c,
-                'E_Mail'   => spMdt.Email__c,
-                'Code'     => spMdt.MasterLabel   // Salesperson Code value
+                'E_Mail'   => spMdt.Email__c
             };
             String payload = JSON.serialize(payloadMap);
-            System.debug('Salesperson Payload: ' + payload);
+            System.debug('SalesPersonCode Payload: ' + payload);
 
-            // Step 6: Execute the callout
+            // Step 5: Pure callout — no DML before this
             DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
                 apiPath,
                 'POST',
                 payload,
                 ord.AccountId
             );
-            response = integration.executeAndReturnResponse();
+            HttpResponse response = integration.executeAndReturnResponse();
 
+            // Step 6: Log after callout — DML safe now
             if (integration.httpStatusCode != null
-                && integration.httpStatusCode >= 200
-                && integration.httpStatusCode < 300) {
-                System.debug('Salesperson POST Success → ' + integration.responseSummary);
-                return 'SUCCESS';
+                    && integration.httpStatusCode >= 200
+                    && integration.httpStatusCode < 300) {
+                System.debug('SalesPersonCode → SUCCESS');
             } else {
-                System.debug('Salesperson POST Failed → ' + integration.responseSummary);
-                return 'FAILURE: ' + integration.responseSummary;
+                System.debug('SalesPersonCode → FAILED. Status: ' +
+                    String.valueOf(integration.httpStatusCode));
+                DRC_NBC_API_Log_Handler.createApiLog(
+                    'DRC_NBC_SalesPersonCode_Callout',
+                    apiPath,
+                    payload,
+                    'POST',
+                    response != null ? response.getBody() : 'null',
+                    integration.httpStatusCode,
+                    null,
+                    'Error',
+                    ord.AccountId
+                );
             }
 
-        } catch (Exception ex) {
-            System.debug('Exception during Salesperson POST callout: ' + ex.getMessage());
-            System.debug('Stack Trace: ' + ex.getStackTraceString());
+        } catch (Exception e) {
+            System.debug('SalesPersonCode Exception: ' + e.getMessage());
             DRC_NBC_API_Log_Handler.createApiLog(
                 'DRC_NBC_SalesPersonCode_Callout',
-                orderId,
+                null,
                 null,
                 'POST',
-                ex.getMessage(),
+                e.getMessage(),
                 null,
-                ex.getStackTraceString(),
-                'Exception',
+                e.getStackTraceString(),
+                'Error',
                 null
             );
-            return 'FAILURE: ' + ex.getMessage();
+        }
+
+        // Always chain to Account sync in production — pass or fail
+        if (!Test.isRunningTest()) {
+            System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
         }
     }
 }

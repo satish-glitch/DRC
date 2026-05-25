@@ -222,7 +222,7 @@
     </actionOverrides>
     <compactLayoutAssignment>DRC_NBC_Order_Compact_Layout</compactLayoutAssignment>
     <enableFeeds>false</enableFeeds>
-    <externalSharingModel>Private</externalSharingModel>
+    <externalSharingModel>ControlledByParent</externalSharingModel>
     <recordTypeTrackHistory>false</recordTypeTrackHistory>
     <searchLayouts>
         <customTabListAdditionalFields>ORDERS.ORDER_NUMBER</customTabListAdditionalFields>
@@ -241,5 +241,5 @@
         <searchResultsAdditionalFields>ORDERS.STATUS</searchResultsAdditionalFields>
         <searchResultsAdditionalFields>CONTRACT.CONTRACT_NUMBER</searchResultsAdditionalFields>
     </searchLayouts>
-    <sharingModel>Private</sharingModel>
+    <sharingModel>ControlledByParent</sharingModel>
 </CustomObject>

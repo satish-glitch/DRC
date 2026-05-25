@@ -53,6 +53,7 @@
     <tabs>standard-report</tabs>
     <tabs>standard-Dashboard</tabs>
     <tabs>DRC_NBC_BusinessCard_Scanner</tabs>
+    <tabs>DRC_NBC_Consignee_Bank_Details__c</tabs>
     <uiType>Lightning</uiType>
     <utilityBar>DRC_Resins_UtilityBar</utilityBar>
 </CustomApplication>

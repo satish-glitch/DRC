@@ -25,6 +25,7 @@ public class DRC_NBC_Order_BC_Integration extends DRC_NBC_Base_API_Integration {
         HttpRequest request = new HttpRequest();
         String fullEndpoint = DRC_NBC_BC_Callout_Utility.getFullEndpoint(apiPath);
         request.setEndpoint(fullEndpoint);
+        request.setTimeout(120000);
         request.setMethod(this.httpMethod);
         DRC_NBC_BC_Callout_Utility.prepareRequest(request);
         request.setBody(payload);

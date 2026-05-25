@@ -3386,6 +3386,65 @@
         </values>
     </picklistValues>
     <picklistValues>
+        <picklist>DRC_NBC_SalesPerson_Code__c</picklist>
+        <values>
+            <fullName>AKSHTA SAWANT</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Ajit Phadke</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Ajit Vasudevan</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Amit Drolia</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Bhavesh Tambe</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Jigna Shah</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Kirit Acharya</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Manali Maniyar</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Nirmal Mansukhani</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Shekhar Rege</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Shirley D%27silva</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Tanay Drolia</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Vijay Gurnani</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>Yash Drolia</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
         <picklist>DRC_NBC_Sample_Status__c</picklist>
         <values>
             <fullName>Approved</fullName>

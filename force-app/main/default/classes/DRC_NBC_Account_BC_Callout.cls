@@ -1,8 +1,7 @@
 public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
     
     public static String executeCallout(Id OrderId) {
-         Id accountId;
-        // This method is now just a wrapper for the queueable
+        Id accountId;
         if (OrderId == null) {
             return 'FAILURE: Order Id is required';
         }
@@ -15,9 +14,11 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
                 LIMIT 1
             ];
             accountId = orderRecord.AccountId;
-            Account acc = getAccountDetails(accountId);
-            System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
+            
+            // ✅ Enqueue SalesPersonCode FIRST — it will chain to Account sync after
+            System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(orderId));
             return 'Account Sync SUCCESS';
+            
         } catch (Exception e) {
             return 'FAILURE: ' + e.getMessage();
         }
@@ -26,11 +27,12 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
     // Make this public so Queueable can access it
     public static Account getAccountDetails(Id accId) {
         return [
-            SELECT Id, Name, DRC_NBC_PAN_No__c, DRC_NBC_Payment_Term_Code__c, DRC_NBC_Customer_Number__c,DRC_NBC_BC_Approval_Status__c,
-            CurrencyIsoCode, Phone, AccountNumber, DRC_NBC_Account_Email_Email__c, DRC_NBC_Payment_Terms__c,
+            SELECT Id, Name, DRC_NBC_PAN_No__c, Type, Website, DRC_NBC_Credit_Limit__c, Other_Email__c,Description, DRC_NBC_Special_Instructions__c, 
+            DRC_NBC_Payment_Term_Code__c, DRC_NBC_Customer_Number__c,DRC_NBC_BC_Approval_Status__c,Industry,
+            CurrencyIsoCode, Phone, AccountNumber, DRC_NBC_Account_Email_Email__c, DRC_NBC_Payment_Terms__c,SalesPerson_Code__c,
             BillingCity, BillingCountry, BillingCountryCode, BillingPostalCode, DRC_Inco_Term__c, DRC_Gst_Customer_Type__c,
             BillingState, BillingStateCode, BillingStreet, DRC_NBC_GST_Number__c,
-            (SELECT Id, DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s,
+            (SELECT Id, DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s, 
              DRC_NBC_Address__StateCode__s, DRC_NBC_Address__PostalCode__s, DRC_Inco_Term__c, DRC_Shipping_Gst_Customer_Type__c,
              DRC_NBC_Address__CountryCode__s, DRC_NBC_GST_Number__c, DRC_NBC_Type__c
              FROM Address__r)
@@ -42,7 +44,7 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
     
     // Make this public so Queueable can access it
     public static DRC_NBC_Integration_Payload.CustomerPayload mapAccountToPayload(Account acc) {
-         
+        
         // Fetch Inco Terms Metadata
         Warehouse_Location_Code__mdt incoTermsMeta;
         String incoTermsLabel = acc.DRC_Inco_Term__c;
@@ -62,6 +64,13 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         } else {
             System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
         }
+        List<SalesPerson_Code__mdt> mdtRecords = [
+            SELECT MasterLabel, Name__c, Phone__c, Email__c
+            FROM SalesPerson_Code__mdt
+            WHERE Name__c = :acc.SalesPerson_Code__c
+            LIMIT 1
+        ];
+        SalesPerson_Code__mdt spMdt = mdtRecords.isEmpty() ? null : mdtRecords[0];
         
         DRC_NBC_Integration_Payload.CustomerPayload payload = new DRC_NBC_Integration_Payload.CustomerPayload();
         payload.No = acc.DRC_NBC_Customer_Number__c;
@@ -77,11 +86,46 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         payload.GST_Customer_Type = acc.DRC_Gst_Customer_Type__c;
         payload.Phone_No = acc.Phone;
         payload.Mobile_Phone_No = '';
+        payload.Credit_Limit_LCY = acc.DRC_NBC_Credit_Limit__c != null
+            ? Integer.valueOf(acc.DRC_NBC_Credit_Limit__c)
+            : 0;
+        
+        payload.Home_Page = String.isNotBlank(acc.Website)
+            ? acc.Website
+            : '';
+        
+        payload.Business_type = String.isNotBlank(acc.Industry)
+            ? acc.Industry
+            : '';
+        //  payload.Business_type = '';
+        
+        payload.Other_E_Mail = String.isNotBlank(acc.Other_Email__c)
+            ? acc.Other_Email__c
+            : '';
+        payload.Salesperson_Code = (spMdt != null && String.isNotBlank(spMdt.MasterLabel))
+            ? spMdt.MasterLabel
+            : '';
         payload.E_Mail = acc.DRC_NBC_Account_Email_Email__c;
         payload.Payment_Terms_Code = acc.DRC_NBC_Payment_Terms__c;
-      // payload.Payment_Terms_Code = '100';
-        payload.Address = acc.BillingStreet;
-        payload.Address_2 = '';
+        // payload.Payment_Terms_Code = '10 DAYS';
+        String billingStreet = acc.BillingStreet;
+        
+        if (String.isNotBlank(billingStreet)) {
+            if (billingStreet.length() > 100) {
+                payload.Address = billingStreet.substring(0, 100);
+                
+                String remainingAddress = billingStreet.substring(100);
+                payload.Address_2 = remainingAddress.length() > 100
+                    ? remainingAddress.substring(0, 100)
+                    : remainingAddress;
+            } else {
+                payload.Address = billingStreet;
+                payload.Address_2 = '';
+            }
+        } else {
+            payload.Address = '';
+            payload.Address_2 = '';
+        }
         payload.City = acc.BillingCity;
         payload.State_Code = acc.BillingStateCode;
         payload.Post_Code = acc.BillingPostalCode;

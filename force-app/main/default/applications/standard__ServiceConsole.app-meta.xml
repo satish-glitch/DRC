@@ -190,6 +190,7 @@
     <tabs>DRC_NBC_Invoice_Line_Item__c</tabs>
     <tabs>DRC_NBC_Case_Product_Junction__c</tabs>
     <tabs>DRC_NBC_Invoice_Lot__c</tabs>
+    <tabs>DRC_NBC_Consignee_Bank_Details__c</tabs>
     <workspaceConfig>
         <mappings>
             <tab>DRC_NBC_API_Log__c</tab>
@@ -199,6 +200,9 @@
         </mappings>
         <mappings>
             <tab>DRC_NBC_Case_Product_Junction__c</tab>
+        </mappings>
+        <mappings>
+            <tab>DRC_NBC_Consignee_Bank_Details__c</tab>
         </mappings>
         <mappings>
             <tab>DRC_NBC_Invoice_Line_Item__c</tab>

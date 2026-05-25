@@ -12,19 +12,19 @@ public class DRC_NBC_Account_BC_Callout_Second_Queue implements System.Queueable
         try {
             Account acc = DRC_NBC_Account_BC_Callout.getAccountDetails(accountId);
             
-           /* if (acc.DRC_NBC_BC_Approval_Status__c) {
-                System.enqueueJob(new DRC_NBC_Order_BC_Callout(orderId));
-                return;
-            }*/
+            /* if (acc.DRC_NBC_BC_Approval_Status__c) {
+System.enqueueJob(new DRC_NBC_Order_BC_Callout(orderId));
+return;
+}*/
             
-          /*  Boolean hasShippingAddressInIndia = false;
-            for (DRC_NBC_Addresses__c addr : acc.Address__r) {
-                if (addr.DRC_NBC_Type__c == 'Shipping' &&
-                    addr.DRC_NBC_Address__CountryCode__s == 'IND') {
-                    hasShippingAddressInIndia = true;
-                    break;
-                }
-            }*/
+            /*  Boolean hasShippingAddressInIndia = false;
+for (DRC_NBC_Addresses__c addr : acc.Address__r) {
+if (addr.DRC_NBC_Type__c == 'Shipping' &&
+addr.DRC_NBC_Address__CountryCode__s == 'IND') {
+hasShippingAddressInIndia = true;
+break;
+}
+}*/
             
             DRC_NBC_Integration_Payload.CustomerPayload payload = DRC_NBC_Account_BC_Callout.mapAccountToPayload(acc);
             String jsonBody = JSON.serialize(payload, true);
@@ -33,12 +33,18 @@ public class DRC_NBC_Account_BC_Callout_Second_Queue implements System.Queueable
             DRC_NBC_Account_BC_Integration integration = new DRC_NBC_Account_BC_Integration(endpoint, 'POST', jsonBody, accountId);
             HttpResponse response = integration.executeAndReturnResponse();
             
+            //    if (response != null && response.getStatusCode() == 201) {
+            //       System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(orderId));
+            /*  if (hasShippingAddressInIndia) {
+System.enqueueJob(new DRC_NBC_Shipping_BC_Callout(accountId, orderId));
+}*/
+            //    DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
+            //   }
+            
             if (response != null && response.getStatusCode() == 201) {
-                System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(orderId));
-              /*  if (hasShippingAddressInIndia) {
-                    System.enqueueJob(new DRC_NBC_Shipping_BC_Callout(accountId, orderId));
-                }*/
-                DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
+                System.enqueueJob(
+                    new DRC_NBC_CustomerItems_Callout_Queueable(orderId, accountId));
+               // DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
             }
             
         } catch (Exception e) {

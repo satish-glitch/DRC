@@ -31,5 +31,6 @@
     <tabs>DRC_NBC_Invoice_Line_Item__c</tabs>
     <tabs>DRC_NBC_Case_Product_Junction__c</tabs>
     <tabs>DRC_NBC_Invoice_Lot__c</tabs>
+    <tabs>DRC_NBC_Consignee_Bank_Details__c</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

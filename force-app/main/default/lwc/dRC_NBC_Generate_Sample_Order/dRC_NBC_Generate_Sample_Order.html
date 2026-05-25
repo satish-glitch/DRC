@@ -571,17 +571,15 @@
                                                     variant="label-hidden"
                                                     data-id={prod.Id} 
                                                     value={prod.Quantity}
-                                                    min={prod.packingStep}
-                                                    step={prod.packingStep}
                                                     onchange={handleQuantityChange} 
                                                     class="small-input">
                                                 </lightning-input>
                                                 <!-- Helper text shown only when a packing step exists -->
-                                                <template if:true={prod.packingStep}>
+                                              <!--  <template if:true={prod.packingStep}>
                                                     <p class="slds-form-element__help" style="font-size: 0.75rem; color: #706e6b;">
                                                         Must be a multiple of {prod.packingStep}
                                                     </p>
-                                                </template>
+                                                </template>-->
                                             </div>
                                         </td>
                                         

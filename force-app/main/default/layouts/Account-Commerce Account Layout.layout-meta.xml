@@ -573,6 +573,10 @@
         <fields>NAME</fields>
         <relatedList>DRC_NBC_Invoice__c.DRC_NBC_Shipped_To_DRC_Customer_Code__c</relatedList>
     </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <relatedList>DRC_NBC_Consignee_Bank_Details__c.Account__c</relatedList>
+    </relatedLists>
     <relatedObjects>ParentId</relatedObjects>
     <showEmailCheckbox>false</showEmailCheckbox>
     <showHighlightsPanel>false</showHighlightsPanel>

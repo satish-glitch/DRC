@@ -1,0 +1,130 @@
+<apex:page controller="DRC_NBC_CustomerItems_StatusCtrl"
+           showHeader="true"
+           sidebar="false"
+           title="BC Sync Status"
+           action="{!onLoad}">
+
+    <style>
+        .wrap{display:flex;align-items:center;justify-content:center;padding:3rem 1rem}
+        .card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;width:100%;max-width:480px;overflow:hidden;font-family:Arial,sans-serif}
+        .card-header{padding:20px 24px 16px;border-bottom:1px solid #e5e5e5}
+        .card-title{font-size:15px;font-weight:600;color:#111;margin:0 0 2px}
+        .card-sub{font-size:12px;color:#888;margin:0}
+        .op-row{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid #f0f0f0}
+        .op-name{font-size:13px;font-weight:600;color:#444}
+        .pill{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+        .pill-pass{background:#E1F5EE;color:#085041}
+        .pill-fail{background:#FCEBEB;color:#791F1F}
+        .pill-skip{background:#F1EFE8;color:#444441}
+        .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+        .dot-pass{background:#1D9E75}
+        .dot-fail{background:#E24B4A}
+        .dot-skip{background:#B4B2A9}
+        .card-footer{padding:14px 24px;background:#fafafa;border-top:1px solid #e5e5e5;text-align:right}
+        .spinner-wrap{text-align:center;padding:2rem}
+        .spinner{display:inline-block;width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1D9E75;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .status-msg{font-size:13px;color:#888;margin-top:12px}
+    </style>
+
+    <apex:form >
+
+        <!-- actionFunction called by JS poll every 4 seconds -->
+        <apex:actionFunction name="pollResults"
+                             action="{!checkResults}"
+                             reRender="resultsPanel,spinnerPanel"
+                             oncomplete="handlePollComplete()"/>
+
+        <div class="wrap">
+            <div class="card">
+
+                <div class="card-header">
+                    <p class="card-title">BC sync — operation status</p>
+                    <p class="card-sub">
+                        Account: <strong><apex:outputText value="{!accountName}"/></strong>
+                    </p>
+                </div>
+
+                <!-- Spinner — shown while waiting for results -->
+                <apex:outputPanel id="spinnerPanel">
+                    <apex:outputPanel rendered="{!NOT(showResults)}">
+                        <div class="spinner-wrap">
+                            <div class="spinner"></div>
+                            <p class="status-msg">Syncing with Business Central...</p>
+                        </div>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+
+                <!-- Results — shown once job logs are available -->
+                <apex:outputPanel id="resultsPanel">
+                    <apex:outputPanel rendered="{!showResults}">
+
+                        <div class="op-row">
+                            <span class="op-name">Read</span>
+                            <apex:outputPanel layout="inline" styleClass="{!IF(readSuccess, 'pill pill-pass', IF(readStatus == 'Skipped', 'pill pill-skip', 'pill pill-fail'))}">
+                                <apex:outputPanel layout="inline" styleClass="{!IF(readSuccess, 'dot dot-pass', IF(readStatus == 'Skipped', 'dot dot-skip', 'dot dot-fail'))}"/>
+                                <apex:outputText value="{!readStatus}"/>
+                            </apex:outputPanel>
+                        </div>
+
+                        <div class="op-row">
+                            <span class="op-name">Create</span>
+                            <apex:outputPanel layout="inline" styleClass="{!IF(createSuccess, 'pill pill-pass', IF(createStatus == 'Skipped', 'pill pill-skip', 'pill pill-fail'))}">
+                                <apex:outputPanel layout="inline" styleClass="{!IF(createSuccess, 'dot dot-pass', IF(createStatus == 'Skipped', 'dot dot-skip', 'dot dot-fail'))}"/>
+                                <apex:outputText value="{!createStatus}"/>
+                            </apex:outputPanel>
+                        </div>
+
+                        <div class="op-row">
+                            <span class="op-name">Update</span>
+                            <apex:outputPanel layout="inline" styleClass="{!IF(updateSuccess, 'pill pill-pass', IF(updateStatus == 'Skipped', 'pill pill-skip', 'pill pill-fail'))}">
+                                <apex:outputPanel layout="inline" styleClass="{!IF(updateSuccess, 'dot dot-pass', IF(updateStatus == 'Skipped', 'dot dot-skip', 'dot dot-fail'))}"/>
+                                <apex:outputText value="{!updateStatus}"/>
+                            </apex:outputPanel>
+                        </div>
+
+                        <div style="padding:8px 24px;font-size:11px;color:#aaa">
+                            <apex:outputText value="{!syncTime}"/>
+                        </div>
+
+                    </apex:outputPanel>
+                </apex:outputPanel>
+
+                <div class="card-footer">
+                    <apex:commandButton value="Back to account"
+                                        action="{!goBack}"
+                                        style="font-size:12px;padding:6px 16px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer"/>
+                </div>
+
+            </div>
+        </div>
+
+    </apex:form>
+
+    <script>
+        var pollInterval;
+        var pollCount = 0;
+        var maxPolls  = 15; // stop after 60 seconds (15 x 4s)
+
+        // Start polling 4 seconds after page loads
+        window.onload = function() {
+            pollInterval = setInterval(function() {
+                pollCount++;
+                if (pollCount <= maxPolls) {
+                    pollResults(); // calls apex:actionFunction
+                } else {
+                    clearInterval(pollInterval);
+                }
+            }, 4000);
+        };
+
+        function handlePollComplete() {
+            // If results panel now has content, stop polling
+            var panel = document.getElementById('{!$Component.resultsPanel}');
+            if (panel && panel.innerHTML.trim().length > 10) {
+                clearInterval(pollInterval);
+            }
+        }
+    </script>
+
+</apex:page>

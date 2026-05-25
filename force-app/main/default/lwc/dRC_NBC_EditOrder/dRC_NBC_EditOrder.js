@@ -14,13 +14,6 @@ import { NavigationMixin } from 'lightning/navigation';
 import { loadStyle } from 'lightning/platformResourceLoader';
 import AddProductCSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
 
-const SALES_PERSON_CODES = [
-    'AJITPH', 'AJITVA', 'AKSHTA SAWANT', 'AMITDR',
-    'BHAVTA', 'JIGNA', 'KIRTIA', 'MANMA',
-    'NIRMAL', 'SHIRLEY', 'SHREGE', 'TANYDR',
-    'VIJYGU', 'YASHDR'
-];
-
 export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement) {
     @track allData = [];
     @track filteredData = [];
@@ -121,6 +114,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     @track showFinalDestinationDropdown = false;
     @track finalDestinationName = '';
 
+    // Sales Person Code — loaded from Apex picklist
+    @track salesPersonCodeOptions = [];
+
     // Packing details map: Product2Id → List of { packingSize, packingQuantity }
     packingDetailsMap = {};
 
@@ -194,6 +190,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 if (result.DRC_NBC_Final_Destination__c) {
                     this.allFinalDestinationOptions      = result.DRC_NBC_Final_Destination__c.map(v => ({ label: v, value: v }));
                     this.filteredFinalDestinationOptions = [...this.allFinalDestinationOptions];
+                }
+                if (result.DRC_NBC_SalesPerson_Code__c) {
+                    this.salesPersonCodeOptions = result.DRC_NBC_SalesPerson_Code__c.map(v => ({ label: v, value: v }));
                 }
             })
             .catch(() => {
@@ -327,11 +326,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     get getProductIcon()        { return this.isProductOpen       ? 'utility:chevrondown' : 'utility:chevronright'; }
     get hasProducts()           { return this.filteredData && this.filteredData.length > 0; }
 
-    get salesPersonCodeOptions() {
-        return SALES_PERSON_CODES.map(code => ({ label: code, value: code }));
-    }
-
-    // ─── Sales Person ─────────────────────────────────────────────────────────
+    // ─── Sales Person Code ────────────────────────────────────────────────────
 
     handleSalesPersonCodeChange(event) {
         this.orderRec = { ...this.orderRec, DRC_NBC_SalesPerson_Code__c: event.detail.value };
@@ -350,6 +345,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     }
 
     _validateQuantityMultiple(rowData) {
+        if (this.isSample) return null;
         const rawPkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
         if (rawPkgQty <= 0 || !rowData.selectedPackingSize) return null;
         const qty = parseFloat(rowData.Quantity) || 0;
@@ -774,25 +770,25 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
             this.filteredData[index].recordData = {
                 ...this.filteredData[index].recordData,
-                showSearch:          false,
-                Name:                selectedProduct.Product2.Name,
-                Product2Id:          product2Id,
-                Description:         selectedProduct.Product2.Description,
-                UnitPrice:           unitPrice,
-                OriginalUnitPrice:   unitPrice,
+                showSearch:              false,
+                Name:                    selectedProduct.Product2.Name,
+                Product2Id:              product2Id,
+                Description:             selectedProduct.Product2.Description,
+                UnitPrice:               unitPrice,
+                OriginalUnitPrice:       unitPrice,
                 DRC_NBC_HSN_SAC_Code__c: selectedProduct.Product2.DRC_NBC_HSN_SAC_Code__c,
                 DRC_NBC_FG_Code__c:      selectedProduct.Product2.DRC_NBC_FG_Code__c,
-                PricebookEntryId:    selectedProduct.Id,
-                UOM:                 selectedProduct.Product2.QuantityUnitOfMeasure,
-                modifiedPrice:       unitPrice,
+                PricebookEntryId:        selectedProduct.Id,
+                UOM:                     selectedProduct.Product2.QuantityUnitOfMeasure,
+                modifiedPrice:           unitPrice,
                 packingDetails,
                 packingSizeOptions,
-                selectedPackingSize: '',
-                rawPackingQuantity:  '',
-                packingQuantity:     '',
-                quantityError:       '',
-                searchResults:       [],
-                noResultsFound:      false
+                selectedPackingSize:     '',
+                rawPackingQuantity:      '',
+                packingQuantity:         '',
+                quantityError:           '',
+                searchResults:           [],
+                noResultsFound:          false
             };
             this.updateTotal(index);
             this.filteredData = [...this.filteredData];

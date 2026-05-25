@@ -73,12 +73,16 @@ public class DRC_NBC_Account_BC_Callout_Queueable implements System.Queueable, D
             DRC_NBC_Account_BC_Integration integration = new DRC_NBC_Account_BC_Integration(endpoint, 'POST', jsonBody, accountId);
             HttpResponse response = integration.executeAndReturnResponse();
             
-            if (response != null && response.getStatusCode() == 201) {
-                System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(orderId));
+          // if (response != null && response.getStatusCode() == 201) {
+             //   System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(orderId));
               /*  if (hasShippingAddressInIndia) {
                     System.enqueueJob(new DRC_NBC_Shipping_BC_Callout(accountId, orderId));
                 }*/
-                DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
+             //   DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
+           // }
+            if (response != null && response.getStatusCode() == 201) {
+                System.enqueueJob( new DRC_NBC_CustomerItems_Callout_Queueable(orderId, accountId));
+               // DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
             }
             
         } catch (Exception e) {

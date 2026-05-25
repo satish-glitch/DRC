@@ -81,8 +81,43 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Payment_Terms_Code;
         public String Shipment_Method_Code;
         public String Approval_Status;
+        
+        // Added Payload 
+        public Decimal Credit_Limit_LCY;
+        public String Home_Page;
+        public String Business_type;
+        public String Other_E_Mail;
+         public String Salesperson_Code;
     }
     
+    // Add inside DRC_NBC_Integration_Payload class
+    global class CustomerItemPayload {
+        public String Cust_No;
+        public String Item_No;
+       // public String Item_Description;
+        public String UOM;
+        public Decimal Unit_Price;
+        public Decimal Quantity_Month;
+        public Decimal Amount;
+        public String Remarks;
+    } 
+    
+    global class ConsigneeBankPayload {
+        public String Customer_No;
+        public String Code;
+        public String Name;
+        public String Address;
+        public String Address_2;
+        public String Bank_Account_No;
+        public String Bank_Branch_No;
+        public String Country_Region_Code;
+        public String Contact;
+        public String City;
+        public String E_Mail;
+        public String Post_Code;
+        public String Phone_No;
+        public String SWIFT_Code;
+    }
     
     // Payload for BC Account  Shipping Integration
     public class ShipToPayload {
@@ -121,8 +156,6 @@ global with sharing class DRC_NBC_Integration_Payload {
         public Boolean Sample_Sales;
         public String Salesforce_So_No;
         public String External_Document_No;
-        public String Ship_to_GST_Customer_Type;
-        public String Ship_to_GST_Reg_No;
         public String Ship_to_Code;
         public String Ship_to_Country_Region_Code;
         public String Ship_to_Name;
@@ -134,6 +167,26 @@ global with sharing class DRC_NBC_Integration_Payload {
         Public Boolean Salesforce_Order_Created;
         Public String Currency_Code;
         Public Boolean Export_Document; 
+        
+        // Missing fields from BC payload
+        public String Country_Of_Origin_Of_Goods;
+        public String Country_Of_Final_Destination;
+        public String Port_Of_Discharge;
+        public String Port_of_Loading;
+        public String Notify_Name;
+        public String Place_of_receipt_pre_carrier;
+        public String Vessel_Flight_No;
+        public String Final_Destination;
+        public String Part_Shipment;
+        public String Trans_Shipment;
+        public String DispatchDate;
+        public String Transporter_Code;
+        public String Company_Bank_Account_Code_New;
+        public String PO_Date;
+        public String Requested_Delivery_Date;
+        public String Mode_of_Transport;
+        public String Courier_Number;
+        public String Courier_Date;
     }
     
     public class OrderLinePayload {
