@@ -425,7 +425,7 @@ private class Generate_Export_PI_ControllerTest {
         Test.stopTest();
     }
     
-   
+    
     @IsTest
     static void test_lineItems_hazardousTrue_mapsToYes() {
         Order ord = getExportOrder();
@@ -597,7 +597,7 @@ private class Generate_Export_PI_ControllerTest {
         Generate_Export_PI_Controller ctrl = new Generate_Export_PI_Controller();
         Test.stopTest();
     }
-   
+    
     @IsTest
     static void test_domesticSequence_assignedOnFirstLoad_withExistingMax() {
         // getDomesticOrder() returns the Pune order which has no sequence yet.
@@ -609,7 +609,7 @@ private class Generate_Export_PI_ControllerTest {
         Generate_Export_PI_Controller ctrl = new Generate_Export_PI_Controller();
         Test.stopTest();
     }
- 
+    
     @IsTest
     static void test_domesticSequence_alreadyAssigned_noReassignment() {
         Order ord = getDomesticOrderNoMax();   // sequence already = 100
@@ -629,6 +629,52 @@ private class Generate_Export_PI_ControllerTest {
         Generate_Export_PI_Controller ctrl = new Generate_Export_PI_Controller();
         // Now trigger the catch by calling a re-entrant path isn't possible directly,
         // so use the @TestVisible flag approach below
+        Test.stopTest();
+    }
+    
+    @IsTest
+    static void test_showChargeMethods_whenValuesGreaterThanZero() {
+        Order ord = getExportOrder();
+        
+        ord.DRC_NBC_Fright_Charges__c = 1000;
+        ord.DRC_NBC_Insurance__c = 500;
+        ord.DRC_NBC_Other_Tax_Amount__c = 250;
+        update ord;
+        
+        Test.setCurrentPage(buildPage(ord.Id));
+        
+        Test.startTest();
+        Generate_Export_PI_Controller ctrl = new Generate_Export_PI_Controller();
+        
+        Boolean showFreight = ctrl.getShowFreightCharges();
+        Boolean showInsurance = ctrl.getShowInsurance();
+        Boolean showOtherTax = ctrl.getShowOtherTaxAmount();
+        
+        Decimal finalTotal = ctrl.totalAmount;
+        String finalAmountInWords = ctrl.amountInWords;
+        Test.stopTest();
+    }
+    
+    @IsTest
+    static void test_showChargeMethods_whenValuesZeroOrNull() {
+        Order ord = getExportOrder();
+        
+        ord.DRC_NBC_Fright_Charges__c = 0;
+        ord.DRC_NBC_Insurance__c = 0;
+        ord.DRC_NBC_Other_Tax_Amount__c = null;
+        update ord;
+        
+        Test.setCurrentPage(buildPage(ord.Id));
+        
+        Test.startTest();
+        Generate_Export_PI_Controller ctrl = new Generate_Export_PI_Controller();
+        
+        Boolean showFreight = ctrl.getShowFreightCharges();
+        Boolean showInsurance = ctrl.getShowInsurance();
+        Boolean showOtherTax = ctrl.getShowOtherTaxAmount();
+        
+        Decimal finalTotal = ctrl.totalAmount;
+        String finalAmountInWords = ctrl.amountInWords;
         Test.stopTest();
     }
 }

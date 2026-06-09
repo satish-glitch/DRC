@@ -31,7 +31,7 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
             DRC_NBC_Payment_Term_Code__c, DRC_NBC_Customer_Number__c,DRC_NBC_BC_Approval_Status__c,Industry,
             CurrencyIsoCode, Phone, AccountNumber, DRC_NBC_Account_Email_Email__c, DRC_NBC_Payment_Terms__c,SalesPerson_Code__c,
             BillingCity, BillingCountry, BillingCountryCode, BillingPostalCode, DRC_Inco_Term__c, DRC_Gst_Customer_Type__c,
-            BillingState, BillingStateCode, BillingStreet, DRC_NBC_GST_Number__c,
+            BillingState, BillingStateCode, BillingStreet, DRC_NBC_GST_Number__c,DRC_NBC_Transport_Agent__c, 
             (SELECT Id, DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s, 
              DRC_NBC_Address__StateCode__s, DRC_NBC_Address__PostalCode__s, DRC_Inco_Term__c, DRC_Shipping_Gst_Customer_Type__c,
              DRC_NBC_Address__CountryCode__s, DRC_NBC_GST_Number__c, DRC_NBC_Type__c
@@ -72,6 +72,21 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         ];
         SalesPerson_Code__mdt spMdt = mdtRecords.isEmpty() ? null : mdtRecords[0];
         
+        
+        String transporterCode;
+        if (String.isNotBlank(acc.DRC_NBC_Transport_Agent__c)) {
+            List<DRC_NBC_Shipping_Agent_Master__mdt> shippingAgentList = [
+                SELECT MasterLabel, DRC_NBC_Shipping_Agent_Full_Name__c
+                FROM DRC_NBC_Shipping_Agent_Master__mdt
+                WHERE DRC_NBC_Shipping_Agent_Full_Name__c = :acc.DRC_NBC_Transport_Agent__c
+                LIMIT 1
+            ];
+            
+            if (!shippingAgentList.isEmpty()) {
+                transporterCode = shippingAgentList[0].MasterLabel;
+            }
+        }
+        
         DRC_NBC_Integration_Payload.CustomerPayload payload = new DRC_NBC_Integration_Payload.CustomerPayload();
         payload.No = acc.DRC_NBC_Customer_Number__c;
         payload.Name = acc.Name;
@@ -97,7 +112,9 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         payload.Business_type = String.isNotBlank(acc.Industry)
             ? acc.Industry
             : '';
-        //  payload.Business_type = '';
+        payload.Transporter_Code = String.isBlank(transporterCode) 
+            ? '' 
+            : transporterCode;        
         
         payload.Other_E_Mail = String.isNotBlank(acc.Other_Email__c)
             ? acc.Other_Email__c

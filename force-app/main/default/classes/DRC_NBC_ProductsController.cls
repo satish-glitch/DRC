@@ -427,7 +427,9 @@ public static qliWrapper getExistingQLIs(String quoteId) {
             Quantity,
             UnitPrice,
             DRC_NBC_Packing_Size__c,
-            DRC_NBC_Packing_Qauntity__c
+            DRC_NBC_Packing_Qauntity__c,
+             DRC_NBC_Hazardous__c,       
+        DRC_NBC_MARKS_NOS__c 
         FROM QuoteLineItem
         WHERE QuoteId = :quoteId
     ];
@@ -446,6 +448,8 @@ public static qliWrapper getExistingQLIs(String quoteId) {
             Product2.DRC_NBC_FG_Code__c,
             Product2.DRC_NBC_HSN_SAC_Code__c,
             Product2.QuantityUnitOfMeasure,
+            Product2.DRC_NBC_Hazardous__c,  
+            Product2.DRC_NBC_MARKS_NOS__c,
             CurrencyIsoCode,
             Pricebook2Id,
             Product2.Description,

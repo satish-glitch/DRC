@@ -37,7 +37,7 @@ insert customSetting;*/
             DRC_NBC_Shipping_Address_Endpoint__c = 'shipToAddresses',
             DRC_NBC_SalesPerson_Code__c      = 'SP001',
             DRC_NBC_SendOrderLineEndpoint__c = 'salesOrderLines'
-          
+            
             // DRC_NBC_Token_Generated_Time__c intentionally null → isTokenExpired() = true
         );
         insert customSetting;
@@ -119,28 +119,28 @@ insert customSetting;*/
         insert pbe;
         
         // Create Order
-       /* Order testOrder = new Order(
-            AccountId = testAccount.Id,
-            EffectiveDate = Date.today(),
-            EndDate = Date.today().addDays(30),
-            Status = 'Draft',
-            Pricebook2Id = standardPricebook.Id,
-            BillToContactId = billToContact.Id,
-            ShipToContactId = shipToContact.Id,
-            PoNumber = 'PO12345',
-            PoDate = Date.today(),
-            DRC_NBC_Payment_Terms__c = 'PDC90',
-            DRC_NBC_Inco_Terms__c = 'Cost Insurance & Freight (CIF)',
-            DRC_NBC_Cust_Order_Number__c = 'ORD-001',
-            ShippingStreet = '123 Test St',
-            ShippingCity = 'Test City',
-            ShippingState = 'Maharashtra',
-            ShippingPostalCode = '12345',
-            ShippingCountry = 'India',
-            ShippingCountryCode = 'IN',
-            DRC_NBC_Warehouse__c = 'C4/2/2 D.R COATS INK & RESINS PVT LTD (UNIT-III)'
-        );
-        insert testOrder;*/
+        /* Order testOrder = new Order(
+AccountId = testAccount.Id,
+EffectiveDate = Date.today(),
+EndDate = Date.today().addDays(30),
+Status = 'Draft',
+Pricebook2Id = standardPricebook.Id,
+BillToContactId = billToContact.Id,
+ShipToContactId = shipToContact.Id,
+PoNumber = 'PO12345',
+PoDate = Date.today(),
+DRC_NBC_Payment_Terms__c = 'PDC90',
+DRC_NBC_Inco_Terms__c = 'Cost Insurance & Freight (CIF)',
+DRC_NBC_Cust_Order_Number__c = 'ORD-001',
+ShippingStreet = '123 Test St',
+ShippingCity = 'Test City',
+ShippingState = 'Maharashtra',
+ShippingPostalCode = '12345',
+ShippingCountry = 'India',
+ShippingCountryCode = 'IN',
+DRC_NBC_Warehouse__c = 'C4/2/2 D.R COATS INK & RESINS PVT LTD (UNIT-III)'
+);
+insert testOrder;*/
         
         // Create Shipping Address
         DRC_NBC_Addresses__c shippingAddress = new DRC_NBC_Addresses__c(
@@ -158,7 +158,7 @@ insert customSetting;*/
         insert shippingAddress;
         
         
-          // Create Order
+        // Create Order
         Order testOrder = new Order(
             AccountId = testAccount.Id,
             EffectiveDate = Date.today(),
@@ -183,7 +183,7 @@ insert customSetting;*/
             DRC_NBC_Shipping_Address__c = shippingAddress.Id
         );
         insert testOrder;
-      
+        
         // Create Order Line Items
         OrderItem testOrderItem = new OrderItem(
             OrderId = testOrder.Id,
@@ -588,8 +588,29 @@ insert customSetting;*/
             EffectiveDate, PoNumber, PoDate, DRC_NBC_Warehouse__c, ShipToContactId, CurrencyIsoCode,
             DRC_NBC_Cust_Order_Number__c, Status, DRC_NBC_Payment_Terms__c, DRC_NBC_Type__c,
             DRC_NBC_Inco_Terms__c, ShippingStreet, ShippingCity, ShippingState, DRC_NBC_SalesPerson_Code__c,
-            ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c, DRC_NBC_Grand_Total__c,
-            DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name,DRC_NBC_Record_Type_Name__c
+            ShippingPostalCode, ShippingCountry, DRC_NBC_Shipping_Address__c, DRC_NBC_Grand_Total__c,DRC_NBC_Shipment_Method__c,
+            DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, RecordType.Name,DRC_NBC_Record_Type_Name__c,   DRC_NBC_Transport_Agent__c, 
+            DRC_NBC_Shipment_Date__c,
+            DRC_NBC_Courier_Number__c,
+            DRC_NBC_Expected_Delivery_Date__c,
+            DRC_NBC_Courier_date__c,
+            DRC_NBC_Courier_service__c,
+            DRC_NBC_Special_request__c,
+            DRC_NBC_Remarks__c,
+            NBC_DRC_Dispatch_Date__c,
+            DRC_NBC_Country_of_Origin__c,   
+            DRC_NBC_Country_of_Final_Destination__c,
+            DRC_NBC_Trans_Shipment__c,
+            DRC_NBC_Part_Shipment__c,
+            DRC_NBC_Port_Of_Discharge__c,
+            DRC_NBC_Port_of_Loading__c,
+            DRC_NBC_Final_Destination__c,
+            DRC_NBC_Vessel_no_Flight_no__c,
+            DRC_NBC_Notify_Party__c,
+            DRC_NBC_PLACE_OF_RECEIPT_BY_CARRIAG__c,
+            DRC_NBC_Required_Documents__c,
+            DRC_NBC_Final_Dispatch_Date__c,
+            DRC_NBC_Select_Bank__c
             FROM Order LIMIT 1
         ];
         
@@ -681,7 +702,7 @@ insert customSetting;*/
                 Pricebook2Id = pricebook.Id,
                 BillToContactId = contact.Id,
                 ShipToContactId = contact.Id,
-                DRC_NBC_Cust_Order_Number__c = 'ORD-00' + i
+                DRC_NBC_Cust_Order_Number__c = 'ORDtest-00' + i
             ));
         }
         insert orders;

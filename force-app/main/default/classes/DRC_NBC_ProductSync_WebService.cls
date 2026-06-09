@@ -51,7 +51,10 @@ global without sharing class DRC_NBC_ProductSync_WebService {
                     DRC_NBC_Category_Level_1__c   = data.product.ProductCategoryL1,
                     DRC_NBC_Category_Level_2__c   = data.product.ProductCategoryL2,
                     DRC_NBC_Category_Level_3__c   = data.product.ProductCategoryL3,
-                    DRC_NBC_HSN_SAC_Code__c       = data.product.HSNCode
+                    DRC_NBC_HSN_SAC_Code__c       = data.product.HSNCode,
+                    DRC_NBC_MARKS_NOS__c       = data.product.marksnos,
+                    DRC_NBC_Hazardous__c       = data.product.hazardous,
+                    Description = data.product.marksnos
                     // ✅ Removed DRC_NBC_Packing_Size__c — now handled via child object
                 );
                 productToUpsert.add(productObj);

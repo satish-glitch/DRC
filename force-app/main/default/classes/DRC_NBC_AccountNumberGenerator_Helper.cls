@@ -1,4 +1,4 @@
-public class DRC_NBC_AccountNumberGenerator_Helper {
+public without sharing class DRC_NBC_AccountNumberGenerator_Helper {
     
     @future
     public static void generateAccountNumbersAsync(Id accountIds) {

@@ -1,4 +1,4 @@
-public class DRC_NBC_OrderNumberGenerator_Helper {
+public without sharing class DRC_NBC_OrderNumberGenerator_Helper {
     @future
     public static void generateOrderNumbersSync(Id orderIds) {
         List<Order> orders = [
@@ -49,7 +49,7 @@ continue;
             SELECT DRC_NBC_Cust_Order_Number__c
             FROM Order
             WHERE DRC_NBC_Cust_Order_Number__c LIKE :prefix + '%'
-            ORDER BY CreatedDate DESC
+            ORDER BY DRC_NBC_Cust_Order_Number__c DESC
             LIMIT 1
         ];
         

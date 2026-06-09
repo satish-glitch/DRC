@@ -62,6 +62,18 @@
         <layoutColumns/>
         <style>CustomLinks</style>
     </layoutSections>
+    <relatedLists>
+        <fields>Product2</fields>
+        <fields>Quantity</fields>
+        <fields>UnitPrice</fields>
+        <fields>ListPrice</fields>
+        <fields>TotalPrice</fields>
+        <fields>ODER_ITEM.START_DATE</fields>
+        <fields>ODER_ITEM.END_DATE</fields>
+        <fields>QUOTE_LI</fields>
+        <fields>OriginalOrderItem</fields>
+        <relatedList>OrderItem.Account_Products__c</relatedList>
+    </relatedLists>
     <showEmailCheckbox>false</showEmailCheckbox>
     <showHighlightsPanel>false</showHighlightsPanel>
     <showInteractionLogPanel>false</showInteractionLogPanel>

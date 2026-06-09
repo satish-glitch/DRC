@@ -184,7 +184,7 @@ public class DRC_NBC_CheckShippingDetails_Test {
         
         Account accNoCustomer = new Account(  Name                                     = 'Excel11',
                                             Phone                                    = '9876453210',
-                                            DRC_NBC_Customer_Number__c               = 'CUST001',
+                                            DRC_NBC_Customer_Number__c               = 'CUSTtet001',
                                             CurrencyIsoCode                          = 'INR',
                                             AccountNumber                            = 'ACC301',
                                             DRC_NBC_PAN_No__c                        = 'AWVPY9594J',

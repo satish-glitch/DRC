@@ -169,6 +169,22 @@
                             <lightning-input-field field-name="DRC_NBC_Sample_Shipping_Cost__c" onchange={handleFieldChange}></lightning-input-field>
                         </div>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field 
+                                field-name="DRC_NBC_Part_Shipment__c" 
+                                data-field="DRC_NBC_Part_Shipment__c"
+                                onchange={handleFieldChange}
+                                required>
+                            </lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field 
+                                field-name="DRC_NBC_Trans_Shipment__c" 
+                                data-field="DRC_NBC_Trans_Shipment__c"
+                                onchange={handleFieldChange}
+                                required>
+                            </lightning-input-field>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                             <lightning-input-field field-name="DRC_NBC_Special_request__c" onchange={handleFieldChange}></lightning-input-field>
                         </div>
                         <template if:true={isRejected}>

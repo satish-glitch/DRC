@@ -60,7 +60,7 @@ public class DRC_NBC_SalesPerson_BC_Integration extends DRC_NBC_Base_API_Integra
             );
         } else {
             // Error logging
-            DRC_NBC_API_Log_Handler.createApiLog(
+          /*  DRC_NBC_API_Log_Handler.createApiLog(
                 this.apiPath,
                 DRC_NBC_BC_Callout_Utility.trimPayload(payload),
                 DRC_NBC_BC_Callout_Utility.trimPayload(responseBody),
@@ -70,7 +70,7 @@ public class DRC_NBC_SalesPerson_BC_Integration extends DRC_NBC_Base_API_Integra
                 null,
                 'Error',
                 this.recordId
-            );
+            );*/
             
             System.debug('BC Salesperson POST failed with status: ' + statusCode);
         }

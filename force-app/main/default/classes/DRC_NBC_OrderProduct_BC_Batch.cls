@@ -14,19 +14,26 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         return Database.getQueryLocator([
             SELECT Id,
             OrderId,
+            DRC_NBC_Hazardous__c,
+            DRC_NBC_MARKS_NOS__c,
+            Order.DRC_NBC_Fright_Charges__c,
+            Order.DRC_NBC_Insurance__c,
             Description,
             Product2Id,
             Quantity,
             UnitPrice,
             DRC_NBC_Discount__c,
             Order.DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
+            Order.DRC_NBC_Record_Type_Name__c,
             Order.DRC_NBC_TCS_Amount__c,
             Order.DRC_NBC_Other_Tax_Amount__c,
-            Order.DRC_NBC_Sample_Shipping_Cost__c,   // ← NEW
-            Order.DRC_NBC_Sample_Amount__c,           // ← NEW
+            Order.DRC_NBC_Sample_Shipping_Cost__c,
+            Order.DRC_NBC_Sample_Amount__c,
             DRC_NBC_Total_Price__c,
             Order.DRC_NBC_Cust_Order_Number__c,
+            Order.AccountId,
             Order.Account.DRC_NBC_Customer_Number__c,
+            Order.Account.Type,
             Order.RecordType.Name,
             Order.DRC_NBC_Warehouse__c,
             Product2.DRC_NBC_FG_Code__c,
@@ -52,6 +59,27 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         }
         
         System.debug('Total OrderItems in current scope: ' + scope.size());
+        
+        // ==========================================================
+        //  BUILD RESTRICTED PRODUCT MAP (Product2Id → Name)
+        // ==========================================================
+        Map<Id, String> restrictedProductMap = new Map<Id, String>();
+        try {
+            Id accountId = ((OrderItem) scope[0]).Order.AccountId;
+            System.debug('Building Restricted Product Map for AccountId: ' + accountId);
+            for (DRC_NBC_Restricted_Product__c rp : [
+                SELECT Name, DRC_NBC_Product__c
+                FROM DRC_NBC_Restricted_Product__c
+                WHERE DRC_NBC_Customer__c = :accountId
+            ]) {
+                restrictedProductMap.put(rp.DRC_NBC_Product__c, rp.Name);
+            }
+            System.debug('Restricted Product Map built. Size: ' + restrictedProductMap.size());
+            System.debug('Restricted Product Map: ' + restrictedProductMap);
+        } catch (Exception ex) {
+            System.debug('!!! ERROR building Restricted Product Map: ' + ex.getMessage());
+            System.debug('Stack Trace: ' + ex.getStackTraceString());
+        }
         
         List<Map<String, Object>> requestList = new List<Map<String, Object>>();
         Integer lineCounter = 1;
@@ -79,14 +107,14 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                 System.debug('  - Record Type: ' + relatedOrder.RecordType.Name);
                 System.debug('  - TCS Amount: ' + relatedOrder.DRC_NBC_TCS_Amount__c);
                 System.debug('  - Other Tax Amount: ' + relatedOrder.DRC_NBC_Other_Tax_Amount__c);
-                System.debug('  - Sample Shipping Cost: ' + relatedOrder.DRC_NBC_Sample_Shipping_Cost__c);  // ← NEW
-                System.debug('  - Sample Amount: ' + relatedOrder.DRC_NBC_Sample_Amount__c);                // ← NEW
+                System.debug('  - Sample Shipping Cost: ' + relatedOrder.DRC_NBC_Sample_Shipping_Cost__c);
+                System.debug('  - Sample Amount: ' + relatedOrder.DRC_NBC_Sample_Amount__c);
             }
             
             Integer lineNo = (lineCounter++) * 10000;
             
             try {
-                DRC_NBC_Integration_Payload.OrderLinePayload payload = mapOrderItemToPayload(item, lineNo);
+                DRC_NBC_Integration_Payload.OrderLinePayload payload = mapOrderItemToPayload(item, lineNo, restrictedProductMap);
                 
                 System.debug('--- ITEM PAYLOAD CREATED ---');
                 System.debug(JSON.serializePretty(payload));
@@ -214,7 +242,105 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         }
         
         // ==========================================================
-        //  ADD SAMPLE SHIPPING COST LINE (G/L Account) - Only for Sample Orders  ← NEW BLOCK
+        //  ADD FREIGHT CHARGES LINE (G/L Account)
+        // ==========================================================
+        System.debug('--- Checking for Freight Charges Line ---');
+        try {
+            if (relatedOrder != null) {
+                Decimal freightCharges = relatedOrder.DRC_NBC_Fright_Charges__c;
+                System.debug('Freight Charges from Order: ' + freightCharges);
+                
+                if (freightCharges != null && freightCharges != 0) {
+                    Integer freightLineNo = (lineCounter++) * 10000;
+                    System.debug('Creating Freight Charges Line with Line No: ' + freightLineNo);
+                    
+                    DRC_NBC_Integration_Payload.OrderLinePayload freightPayload =
+                        mapFreightChargesToPayload(relatedOrder, freightCharges, freightLineNo);
+                    
+                    System.debug('--- FREIGHT CHARGES PAYLOAD CREATED ---');
+                    System.debug(JSON.serializePretty(freightPayload));
+                    
+                    Map<String, Object> requestBlock = new Map<String, Object>();
+                    requestBlock.put('method', 'POST');
+                    requestBlock.put('id', 'r' + requestCounter);
+                    requestBlock.put('url', System.Label.DRC_UAT);
+                    
+                    Map<String, String> headers = new Map<String, String>{
+                        'Content-Type' => 'application/json'
+                    };
+                    requestBlock.put('headers', headers);
+                    requestBlock.put('body', freightPayload);
+                    
+                    System.debug('--- FREIGHT CHARGES REQUEST BLOCK #' + requestCounter + ' ---');
+                    System.debug(JSON.serializePretty(requestBlock));
+                    
+                    requestList.add(requestBlock);
+                    requestCounter++;
+                    
+                    System.debug('✓ Successfully added Freight Charges G/L Account Line. Amount=' + freightCharges + ', Line No=' + freightLineNo);
+                } else {
+                    System.debug('No Freight Charges to add (null or zero)');
+                }
+            } else {
+                System.debug('!!! No related Order found for Freight Charges line');
+            }
+        } catch (Exception ex) {
+            System.debug('!!! ERROR adding Freight Charges line: ' + ex.getMessage());
+            System.debug('Stack Trace: ' + ex.getStackTraceString());
+            logError('Freight Charges Line Error: ' + ex.getMessage(), orderId, null, null);
+        }
+        
+        // ==========================================================
+        //  ADD INSURANCE LINE (G/L Account)
+        // ==========================================================
+        System.debug('--- Checking for Insurance Line ---');
+        try {
+            if (relatedOrder != null) {
+                Decimal insuranceAmount = relatedOrder.DRC_NBC_Insurance__c;
+                System.debug('Insurance from Order: ' + insuranceAmount);
+                
+                if (insuranceAmount != null && insuranceAmount != 0) {
+                    Integer insuranceLineNo = (lineCounter++) * 10000;
+                    System.debug('Creating Insurance Line with Line No: ' + insuranceLineNo);
+                    
+                    DRC_NBC_Integration_Payload.OrderLinePayload insurancePayload =
+                        mapInsuranceToPayload(relatedOrder, insuranceAmount, insuranceLineNo);
+                    
+                    System.debug('--- INSURANCE PAYLOAD CREATED ---');
+                    System.debug(JSON.serializePretty(insurancePayload));
+                    
+                    Map<String, Object> requestBlock = new Map<String, Object>();
+                    requestBlock.put('method', 'POST');
+                    requestBlock.put('id', 'r' + requestCounter);
+                    requestBlock.put('url', System.Label.DRC_UAT);
+                    
+                    Map<String, String> headers = new Map<String, String>{
+                        'Content-Type' => 'application/json'
+                    };
+                    requestBlock.put('headers', headers);
+                    requestBlock.put('body', insurancePayload);
+                    
+                    System.debug('--- INSURANCE REQUEST BLOCK #' + requestCounter + ' ---');
+                    System.debug(JSON.serializePretty(requestBlock));
+                    
+                    requestList.add(requestBlock);
+                    requestCounter++;
+                    
+                    System.debug('✓ Successfully added Insurance G/L Account Line. Amount=' + insuranceAmount + ', Line No=' + insuranceLineNo);
+                } else {
+                    System.debug('No Insurance to add (null or zero)');
+                }
+            } else {
+                System.debug('!!! No related Order found for Insurance line');
+            }
+        } catch (Exception ex) {
+            System.debug('!!! ERROR adding Insurance line: ' + ex.getMessage());
+            System.debug('Stack Trace: ' + ex.getStackTraceString());
+            logError('Insurance Line Error: ' + ex.getMessage(), orderId, null, null);
+        }
+        
+        // ==========================================================
+        //  ADD SAMPLE SHIPPING COST LINE (G/L Account) - Only for Sample Orders
         // ==========================================================
         System.debug('--- Checking for Sample Shipping Cost Line ---');
         try {
@@ -263,7 +389,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         }
         
         // ==========================================================
-        //  ADD SAMPLE AMOUNT LINE (G/L Account) - Only for Sample Orders  ← NEW BLOCK
+        //  ADD SAMPLE AMOUNT LINE (G/L Account) - Only for Sample Orders
         // ==========================================================
         System.debug('--- Checking for Sample Amount Line ---');
         try {
@@ -323,7 +449,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             Map<String, Object> payloadWrapper = new Map<String, Object>{
                 'requests' => requestList
             };
-                        
+            
             String jsonBody = JSON.serialize(payloadWrapper, true);
             
             System.debug('=======================================================');
@@ -398,7 +524,9 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
     // ==========================================================
     // EXISTING ITEM PAYLOAD MAPPER
     // ==========================================================
-    private DRC_NBC_Integration_Payload.OrderLinePayload mapOrderItemToPayload(OrderItem item, Integer lineNo) {
+    private DRC_NBC_Integration_Payload.OrderLinePayload mapOrderItemToPayload(
+        OrderItem item, Integer lineNo, Map<Id, String> restrictedProductMap
+    ) {
         System.debug('  >> Mapping OrderItem to Payload (Line No: ' + lineNo + ')');
         
         String warehouseLabel = item.Order.DRC_NBC_Warehouse__c;
@@ -435,6 +563,12 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             System.debug('  Sample Order detected - Total Price and Discount set to 0');
         }
         
+        // Resolve Item_Reference_No from Restricted Product map
+        String itemReferenceNo = restrictedProductMap.containsKey(item.Product2Id)
+            ? restrictedProductMap.get(item.Product2Id)
+            : '';
+        System.debug('  Item Reference No (Restricted Product Name): ' + itemReferenceNo);
+        
         DRC_NBC_Integration_Payload.OrderLinePayload payload = new DRC_NBC_Integration_Payload.OrderLinePayload();
         payload.Document_Type = 'Order';
         payload.Document_No = item.Order.DRC_NBC_Cust_Order_Number__c;
@@ -455,11 +589,20 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.GST_Group_Code = String.isNotBlank(item.Product2.DRC_NBC_GST_Group_Code__c) ? item.Product2.DRC_NBC_GST_Group_Code__c : '';
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = String.isNotBlank(item.DRC_NBC_Packing_Size__c) ? item.DRC_NBC_Packing_Size__c : '';
-        if (String.isNotBlank(item.DRC_NBC_Packing_Quantity__c)) {
-            payload.No_of_Pkg_for_Qty = item.Quantity;
-        } else {
-            payload.No_of_Pkg_for_Qty = 0;
-        }
+        Decimal packingQty = String.isNotBlank(item.DRC_NBC_Packing_Quantity__c)
+            ? Decimal.valueOf(item.DRC_NBC_Packing_Quantity__c)
+            : 0;
+        payload.No_of_Pkg_for_Qty = packingQty > 0
+            ? item.Quantity / packingQty
+            : item.Quantity;
+        payload.Hazardous = item.DRC_NBC_Hazardous__c;
+        payload.MarkNosContainerNos = String.isBlank(item.DRC_NBC_MARKS_NOS__c)
+            ? ''
+            : item.DRC_NBC_MARKS_NOS__c.trim();
+        payload.Item_Reference_No = itemReferenceNo;
+        payload.Item_Reference_Type = item.Order.Account.DRC_NBC_Customer_Number__c;
+        payload.Item_Reference_Type_No = item.Order.Account.Type;
+        payload.Item_Reference_Unit_of_Measure = 'KGS';
         
         System.debug('  << Payload mapping complete');
         return payload;
@@ -494,6 +637,13 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
+        payload.Hazardous = false;
+        payload.MarkNosContainerNos = '';
+        payload.Item_Reference_No = '';
+        payload.Item_Reference_Type = '';
+        payload.Item_Reference_Type_No = '';
+        payload.Item_Reference_Unit_of_Measure = 'KGS';
+        
         
         System.debug('  << Other Tax payload mapping complete');
         return payload;
@@ -528,13 +678,99 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
+        payload.Hazardous = false;
+        payload.MarkNosContainerNos = '';
+        payload.Item_Reference_No = '';
+        payload.Item_Reference_Type = '';
+        payload.Item_Reference_Type_No = '';
+        payload.Item_Reference_Unit_of_Measure = 'KGS';
         
         System.debug('  << TCS Amount payload mapping complete');
         return payload;
     }
     
     // ==========================================================
-    //  SAMPLE SHIPPING COST PAYLOAD (G/L Account) - NEW
+    //  FREIGHT CHARGES PAYLOAD (G/L Account)
+    // ==========================================================
+    private DRC_NBC_Integration_Payload.OrderLinePayload mapFreightChargesToPayload(
+        Order ord, Decimal freightCharges, Integer lineNo
+    ) {
+        System.debug('  >> Mapping Freight Charges to Payload (Line No: ' + lineNo + ')');
+        
+        DRC_NBC_Integration_Payload.OrderLinePayload payload = new DRC_NBC_Integration_Payload.OrderLinePayload();
+        payload.Document_Type = 'Order';
+        payload.Document_No = ord.DRC_NBC_Cust_Order_Number__c;
+        payload.Line_No = lineNo;
+        payload.Type = 'G/L Account';
+        payload.No = Label.DRC_TCS_Tax_Number;
+        payload.Customer_item_no = '';
+        payload.Description = 'Freight Charges';
+        payload.Location_Code = locationCode;
+        payload.Quantity = 1;
+        payload.Unit_of_Measure_Code = 'KGS';
+        payload.Unit_Price = freightCharges;
+        payload.Line_Amount = freightCharges;
+        payload.Line_Discount_Percent = 0;
+        payload.Line_Discount_Amount = 0;
+        payload.Inv_Discount_Amount = 0;
+        payload.HSN_SAC_Code = '';
+        payload.GST_Group_Code = '';
+        payload.GST_Credit = 'Availment';
+        payload.Packing_Details = '';
+        payload.No_of_Pkg_for_Qty = 1;
+        payload.Hazardous = false;
+        payload.MarkNosContainerNos = '';
+        payload.Item_Reference_No = '';
+        payload.Item_Reference_Type = '';
+        payload.Item_Reference_Type_No = '';
+        payload.Item_Reference_Unit_of_Measure = 'KGS';
+        
+        System.debug('  << Freight Charges payload mapping complete');
+        return payload;
+    }
+    
+    // ==========================================================
+    //  INSURANCE PAYLOAD (G/L Account)
+    // ==========================================================
+    private DRC_NBC_Integration_Payload.OrderLinePayload mapInsuranceToPayload(
+        Order ord, Decimal insuranceAmount, Integer lineNo
+    ) {
+        System.debug('  >> Mapping Insurance to Payload (Line No: ' + lineNo + ')');
+        
+        DRC_NBC_Integration_Payload.OrderLinePayload payload = new DRC_NBC_Integration_Payload.OrderLinePayload();
+        payload.Document_Type = 'Order';
+        payload.Document_No = ord.DRC_NBC_Cust_Order_Number__c;
+        payload.Line_No = lineNo;
+        payload.Type = 'G/L Account';
+        payload.No = Label.DRC_TCS_Tax_Number;
+        payload.Customer_item_no = '';
+        payload.Description = 'Insurance';
+        payload.Location_Code = locationCode;
+        payload.Quantity = 1;
+        payload.Unit_of_Measure_Code = 'KGS';
+        payload.Unit_Price = insuranceAmount;
+        payload.Line_Amount = insuranceAmount;
+        payload.Line_Discount_Percent = 0;
+        payload.Line_Discount_Amount = 0;
+        payload.Inv_Discount_Amount = 0;
+        payload.HSN_SAC_Code = '';
+        payload.GST_Group_Code = '';
+        payload.GST_Credit = 'Availment';
+        payload.Packing_Details = '';
+        payload.No_of_Pkg_for_Qty = 1;
+        payload.Hazardous = false;
+        payload.MarkNosContainerNos = '';
+        payload.Item_Reference_No = '';
+        payload.Item_Reference_Type = '';
+        payload.Item_Reference_Type_No = '';
+        payload.Item_Reference_Unit_of_Measure = 'KGS';
+        
+        System.debug('  << Insurance payload mapping complete');
+        return payload;
+    }
+    
+    // ==========================================================
+    //  SAMPLE SHIPPING COST PAYLOAD (G/L Account)
     // ==========================================================
     public DRC_NBC_Integration_Payload.OrderLinePayload mapSampleShippingCostToPayload(
         Order ord, Decimal sampleShippingCost, Integer lineNo
@@ -548,7 +784,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Document_No = ord.DRC_NBC_Cust_Order_Number__c;
         payload.Line_No = lineNo;
         payload.Type = 'G/L Account';
-        payload.No = label.DRC_TCS_Tax_Number;   // ← Add this Custom Label in Salesforce
+        payload.No = label.DRC_TCS_Tax_Number;
         payload.Customer_item_no = '';
         payload.Description = 'Sample Shipping Cost';
         payload.Location_Code = locationCode;
@@ -564,13 +800,19 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
+        payload.Hazardous = false;
+        payload.MarkNosContainerNos = '';
+        payload.Item_Reference_No = '';
+        payload.Item_Reference_Type = '';
+        payload.Item_Reference_Type_No = '';
+        payload.Item_Reference_Unit_of_Measure = 'KGS';
         
         System.debug('  << Sample Shipping Cost payload mapping complete');
         return payload;
     }
     
     // ==========================================================
-    //  SAMPLE AMOUNT PAYLOAD (G/L Account) - NEW
+    //  SAMPLE AMOUNT PAYLOAD (G/L Account)
     // ==========================================================
     public DRC_NBC_Integration_Payload.OrderLinePayload mapSampleAmountToPayload(
         Order ord, Decimal sampleAmount, Integer lineNo
@@ -584,7 +826,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Document_No = ord.DRC_NBC_Cust_Order_Number__c;
         payload.Line_No = lineNo;
         payload.Type = 'G/L Account';
-        payload.No = label.DRC_TCS_Tax_Number;   // ← Add this Custom Label in Salesforce
+        payload.No = label.DRC_TCS_Tax_Number;
         payload.Customer_item_no = '';
         payload.Description = 'Sample Amount';
         payload.Location_Code = locationCode;
@@ -600,6 +842,12 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
+        payload.Hazardous = false;
+        payload.MarkNosContainerNos = '';
+        payload.Item_Reference_No = '';
+        payload.Item_Reference_Type = '';
+        payload.Item_Reference_Type_No = '';
+        payload.Item_Reference_Unit_of_Measure = 'KGS';
         
         System.debug('  << Sample Amount payload mapping complete');
         return payload;

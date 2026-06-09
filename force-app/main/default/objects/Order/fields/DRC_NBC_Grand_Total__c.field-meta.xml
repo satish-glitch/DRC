@@ -16,10 +16,12 @@
 
   IF(
     TEXT(DRC_NBC_Type__c) = &quot;Export&quot;,
-    /* --- Export Calculation: TotalAmount + Other Tax --- */
+    /* --- Export Calculation --- */
     (
       IF(ISBLANK(TotalAmount), 0, TotalAmount) +
-      IF(ISBLANK(DRC_NBC_Other_Tax_Amount__c), 0, DRC_NBC_Other_Tax_Amount__c)
+      IF(ISBLANK(DRC_NBC_Other_Tax_Amount__c), 0, DRC_NBC_Other_Tax_Amount__c) +
+      IF(ISBLANK(DRC_NBC_Fright_Charges__c), 0, DRC_NBC_Fright_Charges__c) +
+      IF(ISBLANK(DRC_NBC_Insurance__c), 0, DRC_NBC_Insurance__c)
     ),
 
     IF(

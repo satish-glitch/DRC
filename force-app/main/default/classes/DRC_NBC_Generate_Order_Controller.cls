@@ -256,6 +256,8 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                 oi.DRC_NBC_Unit_Of_Measurement__c = w.UOM;
                 oi.DRC_NBC_Packing_Size__c     = w.DRC_NBC_Packing_Size;
                 oi.DRC_NBC_Packing_Quantity__c = w.DRC_NBC_Packing_Quantity;
+                oi.DRC_NBC_Hazardous__c  = w.hazardous;
+                oi.DRC_NBC_MARKS_NOS__c  = w.marksAndNos;
                 finalOrderItems.add(oi);
             }
             
@@ -405,6 +407,8 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     oiw.Product2Id         = qli.Product2Id;
                     oiw.DRC_NBC_Packing_Size     = qli.DRC_NBC_Packing_Size__c;
                     oiw.DRC_NBC_Packing_Quantity = qli.DRC_NBC_Packing_Qauntity__c;
+                    oiw.hazardous   = qli.DRC_NBC_Hazardous__c;
+                oiw.marksAndNos = qli.DRC_NBC_MARKS_NOS__c;
                     
                     // Create Product2 wrapper
                     Product2Wrapper p2w = new Product2Wrapper();
@@ -440,7 +444,9 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                 Quantity,
                 PriceBookEntryId,
                 DRC_NBC_Packing_Size__c,
-                DRC_NBC_Packing_Qauntity__c
+                DRC_NBC_Packing_Qauntity__c,
+                DRC_NBC_Hazardous__c,        
+                DRC_NBC_MARKS_NOS__c 
             FROM
                 QuoteLineItem
             WHERE

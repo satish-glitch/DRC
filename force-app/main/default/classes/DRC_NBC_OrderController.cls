@@ -4,7 +4,7 @@
 * @Author : Satish Yadav
 * @Test_Class : DRC_NBC_OrderControllerTest
 * @Last Modified By : Satish Yadav
-* @Last Modified On : April 23, 2026
+* @Last Modified On : June 05, 2026
 * @Modification Log :
 *==============================================================================
 * Ver | Date | Author | Modification
@@ -18,6 +18,8 @@
 *     |                   |              | in order currency if not found; split insert/update for OrderItems
 * 1.5 | April 23, 2026    |              | Product list now currency-agnostic with best-entry de-dup;
 *     |                   |              | restored else fallback so accounts with no restrictions see all products
+* 1.6 | June 05, 2026     |              | Fixed olisToUpdate block missing DRC_NBC_MARKS_NOS__c and
+*     |                   |              | DRC_NBC_Hazardous__c — both fields now persisted on existing OLI updates
 **/
 
 public class DRC_NBC_OrderController {
@@ -42,6 +44,9 @@ public class DRC_NBC_OrderController {
                 DRC_NBC_Inco_Terms__c,
                 DRC_NBC_Warehouse__c,
                 Description,
+                Fright_Required__c,
+                DRC_NBC_Fright_Charges__c,
+                DRC_NBC_Insurance__c,
                 DRC_NBC_SalesPerson_Code__c,
                 DRC_NBC_Other_Rejection_Reason__c,
                 DRC_NBC_Reject_Reason_Text__c,
@@ -212,6 +217,8 @@ public class DRC_NBC_OrderController {
                    Product2.QuantityUnitOfMeasure,
                    Product2.DRC_NBC_FG_Code__c,
                    Product2.DRC_NBC_HSN_SAC_Code__c,
+                   DRC_NBC_Hazardous__c,
+                   DRC_NBC_MARKS_NOS__c,
                    PricebookEntryId,
                    Description,
                    Product2Id,
@@ -246,6 +253,8 @@ public class DRC_NBC_OrderController {
                    Product2.Family,
                    Product2.DRC_NBC_FG_Code__c,
                    Product2.DRC_NBC_HSN_SAC_Code__c,
+                   Product2.DRC_NBC_Hazardous__c,
+                   Product2.DRC_NBC_MARKS_NOS__c,
                    Product2.QuantityUnitOfMeasure,
                    CurrencyIsoCode,
                    Pricebook2Id,
@@ -371,7 +380,7 @@ public class DRC_NBC_OrderController {
     }
 
     // ─── Helper: get or create PricebookEntry for a product in the required currency ───
-    private static Map<Id, Id> getOrCreatePricebookEntries(
+    public static Map<Id, Id> getOrCreatePricebookEntries(
         Set<Id> product2Ids,
         Id      pricebook2Id,
         String  targetCurrency
@@ -514,6 +523,8 @@ public class DRC_NBC_OrderController {
                     ordToUpdate.DRC_NBC_Prepayment_Method__c = orderData.DRC_NBC_Prepayment_Method__c;
                     ordToUpdate.DRC_NBC_Shipment_Method__c   = orderData.DRC_NBC_Shipment_Method__c;
                     ordToUpdate.DRC_NBC_Shipment_Date__c     = orderData.DRC_NBC_Shipment_Date__c;
+                    ordToUpdate.DRC_NBC_Part_Shipment__c     = orderData.DRC_NBC_Part_Shipment__c;
+                    ordToUpdate.DRC_NBC_Trans_Shipment__c    = orderData.DRC_NBC_Trans_Shipment__c;
                 } else if (orderData.DRC_NBC_Type__c == 'Export') {
                     ordToUpdate.DRC_NBC_Country_of_Origin__c            = orderData.DRC_NBC_Country_of_Origin__c;
                     ordToUpdate.DRC_NBC_Country_of_Final_Destination__c = orderData.DRC_NBC_Country_of_Final_Destination__c;
@@ -526,8 +537,12 @@ public class DRC_NBC_OrderController {
                     ordToUpdate.DRC_NBC_Vessel_no_Flight_no__c          = orderData.DRC_NBC_Vessel_no_Flight_no__c;
                     ordToUpdate.DRC_NBC_Part_Shipment__c                = orderData.DRC_NBC_Part_Shipment__c;
                     ordToUpdate.DRC_NBC_Trans_Shipment__c               = orderData.DRC_NBC_Trans_Shipment__c;
+                    ordToUpdate.DRC_NBC_Delivery_Terms__c               = orderData.DRC_NBC_Delivery_Terms__c;
                     ordToUpdate.DRC_NBC_Final_Destination__c            = orderData.DRC_NBC_Final_Destination__c;
                     ordToUpdate.DRC_NBC_Required_Documents__c           = orderData.DRC_NBC_Required_Documents__c;
+                    ordToUpdate.DRC_NBC_Insurance__c                    = orderData.DRC_NBC_Insurance__c;
+                    ordToUpdate.DRC_NBC_Fright_Charges__c               = orderData.DRC_NBC_Fright_Charges__c;
+                    ordToUpdate.Fright_Required__c                      = orderData.Fright_Required__c;
                 } else if (orderData.Type == 'Sample Order') {
                     ordToUpdate.DRC_NBC_Sample_Name__c            = orderData.DRC_NBC_Sample_Name__c;
                     ordToUpdate.DRC_NBC_Sample_Type__c            = orderData.DRC_NBC_Sample_Type__c;
@@ -541,6 +556,8 @@ public class DRC_NBC_OrderController {
                     ordToUpdate.DRC_NBC_Sample_Amount__c          = orderData.DRC_NBC_Sample_Amount__c;
                     ordToUpdate.DRC_NBC_Reject_Reason_Text__c     = orderData.DRC_NBC_Reject_Reason_Text__c;
                     ordToUpdate.DRC_NBC_Remarks__c                = orderData.DRC_NBC_Remarks__c;
+                    ordToUpdate.DRC_NBC_Part_Shipment__c          = orderData.DRC_NBC_Part_Shipment__c;
+                    ordToUpdate.DRC_NBC_Trans_Shipment__c         = orderData.DRC_NBC_Trans_Shipment__c;
                 }
 
                 update ordToUpdate;
@@ -595,6 +612,7 @@ public class DRC_NBC_OrderController {
 
             for (OrderItem oli : oliList) {
                 if (oli.Id == null) {
+                    // ── New line item: resolve PricebookEntry and insert ──────────────
                     Id pbeId = product2IdToPbeId.get(oli.Product2Id);
                     if (pbeId == null) {
                         throw new AuraHandledException(
@@ -609,15 +627,23 @@ public class DRC_NBC_OrderController {
                         Quantity                    = oli.Quantity,
                         UnitPrice                   = oli.UnitPrice,
                         Description                 = oli.Description,
+                        DRC_NBC_MARKS_NOS__c        = oli.DRC_NBC_MARKS_NOS__c,
+                        DRC_NBC_Hazardous__c        = oli.DRC_NBC_Hazardous__c,
                         DRC_NBC_Packing_Size__c     = oli.DRC_NBC_Packing_Size__c,
                         DRC_NBC_Packing_Quantity__c = oli.DRC_NBC_Packing_Quantity__c
                     ));
                 } else {
+                    // ── Existing line item: update editable fields ────────────────────
+                    // FIX v1.6: DRC_NBC_MARKS_NOS__c and DRC_NBC_Hazardous__c were
+                    // previously omitted here, causing edits to those fields to be
+                    // silently discarded on save for existing order line items.
                     olisToUpdate.add(new OrderItem(
                         Id                          = oli.Id,
                         Quantity                    = oli.Quantity,
                         UnitPrice                   = oli.UnitPrice,
                         Description                 = oli.Description,
+                        DRC_NBC_MARKS_NOS__c        = oli.DRC_NBC_MARKS_NOS__c,
+                        DRC_NBC_Hazardous__c        = oli.DRC_NBC_Hazardous__c,
                         DRC_NBC_Packing_Size__c     = oli.DRC_NBC_Packing_Size__c,
                         DRC_NBC_Packing_Quantity__c = oli.DRC_NBC_Packing_Quantity__c
                     ));
@@ -662,7 +688,7 @@ public class DRC_NBC_OrderController {
     @AuraEnabled(cacheable=true)
     public static Map<String, List<String>> getPicklistValues() {
         Map<String, List<String>> result = new Map<String, List<String>>();
-        
+
         List<String> fieldNames = new List<String>{
             'DRC_NBC_Transport_Agent__c',
             'DRC_NBC_Port_of_Loading__c',
@@ -670,10 +696,10 @@ public class DRC_NBC_OrderController {
             'DRC_NBC_SalesPerson_Code__c',
             'DRC_NBC_Final_Destination__c'
         };
-        
+
         Schema.SObjectType orderType = Schema.getGlobalDescribe().get('Order');
         Map<String, Schema.SObjectField> fieldMap = orderType.getDescribe().fields.getMap();
-        
+
         for (String fieldName : fieldNames) {
             List<String> values = new List<String>();
             if (fieldMap.containsKey(fieldName)) {

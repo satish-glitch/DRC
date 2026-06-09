@@ -38,7 +38,6 @@
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                             <lightning-input-field field-name="DRC_NBC_Payment_Term_Description__c" onchange={handleFieldChange} required></lightning-input-field>
                         </div>
-                       
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                             <lightning-input-field field-name="DRC_NBC_Inco_terms__c" onchange={handleFieldChange} required></lightning-input-field>
                         </div>
@@ -52,7 +51,7 @@
                             <lightning-input-field field-name="DRC_NBC_Special_Requirements__c" onchange={handleFieldChange}></lightning-input-field>
                         </div>
                     </div>
-                </lightning-record-edit-form> 
+                </lightning-record-edit-form>
             </div>
         </div>
 
@@ -243,10 +242,13 @@
                                                 <th style="text-align: center;">HSN Code</th>
                                                 <th>Quantity <span style="color: red;">*</span></th>
                                                 <th style="text-align: center;">UOM</th>
+                                                  <th style="text-align: center;">Hazardous</th>
+                                                <th style="padding-right: 2.5rem;">Marks &amp; Nos</th>
                                                 <th style="padding-right: 2.5rem;">Packing Size</th>
                                                 <th style="text-align: center;">Packing Quantity</th>
                                                 <th style="padding-right: 2.5rem;">Sales Price</th>
                                                 <th style="padding-right: 2.5rem;">Description</th>
+                                              
                                                 <th style="text-align: center;">Action</th>
                                             </tr>
                                         </thead>
@@ -321,7 +323,6 @@
                                                                 data-index={index}
                                                                 onchange={handleQuantityChange}>
                                                             </lightning-input>
-                                                            <!-- ✅ Inline error shown below quantity field -->
                                                             <template if:true={data.recordData.quantityError}>
                                                                 <p style="color: #c23934; font-size: 0.75rem; margin-top: 2px; white-space: normal; max-width: 200px;">
                                                                     {data.recordData.quantityError}
@@ -332,6 +333,29 @@
 
                                                     <!-- UOM -->
                                                     <td style="text-align: center; vertical-align: middle;">{data.recordData.DRC_NBC_Unit_Of_Measurement__c}</td>
+                                                    <!-- Hazardous -->
+                                                    <td style="text-align: center; vertical-align: middle;">
+                                                        <lightning-input
+                                                            type="checkbox"
+                                                            name="isHazardous"
+                                                            label=""
+                                                            variant="label-hidden"
+                                                            checked={data.recordData.isHazardous}
+                                                            data-index={index}
+                                                            onchange={handleHazardousChange}>
+                                                        </lightning-input>
+                                                    </td>
+
+                                                    <!-- Marks & Nos -->
+                                                    <td class="input-cell">
+                                                        <lightning-input
+                                                            style="width: 150px;"
+                                                            value={data.recordData.marksAndNos}
+                                                            name="marksAndNos"
+                                                            data-index={index}
+                                                            onchange={handleValueChange}>
+                                                        </lightning-input>
+                                                    </td>
 
                                                     <!-- Packing Size -->
                                                     <td class="input-cell">
@@ -351,7 +375,7 @@
                                                         </template>
                                                     </td>
 
-                                                    <!-- Packing Quantity — DB value directly -->
+                                                    <!-- Packing Quantity -->
                                                     <td style="text-align: center; vertical-align: middle;">
                                                         <template if:true={data.recordData.packingQuantity}>
                                                             {data.recordData.packingQuantity}
@@ -384,6 +408,8 @@
                                                             onchange={handleValueChange}>
                                                         </lightning-input>
                                                     </td>
+
+                                                    
 
                                                     <!-- Actions -->
                                                     <td style="text-align: center;">

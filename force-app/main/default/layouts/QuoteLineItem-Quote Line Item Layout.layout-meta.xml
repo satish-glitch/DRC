@@ -27,6 +27,14 @@
                 <behavior>Readonly</behavior>
                 <field>Subtotal</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>DRC_NBC_Hazardous__c</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>DRC_NBC_MARKS_NOS__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

@@ -6,45 +6,45 @@
 * @Last Modified On : January 02, 2026
 **/
 public with sharing class DRC_NBC_OrderBCController {
-    
-    @AuraEnabled
-    public static String triggerBCIntegration(Id orderId) {
-        String result;
-        if (orderId == null) {
-            return 'ERROR: Order Id is required.';
-        }
-        
-        try {
-            // Call BC integration synchronously
-            Order ord = [
-                SELECT Id, AccountId, Account.DRC_NBC_Posted_To_BC__c, DRC_NBC_Order_Sync_To_BC__c,
-                Account.DRC_NBC_BC_Approval_Status__c
-                FROM Order
-                WHERE Id = :orderId
-                LIMIT 1
-            ];
-            if (ord.Account.DRC_NBC_Posted_To_BC__c == false || ord.Account.DRC_NBC_BC_Approval_Status__c == false) {
-                System.debug('Call Account Integration');
-                result = DRC_NBC_Account_BC_Callout.executeCallout(orderId);
-                
-            }
-            
-            if (ord.Account.DRC_NBC_Posted_To_BC__c == true && ord.Account.DRC_NBC_BC_Approval_Status__c == true && ord.DRC_NBC_Order_Sync_To_BC__c == false) {
-                System.debug('Call Order Integration');
-                result = DRC_NBC_Order_BC_Callout.executeCallout(orderId);
-            }
-            
-            if (ord.DRC_NBC_Order_Sync_To_BC__c == true && ord.Account.DRC_NBC_BC_Approval_Status__c == true) {
-                System.debug('Call Order Integration');
-                result = DRC_NBC_UpdateOrderAndLineItems.orderId(orderId);
-            }
-            return result;
-        } catch (Exception ex) {
-            return 'ERROR: ' + ex.getMessage();
-        }
+
+@AuraEnabled
+public static String triggerBCIntegration(Id orderId) {
+    String result;
+    if (orderId == null) {
+        return 'ERROR: Order Id is required.';
     }
     
-    /*  @AuraEnabled
+    try {
+        // Call BC integration synchronously
+        Order ord = [
+            SELECT Id, AccountId, Account.DRC_NBC_Posted_To_BC__c, DRC_NBC_Order_Sync_To_BC__c,
+            Account.DRC_NBC_BC_Approval_Status__c
+            FROM Order
+            WHERE Id = :orderId
+            LIMIT 1
+        ];
+        if (ord.Account.DRC_NBC_Posted_To_BC__c == false || ord.Account.DRC_NBC_BC_Approval_Status__c == false) {
+            System.debug('Call Account Integration');
+            result = DRC_NBC_Account_BC_Callout.executeCallout(orderId);
+            
+        }
+        
+        if (ord.Account.DRC_NBC_Posted_To_BC__c == true && ord.Account.DRC_NBC_BC_Approval_Status__c == true && ord.DRC_NBC_Order_Sync_To_BC__c == false) {
+            System.debug('Call Order Integration');
+            result = DRC_NBC_Order_BC_Callout.executeCallout(orderId);
+        }
+        
+        if (ord.DRC_NBC_Order_Sync_To_BC__c == true && ord.Account.DRC_NBC_BC_Approval_Status__c == true) {
+            System.debug('Call Order Integration');
+            result = DRC_NBC_UpdateOrderAndLineItems.orderId(orderId);
+        }
+        return result;
+    } catch (Exception ex) {
+        return 'ERROR: ' + ex.getMessage();
+    }
+}
+
+/*  @AuraEnabled
 public static Account getAccountDetails(Id orderId) {
 if (orderId == null) {
 throw new AuraHandledException('Order Id is required.');
@@ -70,46 +70,57 @@ LIMIT 1
 
 return acc;
 }*/
-    
-    @AuraEnabled
-    public static Boolean getAccountSyncStatus(Id orderId) {
-        Order ord = [SELECT AccountId FROM Order WHERE Id = :orderId LIMIT 1];
-        Account acc = [SELECT DRC_NBC_Posted_To_BC__c FROM Account WHERE Id = :ord.AccountId LIMIT 1];
-        return acc.DRC_NBC_Posted_To_BC__c;
-    }
-    
-    @AuraEnabled(cacheable=true)
-    public static String getIntegrationStatus(Id orderId) {
-        Order ord = [SELECT DRC_NBC_Integration_Status__c FROM Order WHERE Id = :orderId];
-        return ord.DRC_NBC_Integration_Status__c;
-    }
+
+@AuraEnabled
+public static Boolean getAccountSyncStatus(Id orderId) {
+    Order ord = [SELECT AccountId FROM Order WHERE Id = :orderId LIMIT 1];
+    Account acc = [SELECT DRC_NBC_Posted_To_BC__c FROM Account WHERE Id = :ord.AccountId LIMIT 1];
+    return acc.DRC_NBC_Posted_To_BC__c;
+}
+
+@AuraEnabled(cacheable=true)
+public static String getIntegrationStatus(Id orderId) {
+    Order ord = [SELECT DRC_NBC_Integration_Status__c FROM Order WHERE Id = :orderId];
+    return ord.DRC_NBC_Integration_Status__c;
+}
 @AuraEnabled
 public static DRC_NBC_API_Log__c getLatestLog(Id orderId, String afterDateTime) {
-    if (orderId == null) return null;
+if (orderId == null) return null;
 
-    Order ord = [SELECT AccountId FROM Order WHERE Id = :orderId LIMIT 1];
+Order ord = [SELECT AccountId FROM Order WHERE Id = :orderId LIMIT 1];
 
-    DateTime filterDt = String.isNotBlank(afterDateTime)
-        ? (DateTime) JSON.deserialize('"' + afterDateTime + '"', DateTime.class)
-        : System.now().addMinutes(-2);
+DateTime filterDt = String.isNotBlank(afterDateTime)
+    ? (DateTime) JSON.deserialize('"' + afterDateTime + '"', DateTime.class)
+    : System.now().addMinutes(-2);
 
-    List<DRC_NBC_API_Log__c> allLogs = [
-        SELECT DRC_NBC_Log_Type__c,
-               DRC_NBC_Response_Body__c,
-               DRC_NBC_Timestamp__c,
-               DRC_NBC_Error_Message__c,
-               DRC_NBC_Created_Updated_SF_Id__c
-        FROM   DRC_NBC_API_Log__c
-        WHERE  (
-                   DRC_NBC_Created_Updated_SF_Id__c = :orderId
-                   OR DRC_NBC_Created_Updated_SF_Id__c = :ord.AccountId
-               )
-        AND    DRC_NBC_Timestamp__c >= :filterDt
-        AND    CreatedById = :UserInfo.getUserId()
-        ORDER BY DRC_NBC_Timestamp__c DESC
-        LIMIT 1  // ✅ Just fetch the single latest log — no looping needed
-    ];
+List<DRC_NBC_API_Log__c> allLogs = [
+    SELECT DRC_NBC_Log_Type__c,
+            DRC_NBC_Response_Body__c,
+            DRC_NBC_Timestamp__c,
+            DRC_NBC_Error_Message__c,
+            DRC_NBC_Created_Updated_SF_Id__c
+    FROM   DRC_NBC_API_Log__c
+    WHERE  (
+                DRC_NBC_Created_Updated_SF_Id__c = :orderId
+                OR DRC_NBC_Created_Updated_SF_Id__c = :ord.AccountId
+            )
+    AND    DRC_NBC_Timestamp__c >= :filterDt
+    AND    CreatedById = :UserInfo.getUserId()
+    ORDER BY DRC_NBC_Timestamp__c DESC
+    LIMIT 1  // ✅ Just fetch the single latest log — no looping needed
+];
 
-    return allLogs.isEmpty() ? null : allLogs[0];
+return allLogs.isEmpty() ? null : allLogs[0];
+}
+@AuraEnabled
+public static String getOrderPaymentTerm(Id orderId) {
+if (orderId == null) return null;
+Order ord = [
+    SELECT DRC_NBC_Payment_Terms__c
+    FROM   Order
+    WHERE  Id = :orderId
+    LIMIT  1
+];
+return ord.DRC_NBC_Payment_Terms__c;
 }
 }

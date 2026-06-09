@@ -11,28 +11,25 @@ implements System.Queueable, Database.AllowsCallouts {
     
     public void execute(System.QueueableContext context) {
         try {
-            // Fetch ALL bank records for this Account
             List<DRC_NBC_Consignee_Bank_Details__c> bankDetails =
                 DRC_NBC_ConsigneeBank_Callout.getBankDetails(accountId);
             
-            // Skip if no bank records found
             if (bankDetails == null || bankDetails.isEmpty()) {
                 System.debug('No Consignee Bank records found for Account: '
                              + accountId + '. Skipping.');
-                DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
+                // ✅ No banks — go straight to next step
+                System.enqueueJob(
+                    new DRC_NBC_CustomerRefrenceItem_Queueable(orderId, accountId)
+                );
                 return;
             }
             
-            // Fetch Account for Customer Number
             Account acc = DRC_NBC_ConsigneeBank_Callout.getAccountDetails(accountId);
-            
             String endpoint = DRC_NBC_ConsigneeBank_Callout.getEndpoint();
             System.debug('ConsigneeBank Endpoint >>>> ' + endpoint);
             
-            // ✅ Collect log data during loop — NO DML inside loop
             List<Map<String, Object>> logEntries = new List<Map<String, Object>>();
             
-            // ✅ Loop through each bank record and POST separately
             for (DRC_NBC_Consignee_Bank_Details__c bankDetail : bankDetails) {
                 
                 DRC_NBC_Integration_Payload.ConsigneeBankPayload payload =
@@ -41,22 +38,20 @@ implements System.Queueable, Database.AllowsCallouts {
                 String jsonBody = JSON.serialize(payload, true);
                 System.debug('ConsigneeBank Payload >>>> ' + jsonBody);
                 
-                // ✅ Pure callout — no DML inside loop
                 DRC_NBC_ConsigneeBank_BC_Integration integration =
                     new DRC_NBC_ConsigneeBank_BC_Integration(
                         endpoint, 'POST', jsonBody, accountId);
                 
                 HttpResponse response = integration.executeAndReturnResponse();
                 
-                // ✅ Collect log info — no DML yet
                 logEntries.add(new Map<String, Object>{
                     'requestBody'  => jsonBody,
-                        'responseBody' => response != null ? response.getBody() : 'null',
-                            'statusCode'   => response != null ? response.getStatusCode() : null,
-                                'status'       => (response != null && response.getStatusCode() == 201)
-                                ? 'Success' : 'Error',
-                                    'bankName'     => bankDetail.DRC_NBC_Consignee_Bank_Name__c
-                                    });
+                    'responseBody' => response != null ? response.getBody() : 'null',
+                    'statusCode'   => response != null ? response.getStatusCode() : null,
+                    'status'       => (response != null && response.getStatusCode() == 201)
+                                      ? 'Success' : 'Error',
+                    'bankName'     => bankDetail.DRC_NBC_Consignee_Bank_Name__c
+                });
             }
             
             // ✅ ALL callouts done — now safe for DML logging
@@ -81,10 +76,13 @@ implements System.Queueable, Database.AllowsCallouts {
                                  + ' | Status: ' + entry.get('statusCode'));
                 } else {
                     System.debug('ConsigneeBank Sync SUCCESS for Bank: ' + bankName);
-                    DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
-                    
                 }
             }
+            
+            // ✅ All bank callouts done — enqueue CustomerReferenceItem next
+            System.enqueueJob(
+                new DRC_NBC_CustomerRefrenceItem_Queueable(orderId, accountId)
+            );
             
         } catch (Exception e) {
             System.debug('ConsigneeBank Exception: ' + e.getMessage());
@@ -100,8 +98,5 @@ implements System.Queueable, Database.AllowsCallouts {
                 accountId
             );
         }
-        
     }
-    // DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
-    
 }

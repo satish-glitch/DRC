@@ -49,6 +49,12 @@ public class DRC_NBC_OrderItemWrapper {
      @AuraEnabled 
      public DRC_NBC_Generate_Order_Controller.Product2Wrapper Product2 { get; set; }
     
+    // ── New fields ──────────────────────────────────────────────────────────
+    @AuraEnabled 
+    public Boolean hazardous             { get; set; }
+    @AuraEnabled 
+    public String  marksAndNos           { get; set; }
+    
     // Default constructor (important for deserialization)
     public DRC_NBC_OrderItemWrapper() {
     }

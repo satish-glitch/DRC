@@ -1,12 +1,16 @@
 import { LightningElement, api } from 'lwc';
 import triggerBCIntegration from '@salesforce/apex/DRC_NBC_OrderBCController.triggerBCIntegration';
 import getLatestLog from '@salesforce/apex/DRC_NBC_OrderBCController.getLatestLog';
+import getOrderPaymentTerm from '@salesforce/apex/DRC_NBC_OrderBCController.getOrderPaymentTerm';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { CloseActionScreenEvent } from 'lightning/actions';
 
+const ADVANCE_PAYMENT_TERM = '100%ADV';
+
 export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
     @api recordId;
-    isLoading = true;
+    isLoading        = true;  // spinner on immediately when panel opens
+    showConfirmation = false;
 
     _pollCount            = 0;
     _maxPolls             = 6;
@@ -24,13 +28,43 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
             return;
         }
 
-        // Capture timestamp before trigger fires — ensures no stale logs are read
+        // Fetch payment term first — spinner is already showing
+        getOrderPaymentTerm({ orderId: this.recordId })
+            .then((paymentTerm) => {
+                if (paymentTerm === ADVANCE_PAYMENT_TERM) {
+                    // Stop spinner, show confirmation popup
+                    this.isLoading = false;
+                    this.showConfirmation = true;
+                } else {
+                    // Keep spinner running, fire integration silently
+                    this.startIntegration();
+                }
+            })
+            .catch((error) => {
+                this.isLoading = false;
+                this.showToast('Error', error.body?.message || 'Failed to fetch payment term.', 'error');
+                this.closeAction();
+            });
+    }
+
+    // User clicked "Yes, Sync to BC"
+    handleConfirm() {
+        this.showConfirmation = false;
+        this.isLoading = true;  // spinner back on while integration runs
+        this.startIntegration();
+    }
+
+    // User clicked "Cancel"
+    handleCancel() {
+        this.showConfirmation = false;
+        this.closeAction();
+    }
+
+    startIntegration() {
         this._integrationStartTime = new Date().toISOString();
 
         triggerBCIntegration({ orderId: this.recordId })
             .then((integrationResult) => {
-
-                // Hard failure returned synchronously
                 if (
                     integrationResult == null ||
                     integrationResult?.startsWith('FAILURE') ||
@@ -39,9 +73,7 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                     this.isLoading = false;
                     this.showToast('Error', integrationResult || 'Integration returned no result.', 'error');
                     this.closeAction();
-
                 } else {
-                    // All other paths — poll the log
                     this._pollCount = 0;
                     const delay = integrationResult?.startsWith('QUEUED') ? this._pollInterval : 3000;
                     setTimeout(() => this.pollLog(), delay);
@@ -65,11 +97,9 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                 if (log) {
                     this.isLoading = false;
 
-                    // DRC_NBC_Log_Type__c has two values: 'Error' or 'Success'
                     const logType = (log.DRC_NBC_Log_Type__c || '').trim().toLowerCase();
 
                     if (logType === 'error') {
-                        // Parse BC response body for a human-readable error message
                         const errorMessage = this.extractMessage(
                             log.DRC_NBC_Response_Body__c,
                             log.DRC_NBC_Error_Message__c
@@ -77,12 +107,10 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                         this.showToast('Error', errorMessage, 'error');
 
                     } else if (logType === 'success') {
-                        // Parse BC response body for success message
                         const successMessage = this.extractMessage(
                             log.DRC_NBC_Response_Body__c,
                             null
                         );
-                        // If BC returns a meaningful message use it, else show generic
                         this.showToast(
                             'Success',
                             successMessage || 'Successfully synced to Business Central.',
@@ -90,7 +118,6 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                         );
 
                     } else {
-                        // Unexpected log type value — treat as in-progress
                         this.showToast(
                             'Info',
                             'Sync in progress, please refresh after a few minutes.',
@@ -101,11 +128,9 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                     this.closeAction();
 
                 } else if (this._pollCount < this._maxPolls) {
-                    // Log not written yet — still running, retry
                     setTimeout(() => this.pollLog(), this._pollInterval);
 
                 } else {
-                    // Timed out after all retries
                     this.isLoading = false;
                     this.showToast(
                         'Warning',
@@ -122,22 +147,8 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
             });
     }
 
-    /**
-     * Parses the BC response body and extracts a clean readable message.
-     *
-     * Handles:
-     *   SOAP/XML  → extracts <faultstring> text
-     *   JSON      → {"error": {"message": "..."}}
-     *              {"message": "..."}
-     *              {"Message": "..."}   BC capitalised variant
-     *   Plain string → returned as-is
-     *
-     * Falls back to errorMsg field, then generic message.
-     */
     extractMessage(responseBody, errorMsg) {
         if (responseBody) {
-
-            // SOAP / XML response
             if (responseBody.trim().startsWith('<')) {
                 try {
                     const parser = new DOMParser();
@@ -154,39 +165,31 @@ export default class DRC_NBC_bcOrderQuickAction extends LightningElement {
                     if (detailString?.textContent) {
                         return detailString.textContent;
                     }
-
                 } catch (e) {
                     // XML parse failed — fall through
                 }
                 return responseBody;
             }
 
-            // JSON response
             try {
                 const parsed = JSON.parse(responseBody);
 
-                // {"error": {"message": "..."}} — most common BC error shape
                 if (parsed.error?.message) {
                     return parsed.error.message;
                 }
-                // {"message": "..."}
                 if (parsed.message) {
                     return parsed.message;
                 }
-                // {"Message": "..."} — BC capitalised variant
                 if (parsed.Message) {
                     return parsed.Message;
                 }
-                // Parsed but no known message field — stringify
                 return JSON.stringify(parsed);
 
             } catch (e) {
-                // Not JSON — return plain string
                 return responseBody;
             }
         }
 
-        // Response body empty — fall back to error message field
         return errorMsg || 'Integration failed. Please check logs.';
     }
 

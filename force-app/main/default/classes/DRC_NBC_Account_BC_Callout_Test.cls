@@ -436,7 +436,7 @@ System.assertEquals(jsonBody, req.getBody());
     static void test_mapAccountToPayload_AllFields() {
         Account acc = createTestAccount(false, false, true);
         acc = [SELECT Id, Name, DRC_NBC_PAN_No__c, Type, Website, DRC_NBC_Credit_Limit__c, Other_Email__c,Description, DRC_NBC_Special_Instructions__c, 
-               DRC_NBC_Payment_Term_Code__c, DRC_NBC_Customer_Number__c,DRC_NBC_BC_Approval_Status__c,Industry,
+               DRC_NBC_Payment_Term_Code__c, DRC_NBC_Customer_Number__c,DRC_NBC_BC_Approval_Status__c,Industry,DRC_NBC_Transport_Agent__c,
                CurrencyIsoCode, Phone, AccountNumber, DRC_NBC_Account_Email_Email__c, DRC_NBC_Payment_Terms__c,SalesPerson_Code__c,
                BillingCity, BillingCountry, BillingCountryCode, BillingPostalCode, DRC_Inco_Term__c, DRC_Gst_Customer_Type__c,
                BillingState, BillingStateCode, BillingStreet, DRC_NBC_GST_Number__c

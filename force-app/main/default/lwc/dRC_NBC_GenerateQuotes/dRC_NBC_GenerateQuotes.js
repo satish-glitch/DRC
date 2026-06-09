@@ -123,7 +123,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             }
             this.quoteRec = {
                 ...this.quoteRec,
-                DRC_NBC_Payemnt_Term__c: quoteWrapper.paymentTerm,
+                DRC_NBC_Payemnt_Term__c:             quoteWrapper.paymentTerm,
                 DRC_NBC_Payment_Term_Description__c: quoteWrapper.paymentTermDescription,
                 DRC_NBC_Inco_terms__c:               quoteWrapper.incoterms || ''
             };
@@ -165,7 +165,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             }
 
             // ── Shipping addresses ────────────────────────────────────────────
-            this.addrDetails          = shippingAddresses || [];
+            this.addrDetails            = shippingAddresses || [];
             this.shippingAddressOptions = [];
             (shippingAddresses || []).forEach(addr => {
                 const d     = addr.DRC_NBC_Address__c;
@@ -200,6 +200,9 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
     }
 
     // ─── Build rows from existing OLIs ────────────────────────────────────────
+    // Priority for Hazardous & Marks & Nos:
+    //   1. OLI's own saved field value (previously saved on the line item)
+    //   2. Fall back to Product2 default (for lines that never had a value saved)
     _buildRowsFromOLIs(olis, packingDetailsMap) {
         this.filteredData = olis.map(item => {
             const prod             = item.Product2 || {};
@@ -209,21 +212,26 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             const savedPackingSize = item.DRC_NBC_Packing_Size__c || '';
             const quantity         = item.Quantity || 1;
 
-            // rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from the matched packing detail record
             let rawPackingQuantity = '';
             if (savedPackingSize) {
                 const matched      = packingDetails.find(pd => pd.packingSize === savedPackingSize);
                 rawPackingQuantity = matched ? (matched.packingQuantity || '') : '';
             }
 
-            // packingQuantity displayed in column = directly the DB value (rawPackingQuantity)
-            // NOT a calculation — it is DRC_NBC_Packing_Qauntity__c as-is
             const packingQuantity = rawPackingQuantity;
+            const quantityError   = this._getQuantityError(quantity, rawPackingQuantity);
+            const unitPrice       = item.UnitPrice || 0;
 
-            // Validate quantity: must be a multiple of rawPackingQuantity
-            const quantityError = this._getQuantityError(quantity, rawPackingQuantity);
+            // ── Hazardous: OLI saved value wins; fall back to Product2 default ──
+            const hazardous = (item.DRC_NBC_Hazardous__c != null)
+                ? item.DRC_NBC_Hazardous__c
+                : (prod.DRC_NBC_Hazardous__c || false);
 
-            const unitPrice = item.UnitPrice || 0;
+            // ── Marks & Nos: OLI saved value wins; fall back to Product2 default ─
+            const marksAndNos = (item.DRC_NBC_MARKS_NOS__c != null && item.DRC_NBC_MARKS_NOS__c !== '')
+                ? item.DRC_NBC_MARKS_NOS__c
+                : (prod.DRC_NBC_MARKS_NOS__c || '');
+
             return {
                 id: item.Id || String(Date.now() + Math.random()),
                 recordData: {
@@ -246,8 +254,10 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                     packingDetails,
                     packingSizeOptions:             packingSizeOpts,
                     selectedPackingSize:            savedPackingSize,
+                    DRC_NBC_Hazardous__c:           hazardous,    // OLI value → Product2 fallback
+                    DRC_NBC_MARKS_NOS__c:           marksAndNos,  // OLI value → Product2 fallback
                     rawPackingQuantity,
-                    packingQuantity,                // = DRC_NBC_Packing_Qauntity__c directly
+                    packingQuantity,
                     quantityError
                 }
             };
@@ -304,9 +314,9 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             this.selectedContactPhone = '';
             this.selectedContactFax   = '';
             this.quoteRec.ContactId   = null;
-            this.quoteRec.Email = '';
-            this.quoteRec.Phone = '';
-            this.quoteRec.Fax   = '';
+            this.quoteRec.Email       = '';
+            this.quoteRec.Phone       = '';
+            this.quoteRec.Fax         = '';
             this.filteredContacts       = [];
             this.showContactSuggestions = true;
             return;
@@ -359,9 +369,6 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             const value     = event.detail?.value    || event.target.value;
             if (fieldName) {
                 this.quoteRec[fieldName] = value;
-                // NOTE: CurrencyIsoCode is no longer editable by the user;
-                // it is always set from the Opportunity. This handler is kept
-                // for other fields (ExpirationDate, Type, etc.).
             }
         } catch (error) {
             console.error('Error in handleFieldChange:', error);
@@ -377,13 +384,13 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         this.filteredData[index].recordData[field] = value;
 
         if (field === 'ProductName' && value.length >= 2) {
-           searchProducts({
+            searchProducts({
                 keyword:         value,
                 currencyIsoCode: this.currencyCode,
                 accountId:       this.accountId
             })
             .then(results => {
-                // Collect Product2Ids already selected in OTHER rows (not the current one)
+                // Exclude products already selected in other rows
                 const selectedProductIds = this.filteredData
                     .filter((_, i) => i !== index)
                     .map(row => row.recordData.Product2Id)
@@ -415,6 +422,16 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         return packingDetails.map(pd => ({ label: pd.packingSize || '', value: pd.packingSize || '' }));
     }
 
+    handleCheckboxChange(event) {
+        const index = parseInt(event.target.dataset.index);
+        const field = event.target.name;
+        this.filteredData[index].recordData[field] = event.target.checked;
+        this.filteredData = [...this.filteredData];
+    }
+
+    // ─── Product select from search dropdown ──────────────────────────────────
+    // Pre-populates Hazardous and Marks & Nos from Product2 defaults.
+    // User can still edit both fields after selection.
     handleProductSelect(event) {
         const index      = parseInt(event.target.dataset.index);
         const selectedId = event.target.dataset.id;
@@ -424,6 +441,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             const unitPrice          = selected.UnitPrice || 0;
             const packingDetails     = selected.PackingDetails || [];
             const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
+
             this.filteredData[index].recordData = {
                 ...this.filteredData[index].recordData,
                 showSearch:                     false,
@@ -433,8 +451,8 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 Description:                    '',
                 UnitPrice:                      unitPrice,
                 OriginalUnitPrice:              unitPrice,
-                DRC_NBC_HSN_SAC_Code__c:        selected.HSNCode              || '-',
-                DRC_NBC_FG_Code__c:             selected.FGCode               || '-',
+                DRC_NBC_HSN_SAC_Code__c:        selected.HSNCode               || '-',
+                DRC_NBC_FG_Code__c:             selected.FGCode                || '-',
                 PricebookEntryId:               selected.PricebookEntryId,
                 DRC_NBC_Unit_Of_Measurement__c: selected.QuantityUnitOfMeasure || '-',
                 modifiedPrice:                  unitPrice,
@@ -445,7 +463,10 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 rawPackingQuantity:             '',
                 searchResults:                  [],
                 noResultsFound:                 false,
-                quantityError:                  ''
+                quantityError:                  '',
+                // ── Pre-fill from Product2 defaults; user can override ──────────
+                DRC_NBC_Hazardous__c: (selected.IsHazardous  != null) ? selected.IsHazardous  : false,
+                DRC_NBC_MARKS_NOS__c: (selected.MarksAndNos  != null) ? selected.MarksAndNos  : ''
             };
             this.filteredData = [...this.filteredData];
         }
@@ -462,15 +483,11 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         const packingDetails = row.packingDetails || [];
         const matched        = packingDetails.find(pd => pd.packingSize === selectedSize);
 
-        // rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from the matched record
         row.rawPackingQuantity = (matched?.packingQuantity != null && matched.packingQuantity !== '')
             ? String(matched.packingQuantity) : '';
 
-        // packingQuantity displayed in column = directly the DB value, NOT a calculation
         row.packingQuantity = row.rawPackingQuantity;
-
-        // Validate quantity against the new packing size
-        row.quantityError = this._getQuantityError(row.Quantity, row.rawPackingQuantity);
+        row.quantityError   = this._getQuantityError(row.Quantity, row.rawPackingQuantity);
 
         this.filteredData = [...this.filteredData];
     }
@@ -483,8 +500,6 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
 
         row.Quantity      = quantity;
         row.quantityError = this._getQuantityError(quantity, row.rawPackingQuantity);
-        // packingQuantity column does NOT change when quantity changes —
-        // it always shows DRC_NBC_Packing_Qauntity__c from the DB record
 
         this.filteredData = [...this.filteredData];
     }
@@ -505,7 +520,6 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
         return '';
     }
 
-    // packingQuantity column always = rawPackingQuantity (DB value directly)
     _recalcPackingQuantity(rowData) {
         return rowData.rawPackingQuantity || '';
     }
@@ -542,7 +556,9 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             showSearch:                     true,
             searchResults:                  [],
             noResultsFound:                 false,
-            quantityError:                  ''
+            quantityError:                  '',
+            DRC_NBC_Hazardous__c:           false,
+            DRC_NBC_MARKS_NOS__c:           ''
         };
     }
 
@@ -600,11 +616,14 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                     PricebookEntryId:      row.PricebookEntryId,
                     Quantity:              row.Quantity              || 1,
                     UnitPrice:             row.modifiedPrice         || row.UnitPrice || 0,
-                    Description:          row.Description            || '',
-                    CurrencyIsoCode:      this.currencyCode          || 'INR',
+                    Description:           row.Description           || '',
+                    CurrencyIsoCode:       this.currencyCode         || 'INR',
                     QuantityUnitOfMeasure: row.DRC_NBC_Unit_Of_Measurement__c || '',
                     PackingSize:           row.selectedPackingSize   || '',
-                    PackingQuantity:       row.packingQuantity       || ''
+                    PackingQuantity:       row.packingQuantity       || '',
+                    // User-edited values (may differ from Product2 defaults)
+                    hazardous:   row.DRC_NBC_Hazardous__c != null ? row.DRC_NBC_Hazardous__c : false,
+                    marksAndNos: row.DRC_NBC_MARKS_NOS__c || ''
                 };
             });
 

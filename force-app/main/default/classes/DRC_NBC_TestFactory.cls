@@ -32,6 +32,38 @@ public class DRC_NBC_TestFactory {
         return acc;
     }
     
+       public static Account createAccount2() {
+        Account acc = new Account(
+            Name = 'Test Customer0098',
+            AccountNumber = 'CUST008871',
+            NBC_DRC_Account_DRC_Code__c = 'DRC-CODE-777001',
+            CurrencyIsoCode = 'INR',
+            Phone = '1234567890',
+            DRC_NBC_PAN_No__c = 'AWVPY9594J',
+            DRC_NBC_GST_Number__c = '27AWVPY9594J1ZY',
+            DRC_NBC_Payment_Term_Code__c = 'PDC90',
+            DRC_NBC_Account_Email_Email__c = 'test@example.com',
+            BillingStreet = '123 Street',
+            BillingCity = 'City',
+            BillingCountry = 'India',
+            BillingCountryCode = 'IN',
+            BillingPostalCode = '462002',
+            BillingState = 'Maharashtra',
+            BillingStateCode = 'MH',
+            DRC_NBC_Volume__c = 70, 
+            DRC_NBC_Credit_Limit__c = 123456787,
+            DRC_NBC_Value__c = 900,
+            DRC_NBC_Consignee_Bank_Account_Number__c = '1391001500974141',
+            DRC_NBC_Consignee_Bank_Address__c = 'Barhi 483775',
+            DRC_NBC_Consignee_Bank_IFSC_Code__c = 'PUNB01391000',
+            DRC_NBC_Consignee_Bank_Name__c = 'Punjab National bank',
+            Industry = 'Chemicals Construction',
+            Type = 'Analyst'
+        );
+        insert acc;
+        return acc;
+    }
+    
     public static Product2 createProduct() {
         Product2 prod = new Product2(
             Name = 'Test Product',

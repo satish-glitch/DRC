@@ -102,6 +102,14 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         );
         insert stdPbe;
         
+        // Restricted Product linked to Account + Product
+        DRC_NBC_Restricted_Product__c rp = new DRC_NBC_Restricted_Product__c(
+         //   Name                 = 'RESTR-001',
+            DRC_NBC_Customer__c  = acc.Id,
+            DRC_NBC_Product__c   = prod.Id
+        );
+        insert rp;
+        
         Order ord = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -178,7 +186,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
     }
     
     // ══════════════════════════════════════════════════════════════════════════
-    // EXISTING TESTS (unchanged)
+    // EXISTING TESTS
     // ══════════════════════════════════════════════════════════════════════════
     
     @isTest
@@ -385,16 +393,169 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
     }
     
     // ══════════════════════════════════════════════════════════════════════════
-    // NEW TEST — covers mapSampleShippingCostToPayload (non-zero shipping cost)
-    // Requires: Sample_Order RecordType + DRC_NBC_Sample_Shipping_Cost__c > 0
+    // RESTRICTED PRODUCT TESTS
     // ══════════════════════════════════════════════════════════════════════════
     
     /**
-* Covers: mapSampleShippingCostToPayload() fully
-*         → Sample_Order with DRC_NBC_Sample_Shipping_Cost__c = 750
-*         → G/L Account line for Sample Shipping Cost added to requestList
-*         → HTTP 200 → logSuccess path exercised
-*/
+     * Covers: restrictedProductMap hit path
+     *         → Order item's Product2Id matches DRC_NBC_Restricted_Product__c
+     *         → Item_Reference_No is set to the restricted product Name
+     */
+    @isTest
+    static void test_Batch_RestrictedProduct_Matched() {
+        // ORD-001 already has a matching restricted product from @testSetup
+        Order ord = getOrder('ORD-001');
+        Test.setMock(HttpCalloutMock.class, new MockSuccess());
+        Test.startTest();
+        Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
+        Test.stopTest();
+        List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
+        if (orders.isEmpty()) {
+            throw new IllegalArgumentException('Order should still exist after batch with restricted product match');
+        }
+    }
+    
+    /**
+     * Covers: restrictedProductMap miss path
+     *         → Order item's Product2 has NO matching DRC_NBC_Restricted_Product__c
+     *         → Item_Reference_No falls back to ''
+     */
+    @isTest
+    static void test_Batch_RestrictedProduct_NoMatch() {
+        Account acc        = [SELECT Id FROM Account LIMIT 1];
+        Id stdPbId         = Test.getStandardPricebookId();
+        PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
+        
+        // Insert a second product with NO restricted product record
+        Product2 prodNew = new Product2(
+            Name                      = 'Unrestricted Product',
+            IsActive                  = true,
+            DRC_NBC_FG_Code__c        = 'FG-UNRESTRICTED',
+            DRC_NBC_HSN_SAC_Code__c   = 'HSN002',
+            DRC_NBC_GST_Group_Code__c = 'GST002'
+        );
+        insert prodNew;
+        
+        PricebookEntry pbeNew = new PricebookEntry(
+            Pricebook2Id = stdPbId,
+            Product2Id   = prodNew.Id,
+            UnitPrice    = 200,
+            IsActive     = true
+        );
+        insert pbeNew;
+        
+        Order ord = new Order(
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-RESTR-MISS',
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT',
+            DRC_NBC_TCS_Amount__c        = 0,
+            DRC_NBC_Other_Tax_Amount__c  = 0
+        );
+        insert ord;
+        
+        OrderItem oi = new OrderItem(
+            OrderId                        = ord.Id,
+            PricebookEntryId               = pbeNew.Id,
+            Product2Id                     = prodNew.Id,
+            Quantity                       = 2,
+            UnitPrice                      = 200,
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS'
+        );
+        insert oi;
+        
+        Test.setMock(HttpCalloutMock.class, new MockSuccess());
+        Test.startTest();
+        Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
+        Test.stopTest();
+        
+        List<Order> orders = [SELECT Id FROM Order WHERE Id = :ord.Id];
+        if (orders.isEmpty()) {
+            throw new IllegalArgumentException('Order should exist after batch with no restricted product match');
+        }
+    }
+    
+    /**
+     * Covers: Multiple products in one order — some restricted, some not
+     *         → Map resolves Name for matched products, '' for unmatched
+     */
+    @isTest
+    static void test_Batch_RestrictedProduct_MixedItems() {
+        Account acc        = [SELECT Id FROM Account LIMIT 1];
+        Product2 prod      = [SELECT Id FROM Product2 WHERE DRC_NBC_FG_Code__c = 'FG001' LIMIT 1];
+        Id stdPbId         = Test.getStandardPricebookId();
+        PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId AND Product2Id = :prod.Id LIMIT 1];
+        
+        // Second product — no restricted product record
+        Product2 prodB = new Product2(
+            Name                      = 'Product B',
+            IsActive                  = true,
+            DRC_NBC_FG_Code__c        = 'FG-B',
+            DRC_NBC_HSN_SAC_Code__c   = 'HSN003',
+            DRC_NBC_GST_Group_Code__c = 'GST003'
+        );
+        insert prodB;
+        
+        PricebookEntry pbeB = new PricebookEntry(
+            Pricebook2Id = stdPbId,
+            Product2Id   = prodB.Id,
+            UnitPrice    = 150,
+            IsActive     = true
+        );
+        insert pbeB;
+        
+        Order ord = new Order(
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-RESTR-MIXED',
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT',
+            DRC_NBC_TCS_Amount__c        = 100,
+            DRC_NBC_Other_Tax_Amount__c  = 50
+        );
+        insert ord;
+        
+        // Item A — restricted (matches existing RESTR-001 record)
+        OrderItem oiA = new OrderItem(
+            OrderId                        = ord.Id,
+            PricebookEntryId               = pbe.Id,
+            Product2Id                     = prod.Id,
+            Quantity                       = 3,
+            UnitPrice                      = 100,
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS',
+            DRC_NBC_Packing_Size__c        = 'AL 1 KG',
+            DRC_NBC_Packing_Quantity__c    = '3'
+        );
+        insert oiA;
+        
+        // Item B — not restricted
+        OrderItem oiB = new OrderItem(
+            OrderId                        = ord.Id,
+            PricebookEntryId               = pbeB.Id,
+            Product2Id                     = prodB.Id,
+            Quantity                       = 2,
+            UnitPrice                      = 150,
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS'
+        );
+        insert oiB;
+        
+        Test.setMock(HttpCalloutMock.class, new MockSuccess());
+        Test.startTest();
+        Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
+        Test.stopTest();
+        
+        if ([SELECT COUNT() FROM Order WHERE Id = :ord.Id] == 0) {
+            throw new IllegalArgumentException('Order should exist after mixed restricted product batch');
+        }
+    }
+    
+    // ══════════════════════════════════════════════════════════════════════════
+    // SAMPLE ORDER TESTS
+    // ══════════════════════════════════════════════════════════════════════════
+    
     @isTest
     static void test_Batch_SampleOrder_WithShippingCost() {
         Account acc        = [SELECT Id FROM Account LIMIT 1];
@@ -402,14 +563,12 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         Id stdPbId         = Test.getStandardPricebookId();
         PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
         
-        // Look up Sample_Order RecordType — guard so test compiles even if RT absent
         List<RecordType> sampleRTs = [
             SELECT Id FROM RecordType
             WHERE SObjectType = 'Order' AND Name = 'Sample_Order'
             LIMIT 1
         ];
         
-        // Build a Sample Order with a non-zero Sample Shipping Cost
         Order sampleOrd = new Order(
             AccountId                        = acc.Id,
             Status                           = 'Draft',
@@ -417,15 +576,14 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             Pricebook2Id                     = stdPbId,
             DRC_NBC_Cust_Order_Number__c     = 'ORD-SAMPLE-SHIP',
             DRC_NBC_Warehouse__c             = 'CFS - JNPT',
-            DRC_NBC_Sample_Shipping_Cost__c  = 750,   // ← triggers mapSampleShippingCostToPayload
-            DRC_NBC_Sample_Amount__c         = 0       // keep zero so only shipping path is hit
+            DRC_NBC_Sample_Shipping_Cost__c  = 750,
+            DRC_NBC_Sample_Amount__c         = 0
         );
         if (!sampleRTs.isEmpty()) {
             sampleOrd.RecordTypeId = sampleRTs[0].Id;
         }
         insert sampleOrd;
         
-        // At least one OrderItem required so scope is not empty
         OrderItem oi = new OrderItem(
             OrderId                        = sampleOrd.Id,
             PricebookEntryId               = pbe.Id,
@@ -438,7 +596,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         insert oi;
         
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(sampleOrd.Id), 200);
         Test.stopTest();
@@ -449,16 +606,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         }
     }
     
-    // ══════════════════════════════════════════════════════════════════════════
-    // NEW TEST — covers mapSampleAmountToPayload (non-zero sample amount)
-    // ══════════════════════════════════════════════════════════════════════════
-    
-    /**
-* Covers: mapSampleAmountToPayload() fully
-*         → Sample_Order with DRC_NBC_Sample_Amount__c = 1200
-*         → G/L Account line for Sample Amount added to requestList
-*         → HTTP 200 → logSuccess path exercised
-*/
     @isTest
     static void test_Batch_SampleOrder_WithSampleAmount() {
         Account acc        = [SELECT Id FROM Account LIMIT 1];
@@ -472,7 +619,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             LIMIT 1
         ];
         
-        // Build a Sample Order with a non-zero Sample Amount
         Order sampleOrd = new Order(
             AccountId                        = acc.Id,
             Status                           = 'Draft',
@@ -480,8 +626,8 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             Pricebook2Id                     = stdPbId,
             DRC_NBC_Cust_Order_Number__c     = 'ORD-SAMPLE-AMT',
             DRC_NBC_Warehouse__c             = 'CFS - JNPT',
-            DRC_NBC_Sample_Shipping_Cost__c  = 0,     // keep zero so only amount path is hit
-            DRC_NBC_Sample_Amount__c         = 1200   // ← triggers mapSampleAmountToPayload
+            DRC_NBC_Sample_Shipping_Cost__c  = 0,
+            DRC_NBC_Sample_Amount__c         = 1200
         );
         if (!sampleRTs.isEmpty()) {
             sampleOrd.RecordTypeId = sampleRTs[0].Id;
@@ -500,7 +646,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         insert oi;
         
         Test.setMock(HttpCalloutMock.class, new MockSuccess());
-        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(sampleOrd.Id), 200);
         Test.stopTest();
@@ -511,14 +656,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         }
     }
     
-    // ══════════════════════════════════════════════════════════════════════════
-    // NEW TEST — covers BOTH mappers in one run + HTTP 500 failure path
-    // ══════════════════════════════════════════════════════════════════════════
-    
-    /**
-* Covers: Both mapSampleShippingCostToPayload() AND mapSampleAmountToPayload()
-*         in the same batch execute with HTTP 500 → logError path exercised
-*/
     @isTest
     static void test_Batch_SampleOrder_BothSampleLines_HTTP500() {
         Account acc        = [SELECT Id FROM Account LIMIT 1];
@@ -532,7 +669,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             LIMIT 1
         ];
         
-        // Build a Sample Order with BOTH values non-zero → hits both mapper methods
         Order sampleOrd = new Order(
             AccountId                        = acc.Id,
             Status                           = 'Draft',
@@ -540,8 +676,8 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
             Pricebook2Id                     = stdPbId,
             DRC_NBC_Cust_Order_Number__c     = 'ORD-SAMPLE-BOTH',
             DRC_NBC_Warehouse__c             = 'CFS - JNPT',
-            DRC_NBC_Sample_Shipping_Cost__c  = 500,   // ← mapSampleShippingCostToPayload
-            DRC_NBC_Sample_Amount__c         = 800    // ← mapSampleAmountToPayload
+            DRC_NBC_Sample_Shipping_Cost__c  = 500,
+            DRC_NBC_Sample_Amount__c         = 800
         );
         if (!sampleRTs.isEmpty()) {
             sampleOrd.RecordTypeId = sampleRTs[0].Id;
@@ -560,9 +696,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         );
         insert oi;
         
-        // Use MockFailure so the logError branch inside execute() is also covered
         Test.setMock(HttpCalloutMock.class, new MockFailure());
-        
         Test.startTest();
         Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(sampleOrd.Id), 200);
         Test.stopTest();
@@ -574,7 +708,241 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
     }
     
     // ══════════════════════════════════════════════════════════════════════════
-    // DRC_NBC_OrderProduct_BC_Integration Tests (unchanged)
+    // DIRECT UNIT TESTS — public mapper methods
+    // ══════════════════════════════════════════════════════════════════════════
+    
+    @isTest
+    static void test_DirectCall_MapSampleShippingCostToPayload() {
+        Account acc = [SELECT Id FROM Account LIMIT 1];
+        Id stdPbId  = Test.getStandardPricebookId();
+        
+        Order ord = new Order(
+            AccountId                        = acc.Id,
+            Status                           = 'Draft',
+            EffectiveDate                    = Date.today(),
+            Pricebook2Id                     = stdPbId,
+            DRC_NBC_Cust_Order_Number__c     = 'ORD-DIRECT-SHIP',
+            DRC_NBC_Warehouse__c             = 'CFS - JNPT',
+            DRC_NBC_Sample_Shipping_Cost__c  = 999
+        );
+        insert ord;
+        
+        Order ordFull = [
+            SELECT Id, DRC_NBC_Cust_Order_Number__c,
+            DRC_NBC_Sample_Shipping_Cost__c
+            FROM Order WHERE Id = :ord.Id
+        ];
+        
+        Test.startTest();
+        DRC_NBC_OrderProduct_BC_Batch batchInstance =
+            new DRC_NBC_OrderProduct_BC_Batch(ord.Id);
+        
+        DRC_NBC_Integration_Payload.OrderLinePayload payload =
+            batchInstance.mapSampleShippingCostToPayload(ordFull, 999, 50000);
+        Test.stopTest();
+        
+        if (payload == null) {
+            throw new IllegalArgumentException('mapSampleShippingCostToPayload should return a non-null payload');
+        }
+        if (payload.Description != 'Sample Shipping Cost') {
+            throw new IllegalArgumentException('Expected Description = Sample Shipping Cost but got: ' + payload.Description);
+        }
+        if (payload.Unit_Price != 999) {
+            throw new IllegalArgumentException('Expected Unit_Price = 999 but got: ' + payload.Unit_Price);
+        }
+        if (payload.Line_Amount != 999) {
+            throw new IllegalArgumentException('Expected Line_Amount = 999 but got: ' + payload.Line_Amount);
+        }
+        if (payload.Quantity != 1) {
+            throw new IllegalArgumentException('Expected Quantity = 1 but got: ' + payload.Quantity);
+        }
+        if (payload.Type != 'G/L Account') {
+            throw new IllegalArgumentException('Expected Type = G/L Account but got: ' + payload.Type);
+        }
+        if (payload.Document_Type != 'Order') {
+            throw new IllegalArgumentException('Expected Document_Type = Order but got: ' + payload.Document_Type);
+        }
+        if (payload.Line_No != 50000) {
+            throw new IllegalArgumentException('Expected Line_No = 50000 but got: ' + payload.Line_No);
+        }
+        if (payload.GST_Credit != 'Availment') {
+            throw new IllegalArgumentException('Expected GST_Credit = Availment but got: ' + payload.GST_Credit);
+        }
+        if (payload.Unit_of_Measure_Code != 'KGS') {
+            throw new IllegalArgumentException('Expected Unit_of_Measure_Code = KGS but got: ' + payload.Unit_of_Measure_Code);
+        }
+        if (payload.No_of_Pkg_for_Qty != 1) {
+            throw new IllegalArgumentException('Expected No_of_Pkg_for_Qty = 1 but got: ' + payload.No_of_Pkg_for_Qty);
+        }
+        if (payload.Line_Discount_Percent != 0) {
+            throw new IllegalArgumentException('Expected Line_Discount_Percent = 0 but got: ' + payload.Line_Discount_Percent);
+        }
+        if (payload.Line_Discount_Amount != 0) {
+            throw new IllegalArgumentException('Expected Line_Discount_Amount = 0 but got: ' + payload.Line_Discount_Amount);
+        }
+        if (payload.Inv_Discount_Amount != 0) {
+            throw new IllegalArgumentException('Expected Inv_Discount_Amount = 0 but got: ' + payload.Inv_Discount_Amount);
+        }
+    }
+    
+    @isTest
+    static void test_DirectCall_MapSampleAmountToPayload() {
+        Account acc = [SELECT Id FROM Account LIMIT 1];
+        Id stdPbId  = Test.getStandardPricebookId();
+        
+        Order ord = new Order(
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-DIRECT-AMT',
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT',
+            DRC_NBC_Sample_Amount__c     = 1500
+        );
+        insert ord;
+        
+        Order ordFull = [
+            SELECT Id, DRC_NBC_Cust_Order_Number__c,
+            DRC_NBC_Sample_Amount__c
+            FROM Order WHERE Id = :ord.Id
+        ];
+        
+        Test.startTest();
+        DRC_NBC_OrderProduct_BC_Batch batchInstance =
+            new DRC_NBC_OrderProduct_BC_Batch(ord.Id);
+        
+        DRC_NBC_Integration_Payload.OrderLinePayload payload =
+            batchInstance.mapSampleAmountToPayload(ordFull, 1500, 60000);
+        Test.stopTest();
+        
+        if (payload == null) {
+            throw new IllegalArgumentException('mapSampleAmountToPayload should return a non-null payload');
+        }
+        if (payload.Description != 'Sample Amount') {
+            throw new IllegalArgumentException('Expected Description = Sample Amount but got: ' + payload.Description);
+        }
+        if (payload.Unit_Price != 1500) {
+            throw new IllegalArgumentException('Expected Unit_Price = 1500 but got: ' + payload.Unit_Price);
+        }
+        if (payload.Line_Amount != 1500) {
+            throw new IllegalArgumentException('Expected Line_Amount = 1500 but got: ' + payload.Line_Amount);
+        }
+        if (payload.Quantity != 1) {
+            throw new IllegalArgumentException('Expected Quantity = 1 but got: ' + payload.Quantity);
+        }
+        if (payload.Type != 'G/L Account') {
+            throw new IllegalArgumentException('Expected Type = G/L Account but got: ' + payload.Type);
+        }
+        if (payload.Document_Type != 'Order') {
+            throw new IllegalArgumentException('Expected Document_Type = Order but got: ' + payload.Document_Type);
+        }
+        if (payload.Line_No != 60000) {
+            throw new IllegalArgumentException('Expected Line_No = 60000 but got: ' + payload.Line_No);
+        }
+        if (payload.GST_Credit != 'Availment') {
+            throw new IllegalArgumentException('Expected GST_Credit = Availment but got: ' + payload.GST_Credit);
+        }
+        if (payload.Unit_of_Measure_Code != 'KGS') {
+            throw new IllegalArgumentException('Expected Unit_of_Measure_Code = KGS but got: ' + payload.Unit_of_Measure_Code);
+        }
+        if (payload.No_of_Pkg_for_Qty != 1) {
+            throw new IllegalArgumentException('Expected No_of_Pkg_for_Qty = 1 but got: ' + payload.No_of_Pkg_for_Qty);
+        }
+        if (payload.Line_Discount_Percent != 0) {
+            throw new IllegalArgumentException('Expected Line_Discount_Percent = 0 but got: ' + payload.Line_Discount_Percent);
+        }
+        if (payload.Line_Discount_Amount != 0) {
+            throw new IllegalArgumentException('Expected Line_Discount_Amount = 0 but got: ' + payload.Line_Discount_Amount);
+        }
+        if (payload.Inv_Discount_Amount != 0) {
+            throw new IllegalArgumentException('Expected Inv_Discount_Amount = 0 but got: ' + payload.Inv_Discount_Amount);
+        }
+    }
+    
+    // ══════════════════════════════════════════════════════════════════════════
+    // FREIGHT + INSURANCE TESTS
+    // ══════════════════════════════════════════════════════════════════════════
+    
+    @isTest
+    static void test_Batch_WithFreightCharges() {
+        Account acc        = [SELECT Id FROM Account LIMIT 1];
+        Product2 prod      = [SELECT Id FROM Product2 LIMIT 1];
+        Id stdPbId         = Test.getStandardPricebookId();
+        PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
+        
+        Order ord = new Order(
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-FREIGHT',
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT',
+            DRC_NBC_Fright_Charges__c    = 1000,
+            DRC_NBC_Insurance__c         = 0
+        );
+        insert ord;
+        
+        OrderItem oi = new OrderItem(
+            OrderId                        = ord.Id,
+            PricebookEntryId               = pbe.Id,
+            Product2Id                     = prod.Id,
+            Quantity                       = 5,
+            UnitPrice                      = 100,
+            DRC_NBC_Discount__c            = 0,
+            Description                    = 'Freight Test Item',
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS',
+            DRC_NBC_Packing_Size__c        = 'AL 1 KG',
+            DRC_NBC_Packing_Quantity__c    = '5'
+        );
+        insert oi;
+        
+        Test.setMock(HttpCalloutMock.class, new MockSuccess());
+        Test.startTest();
+        Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void test_Batch_WithInsurance() {
+        Account acc        = [SELECT Id FROM Account LIMIT 1];
+        Product2 prod      = [SELECT Id FROM Product2 LIMIT 1];
+        Id stdPbId         = Test.getStandardPricebookId();
+        PricebookEntry pbe = [SELECT Id FROM PricebookEntry WHERE Pricebook2Id = :stdPbId LIMIT 1];
+        
+        Order ord = new Order(
+            AccountId                    = acc.Id,
+            Status                       = 'Draft',
+            EffectiveDate                = Date.today(),
+            Pricebook2Id                 = stdPbId,
+            DRC_NBC_Cust_Order_Number__c = 'ORD-INSURANCE',
+            DRC_NBC_Warehouse__c         = 'CFS - JNPT',
+            DRC_NBC_Fright_Charges__c    = 0,
+            DRC_NBC_Insurance__c         = 750
+        );
+        insert ord;
+        
+        OrderItem oi = new OrderItem(
+            OrderId                        = ord.Id,
+            PricebookEntryId               = pbe.Id,
+            Product2Id                     = prod.Id,
+            Quantity                       = 3,
+            UnitPrice                      = 200,
+            DRC_NBC_Discount__c            = 0,
+            Description                    = 'Insurance Test Item',
+            DRC_NBC_Unit_Of_Measurement__c = 'KGS',
+            DRC_NBC_Packing_Size__c        = 'AL 1 KG',
+            DRC_NBC_Packing_Quantity__c    = '3'
+        );
+        insert oi;
+        
+        Test.setMock(HttpCalloutMock.class, new MockSuccess());
+        Test.startTest();
+        Database.executeBatch(new DRC_NBC_OrderProduct_BC_Batch(ord.Id), 200);
+        Test.stopTest();
+    }
+    
+    // ══════════════════════════════════════════════════════════════════════════
+    // DRC_NBC_OrderProduct_BC_Integration Tests
     // ══════════════════════════════════════════════════════════════════════════
     
     @isTest
@@ -728,231 +1096,6 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         Boolean processed = true;
         if (!processed) {
             throw new IllegalArgumentException('processResponse should handle 299 as success');
-        }
-    }
-    
-    // ══════════════════════════════════════════════════════════════════════════
-    // DIRECT UNIT TESTS — call public mapper methods on the batch instance
-    // These guarantee line-level coverage regardless of RecordType availability
-    // ══════════════════════════════════════════════════════════════════════════
-    
-    /**
-* Covers: mapSampleShippingCostToPayload() — every line inside the method
-*         Called directly on the batch instance (public method).
-*         No RecordType dependency, no callout needed.
-*/
-    @isTest
-    static void test_DirectCall_MapSampleShippingCostToPayload() {
-        Account acc = [SELECT Id FROM Account LIMIT 1];
-        Id stdPbId  = Test.getStandardPricebookId();
-        
-        // Insert a minimal Order — RecordType does NOT matter here
-        Order ord = new Order(
-            AccountId                        = acc.Id,
-            Status                           = 'Draft',
-            EffectiveDate                    = Date.today(),
-            Pricebook2Id                     = stdPbId,
-            DRC_NBC_Cust_Order_Number__c     = 'ORD-DIRECT-SHIP',
-            DRC_NBC_Warehouse__c             = 'CFS - JNPT',
-            DRC_NBC_Sample_Shipping_Cost__c  = 999
-        );
-        insert ord;
-        
-        // Re-query with all fields the mapper reads
-        Order ordFull = [
-            SELECT Id, DRC_NBC_Cust_Order_Number__c,
-            DRC_NBC_Sample_Shipping_Cost__c
-            FROM Order WHERE Id = :ord.Id
-        ];
-        
-        Test.startTest();
-        // Instantiate batch — sets orderId; locationCode defaults to null/''
-        DRC_NBC_OrderProduct_BC_Batch batchInstance =
-            new DRC_NBC_OrderProduct_BC_Batch(ord.Id);
-        
-        // Call the public mapper directly — covers every line inside it
-        DRC_NBC_Integration_Payload.OrderLinePayload payload =
-            batchInstance.mapSampleShippingCostToPayload(ordFull, 999, 50000);
-        Test.stopTest();
-        
-        // Lightweight guard — no System.assert, just verify object returned
-        if (payload == null) {
-            throw new IllegalArgumentException(
-                'mapSampleShippingCostToPayload should return a non-null payload'
-            );
-        }
-        if (payload.Description != 'Sample Shipping Cost') {
-            throw new IllegalArgumentException(
-                'Expected Description = Sample Shipping Cost but got: ' + payload.Description
-            );
-        }
-        if (payload.Unit_Price != 999) {
-            throw new IllegalArgumentException(
-                'Expected Unit_Price = 999 but got: ' + payload.Unit_Price
-            );
-        }
-        if (payload.Line_Amount != 999) {
-            throw new IllegalArgumentException(
-                'Expected Line_Amount = 999 but got: ' + payload.Line_Amount
-            );
-        }
-        if (payload.Quantity != 1) {
-            throw new IllegalArgumentException(
-                'Expected Quantity = 1 but got: ' + payload.Quantity
-            );
-        }
-        if (payload.Type != 'G/L Account') {
-            throw new IllegalArgumentException(
-                'Expected Type = G/L Account but got: ' + payload.Type
-            );
-        }
-        if (payload.Document_Type != 'Order') {
-            throw new IllegalArgumentException(
-                'Expected Document_Type = Order but got: ' + payload.Document_Type
-            );
-        }
-        if (payload.Line_No != 50000) {
-            throw new IllegalArgumentException(
-                'Expected Line_No = 50000 but got: ' + payload.Line_No
-            );
-        }
-        if (payload.GST_Credit != 'Availment') {
-            throw new IllegalArgumentException(
-                'Expected GST_Credit = Availment but got: ' + payload.GST_Credit
-            );
-        }
-        if (payload.Unit_of_Measure_Code != 'KGS') {
-            throw new IllegalArgumentException(
-                'Expected Unit_of_Measure_Code = KGS but got: ' + payload.Unit_of_Measure_Code
-            );
-        }
-        if (payload.No_of_Pkg_for_Qty != 1) {
-            throw new IllegalArgumentException(
-                'Expected No_of_Pkg_for_Qty = 1 but got: ' + payload.No_of_Pkg_for_Qty
-            );
-        }
-        if (payload.Line_Discount_Percent != 0) {
-            throw new IllegalArgumentException(
-                'Expected Line_Discount_Percent = 0 but got: ' + payload.Line_Discount_Percent
-            );
-        }
-        if (payload.Line_Discount_Amount != 0) {
-            throw new IllegalArgumentException(
-                'Expected Line_Discount_Amount = 0 but got: ' + payload.Line_Discount_Amount
-            );
-        }
-        if (payload.Inv_Discount_Amount != 0) {
-            throw new IllegalArgumentException(
-                'Expected Inv_Discount_Amount = 0 but got: ' + payload.Inv_Discount_Amount
-            );
-        }
-    }
-    
-    /**
-* Covers: mapSampleAmountToPayload() — every line inside the method
-*         Called directly on the batch instance (public method).
-*         No RecordType dependency, no callout needed.
-*/
-    @isTest
-    static void test_DirectCall_MapSampleAmountToPayload() {
-        Account acc = [SELECT Id FROM Account LIMIT 1];
-        Id stdPbId  = Test.getStandardPricebookId();
-        
-        Order ord = new Order(
-            AccountId                    = acc.Id,
-            Status                       = 'Draft',
-            EffectiveDate                = Date.today(),
-            Pricebook2Id                 = stdPbId,
-            DRC_NBC_Cust_Order_Number__c = 'ORD-DIRECT-AMT',
-            DRC_NBC_Warehouse__c         = 'CFS - JNPT',
-            DRC_NBC_Sample_Amount__c     = 1500
-        );
-        insert ord;
-        
-        Order ordFull = [
-            SELECT Id, DRC_NBC_Cust_Order_Number__c,
-            DRC_NBC_Sample_Amount__c
-            FROM Order WHERE Id = :ord.Id
-        ];
-        
-        Test.startTest();
-        DRC_NBC_OrderProduct_BC_Batch batchInstance =
-            new DRC_NBC_OrderProduct_BC_Batch(ord.Id);
-        
-        // Call the public mapper directly — covers every line inside it
-        DRC_NBC_Integration_Payload.OrderLinePayload payload =
-            batchInstance.mapSampleAmountToPayload(ordFull, 1500, 60000);
-        Test.stopTest();
-        
-        if (payload == null) {
-            throw new IllegalArgumentException(
-                'mapSampleAmountToPayload should return a non-null payload'
-            );
-        }
-        if (payload.Description != 'Sample Amount') {
-            throw new IllegalArgumentException(
-                'Expected Description = Sample Amount but got: ' + payload.Description
-            );
-        }
-        if (payload.Unit_Price != 1500) {
-            throw new IllegalArgumentException(
-                'Expected Unit_Price = 1500 but got: ' + payload.Unit_Price
-            );
-        }
-        if (payload.Line_Amount != 1500) {
-            throw new IllegalArgumentException(
-                'Expected Line_Amount = 1500 but got: ' + payload.Line_Amount
-            );
-        }
-        if (payload.Quantity != 1) {
-            throw new IllegalArgumentException(
-                'Expected Quantity = 1 but got: ' + payload.Quantity
-            );
-        }
-        if (payload.Type != 'G/L Account') {
-            throw new IllegalArgumentException(
-                'Expected Type = G/L Account but got: ' + payload.Type
-            );
-        }
-        if (payload.Document_Type != 'Order') {
-            throw new IllegalArgumentException(
-                'Expected Document_Type = Order but got: ' + payload.Document_Type
-            );
-        }
-        if (payload.Line_No != 60000) {
-            throw new IllegalArgumentException(
-                'Expected Line_No = 60000 but got: ' + payload.Line_No
-            );
-        }
-        if (payload.GST_Credit != 'Availment') {
-            throw new IllegalArgumentException(
-                'Expected GST_Credit = Availment but got: ' + payload.GST_Credit
-            );
-        }
-        if (payload.Unit_of_Measure_Code != 'KGS') {
-            throw new IllegalArgumentException(
-                'Expected Unit_of_Measure_Code = KGS but got: ' + payload.Unit_of_Measure_Code
-            );
-        }
-        if (payload.No_of_Pkg_for_Qty != 1) {
-            throw new IllegalArgumentException(
-                'Expected No_of_Pkg_for_Qty = 1 but got: ' + payload.No_of_Pkg_for_Qty
-            );
-        }
-        if (payload.Line_Discount_Percent != 0) {
-            throw new IllegalArgumentException(
-                'Expected Line_Discount_Percent = 0 but got: ' + payload.Line_Discount_Percent
-            );
-        }
-        if (payload.Line_Discount_Amount != 0) {
-            throw new IllegalArgumentException(
-                'Expected Line_Discount_Amount = 0 but got: ' + payload.Line_Discount_Amount
-            );
-        }
-        if (payload.Inv_Discount_Amount != 0) {
-            throw new IllegalArgumentException(
-                'Expected Inv_Discount_Amount = 0 but got: ' + payload.Inv_Discount_Amount
-            );
         }
     }
 }

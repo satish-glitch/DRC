@@ -41,7 +41,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     @track shippingAddressOptions = [];
     @track selectedContactMobile = '';
     @track showContactSuggestions = false;
-    @track filteredContacts  = [];
+    @track filteredContacts = [];
     @track selectedContactName = '';
 
     // Packing details map: Product2Id → List of { packingSize, packingQuantity }
@@ -149,14 +149,6 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     }
 
     /**
-     * Packing quantity column = DRC_NBC_Packing_Qauntity__c directly from DB.
-     * NOT a calculation — just return rawPackingQuantity as-is.
-     */
-    _recalcPackingQuantity(rowData) {
-        return rowData.rawPackingQuantity || '';
-    }
-
-    /**
      * Returns error message if qty is not a valid multiple of rawPackingQty.
      * Returns '' if valid or no packing size selected.
      */
@@ -175,9 +167,9 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     handleClearProduct(event) {
         const index = parseInt(event.currentTarget.dataset.index);
         let clearedRow = this.getBaseRecordData().qlis;
-        clearedRow.ProductName   = '';
-        clearedRow.searchResults = [];
-        clearedRow.showSearch    = true;
+        clearedRow.ProductName    = '';
+        clearedRow.searchResults  = [];
+        clearedRow.showSearch     = true;
         clearedRow.noResultsFound = false;
         this.filteredData[index].recordData = clearedRow;
         this.filteredData = [...this.filteredData];
@@ -197,14 +189,14 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         this.selectedContactName = searchKey;
 
         if (!searchKey) {
-            this.selectedContactId    = null;
-            this.selectedContactEmail = '';
-            this.selectedContactPhone = '';
+            this.selectedContactId     = null;
+            this.selectedContactEmail  = '';
+            this.selectedContactPhone  = '';
             this.selectedContactMobile = '';
-            this.quoteRec.ContactId   = null;
-            this.quoteRec.Email       = '';
-            this.quoteRec.Phone       = '';
-            this.quoteRec.Fax         = '';
+            this.quoteRec.ContactId    = null;
+            this.quoteRec.Email        = '';
+            this.quoteRec.Phone        = '';
+            this.quoteRec.Fax          = '';
             this.filteredContacts       = [];
             this.showContactSuggestions = false;
             return;
@@ -244,8 +236,8 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         getQuoteRecord({ quoteId: this.recordId })
             .then(result => {
                 this.quoteRec                             = { ...result };
-                this.isDomestic = result?.DRC_NBC_Type__c === 'Domestic';
-                this.isExport = result?.DRC_NBC_Type__c === 'Export';
+                this.isDomestic                           = result?.DRC_NBC_Type__c === 'Domestic';
+                this.isExport                             = result?.DRC_NBC_Type__c === 'Export';
                 this.selectedContactId                    = result.ContactId || '';
                 this.selectedContactEmail                 = result.Email     || '';
                 this.selectedContactPhone                 = result.Phone     || '';
@@ -297,12 +289,12 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 }));
 
                 if (this.selectedContactId) {
-                    const selected       = this.contactOptions.find(c => c.value === this.selectedContactId);
+                    const selected = this.contactOptions.find(c => c.value === this.selectedContactId);
                     this.selectedContactName = selected ? selected.label : '';
                 }
             })
             .catch(error => {
-                this.showToastEvent("Error", "Failed to fetch contacts: " + (error.body?.message || error.message), "error");
+                this.showToastEvent('Error', 'Failed to fetch contacts: ' + (error.body?.message || error.message), 'error');
             });
     }
 
@@ -361,7 +353,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 this.showFilterData = true;
             })
             .catch(error => {
-                this.showToastEvent("Error", error.body?.message || error.message, 'error');
+                this.showToastEvent('Error', error.body?.message || error.message, 'error');
             });
     }
 
@@ -380,19 +372,17 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
 
             const savedPackingSize = item.DRC_NBC_Packing_Size__c || '';
 
-            // ✅ rawPackingQuantity ALWAYS from packing details map (child object DRC_NBC_Packing_Details__c)
-            // NOT from item.DRC_NBC_Packing_Qauntity__c (the saved QLI field)
+            // rawPackingQuantity ALWAYS from packing details map (child object DRC_NBC_Packing_Details__c)
             let rawPackingQuantity = '';
             if (savedPackingSize) {
                 const matchedDetail = packingDetails.find(pd => pd.packingSize === savedPackingSize);
                 rawPackingQuantity  = matchedDetail ? (matchedDetail.packingQuantity || '') : '';
             }
 
-            // ✅ Packing quantity column = DB value directly (rawPackingQuantity), NOT a calculation
+            // Packing quantity column = DB value directly (rawPackingQuantity)
             const packingQuantity = rawPackingQuantity;
 
             const quantity      = item.Quantity || 1;
-            // ✅ Validate on load — qty must be a multiple of rawPackingQuantity
             const quantityError = this._getQuantityError(quantity, rawPackingQuantity);
 
             Object.assign(record, {
@@ -415,38 +405,29 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 packingDetails,
                 packingSizeOptions,
                 selectedPackingSize:            savedPackingSize,
-                rawPackingQuantity,             // from child object
-                packingQuantity,               // = rawPackingQuantity (DB value directly)
-                quantityError                  // validated on load
+                rawPackingQuantity,
+                packingQuantity,
+                quantityError,
+                // ── NEW: read from QLI record (saved values round-trip correctly) ──
+                isHazardous:                    item.DRC_NBC_Hazardous__c  ?? false,
+                marksAndNos:                    item.DRC_NBC_MARKS_NOS__c  || ''
             });
             this.allData.push({ recordData: record });
         }
         this.filteredData = [...this.allData];
     }
 
-    /*handleAddRow() {
-        let newRow        = this.getBaseRecordData().qlis;
-        newRow.Id         = null;
-        newRow.showSearch = true;
-        newRow.searchResults  = null;
-        newRow.noResultsFound = false;
-        newRow.searchKey      = '';
-        this.filteredData.push({ recordData: newRow });
-        this.filteredData     = [...this.filteredData];
-        this.showAddProducts  = false;
-    }*/
-
     handleAddRow() {
-        let newRow        = this.getBaseRecordData().qlis;
-        newRow.Id         = null;
-        newRow.QuoteId    = this.recordId;  // ← ADD THIS LINE
-        newRow.showSearch = true;
+        let newRow            = this.getBaseRecordData().qlis;
+        newRow.Id             = null;
+        newRow.QuoteId        = this.recordId;
+        newRow.showSearch     = true;
         newRow.searchResults  = null;
         newRow.noResultsFound = false;
         newRow.searchKey      = '';
         this.filteredData.push({ recordData: newRow });
-        this.filteredData     = [...this.filteredData];
-        this.showAddProducts  = false;
+        this.filteredData    = [...this.filteredData];
+        this.showAddProducts = false;
     }
 
     handleRemoveRow(event) {
@@ -472,81 +453,74 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
             rowCount++;
             const row = record.recordData;
             if (!row.ProductName && !row.Product2Id) {
-                this.showToastEvent("Error", `Product Name is required for row ${rowCount}`, 'error');
+                this.showToastEvent('Error', `Product Name is required for row ${rowCount}`, 'error');
                 isValid = false;
             }
             if (!row.Quantity) {
-                this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error');
+                this.showToastEvent('Error', `Quantity is required for row ${rowCount}`, 'error');
                 isValid = false;
             }
-            // ✅ Packing multiple validation
             if (row.quantityError) {
-                this.showToastEvent("Error", `Row ${rowCount}: ${row.quantityError}`, 'error');
+                this.showToastEvent('Error', `Row ${rowCount}: ${row.quantityError}`, 'error');
                 isValid = false;
             }
         }
 
         if (!this.quoteRec?.ExpirationDate) {
-            this.showToastEvent("Error", "Expiration Date is required in Quote", "error");
+            this.showToastEvent('Error', 'Expiration Date is required in Quote', 'error');
             isValid = false;
         }
         if (!this.quoteRec?.DRC_NBC_Lead_Time__c) {
-            this.showToastEvent("Error", "Lead Date is required in Quote", "error");
+            this.showToastEvent('Error', 'Lead Date is required in Quote', 'error');
             isValid = false;
         }
 
         const expirationDate = new Date(this.quoteRec.ExpirationDate + 'T00:00:00');
-        const today  = new Date();
-        const yyyy   = today.getFullYear();
-        const mm     = String(today.getMonth() + 1).padStart(2, '0');
-        const dd     = String(today.getDate()).padStart(2, '0');
-        const todayDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
+        const today          = new Date();
+        const yyyy           = today.getFullYear();
+        const mm             = String(today.getMonth() + 1).padStart(2, '0');
+        const dd             = String(today.getDate()).padStart(2, '0');
+        const todayDate      = new Date(`${yyyy}-${mm}-${dd}T00:00:00`);
 
         if (expirationDate <= todayDate) {
-            this.showToastEvent("Error", "Expiration Date must be a future date.", "error");
-            isValid = false;
-        }
-
-        if (expirationDate <= !this.quoteRec?.DRC_NBC_Lead_Time__c) {
-            this.showToastEvent("Error", "Expiration Date must be greater than Lead date.", "error");
+            this.showToastEvent('Error', 'Expiration Date must be a future date.', 'error');
             isValid = false;
         }
 
         if (!this.selectedContactId) {
-            this.showToastEvent("Error", "Please select a contact.", "error");
+            this.showToastEvent('Error', 'Please select a contact.', 'error');
             isValid = false;
         }
         if (!this.selectedContactEmail) {
-            this.showToastEvent("Error", "Selected contact must have an email address.", "error");
+            this.showToastEvent('Error', 'Selected contact must have an email address.', 'error');
             isValid = false;
         }
         if (!this.selectedContactPhone) {
-            this.showToastEvent("Error", "Selected contact must have a phone number.", "error");
+            this.showToastEvent('Error', 'Selected contact must have a phone number.', 'error');
             isValid = false;
         }
         if (!this.quoteRec.DRC_NBC_Payment_Term_Description__c) {
-            this.showToastEvent("Error", "Payment Term Description is required.", "error");
+            this.showToastEvent('Error', 'Payment Term Description is required.', 'error');
             isValid = false;
         }
-        
         if (!this.quoteRec.DRC_NBC_Inco_terms__c) {
-            this.showToastEvent("Error", "Inco Term is required.", "error");
+            this.showToastEvent('Error', 'Inco Term is required.', 'error');
             isValid = false;
         }
         if (!this.quoteRec.DRC_NBC_Type__c) {
-            this.showToastEvent("Error", "Type is required.", "error");
+            this.showToastEvent('Error', 'Type is required.', 'error');
             isValid = false;
         }
         if (!this.quoteRec.Status) {
-            this.showToastEvent("Error", "Status is required.", "error");
+            this.showToastEvent('Error', 'Status is required.', 'error');
             isValid = false;
         }
         if (!this.quoteRec.CurrencyIsoCode) {
-            this.showToastEvent("Error", "Currency is required.", "error");
+            this.showToastEvent('Error', 'Currency is required.', 'error');
             isValid = false;
         }
         if (!this.selectedShippingId) {
-            this.showToastEvent("Error", "Please select Shipping Address.", "error");
+            this.showToastEvent('Error', 'Please select Shipping Address.', 'error');
             isValid = false;
         }
 
@@ -564,8 +538,10 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                     Description:                    r.Description,
                     DRC_NBC_Unit_Of_Measurement__c: r.DRC_NBC_Unit_Of_Measurement__c,
                     DRC_NBC_Packing_Size__c:        r.selectedPackingSize || '',
-                    // ✅ Save DRC_NBC_Packing_Qauntity__c = rawPackingQuantity (DB value from child object)
-                    DRC_NBC_Packing_Qauntity__c:    r.packingQuantity || ''
+                    DRC_NBC_Packing_Qauntity__c:    r.packingQuantity     || '',
+                    // ── NEW: include hazardous & marks/nos in save payload ──
+                    DRC_NBC_Hazardous__c:           r.isHazardous || false,
+                    DRC_NBC_MARKS_NOS__c:           r.marksAndNos || ''
                 };
             });
 
@@ -585,7 +561,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 DRC_NBC_Inco_terms__c:               this.quoteRec.DRC_NBC_Inco_terms__c,
                 DRC_NBC_Special_Requirements__c:     this.quoteRec.DRC_NBC_Special_Requirements__c,
                 DRC_NBC_Other_Tax_Amount__c:         this.quoteRec.DRC_NBC_Other_Tax_Amount__c || 0,
-                DRC_NBC_TCS_Amount__c:               this.quoteRec.DRC_NBC_TCS_Amount__c || 0,
+                DRC_NBC_TCS_Amount__c:               this.quoteRec.DRC_NBC_TCS_Amount__c       || 0,
                 DRC_NBC_Shipping_Address_Id__c:      this.selectedShippingId,
                 ContactId:                           this.selectedContactId,
                 Email:                               this.selectedContactEmail,
@@ -604,14 +580,14 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 quoteData:      updatedQuote
             })
                 .then(() => {
-                    this.showToastEvent("Success", "Quote and Line Items saved successfully", "success");
+                    this.showToastEvent('Success', 'Quote and Line Items saved successfully', 'success');
                     this.dispatchEvent(new CloseActionScreenEvent());
                     window.location.href = '/' + this.recordId;
                 })
                 .catch(error => {
                     console.error('SaveQLIData Error:', JSON.stringify(error, null, 2));
                     const message = error?.body?.message || error?.message || 'Unknown error occurred';
-                    this.showToastEvent("Error", message, "error");
+                    this.showToastEvent('Error', message, 'error');
                 })
                 .finally(() => { this.showLoading = false; });
         } else {
@@ -619,38 +595,39 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         }
     }
 
-    // ─── Product search by name pattern only (not currency filtered) ──────────
     handleValueChange(event) {
-        const index = event.target.dataset.index;
+        const index = parseInt(event.target.dataset.index, 10);
         const field = event.target.name;
-        const value = event.target.value;
+        const value = event.target.value || '';
+
         this.filteredData[index].recordData[field] = value;
 
-       /* if (field === 'ProductName' && value.length >= 2) {
-            // ✅ Search by name pattern only — currency already on productsMasterList from Quote
-            const matches = this.productsMasterList.filter(product =>
-                product.Product2.Name.toLowerCase().includes(value.toLowerCase())
+        if (field === 'ProductName' && value.trim().length >= 2) {
+            const selectedProduct2Ids = new Set(
+                this.filteredData
+                    .filter((_, i) => i !== index)
+                    .map(row => row.recordData.Product2Id)
+                    .filter(Boolean)
             );
-            this.filteredData[index].recordData.searchResults  = matches;
-            this.filteredData[index].recordData.noResultsFound = matches.length === 0;
-        } else if (field === 'ProductName') {
-            this.filteredData[index].recordData.searchResults  = [];
-            this.filteredData[index].recordData.noResultsFound = false;
-        }*/
 
-        if (field === 'ProductName' && value.length >= 2) {
-            // Collect Product2Ids already selected in OTHER rows (not the current row)
-            const selectedProduct2Ids = this.filteredData
-                .filter((_, i) => i !== parseInt(index))
-                .map(row => row.recordData.Product2Id)
-                .filter(Boolean);
+            const seenProduct2Ids = new Set();
 
-            // Search within productsMasterList (already account-restricted from Apex)
-            // and exclude products already selected in other rows
-            const matches = this.productsMasterList.filter(product =>
-                product.Product2.Name.toLowerCase().includes(value.toLowerCase()) &&
-                !selectedProduct2Ids.includes(product.Product2Id)
-            );
+            const matches = this.productsMasterList.filter(product => {
+                const product2Id  = product.Product2Id || product.Product2?.Id;
+                const productName = product.Product2?.Name || '';
+
+                if (!product2Id) return false;
+
+                const isNameMatched      = productName.toLowerCase().includes(value.toLowerCase());
+                const isAlreadySelected  = selectedProduct2Ids.has(product2Id);
+                const isDuplicateInSearch = seenProduct2Ids.has(product2Id);
+
+                if (isNameMatched && !isAlreadySelected && !isDuplicateInSearch) {
+                    seenProduct2Ids.add(product2Id);
+                    return true;
+                }
+                return false;
+            });
 
             this.filteredData[index].recordData.searchResults  = matches;
             this.filteredData[index].recordData.noResultsFound = matches.length === 0;
@@ -662,6 +639,15 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         if (['Quantity', 'Discount'].includes(field)) {
             this.updateTotal(index);
         }
+
+        this.filteredData = [...this.filteredData];
+    }
+
+    // ─── Hazardous checkbox change ────────────────────────────────────────────
+    handleHazardousChange(event) {
+        const index = parseInt(event.target.dataset.index, 10);
+        this.filteredData[index].recordData.isHazardous = event.target.checked;
+        this.filteredData = [...this.filteredData];
     }
 
     // ─── Packing Size change ──────────────────────────────────────────────────
@@ -675,14 +661,14 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         const packingDetails = row.packingDetails || [];
         const matchedDetail  = packingDetails.find(pd => pd.packingSize === selectedSize);
 
-        // ✅ rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from child record
+        // rawPackingQuantity = DRC_NBC_Packing_Qauntity__c from child record
         row.rawPackingQuantity = (matchedDetail?.packingQuantity != null && matchedDetail.packingQuantity !== '')
             ? String(matchedDetail.packingQuantity) : '';
 
-        // ✅ Packing quantity column = DB value directly, NOT a calculation
+        // Packing quantity column = DB value directly
         row.packingQuantity = row.rawPackingQuantity;
 
-        // ✅ Validate current quantity against new packing size
+        // Validate current quantity against new packing size
         row.quantityError = this._getQuantityError(row.Quantity, row.rawPackingQuantity);
 
         this.filteredData = [...this.filteredData];
@@ -696,11 +682,8 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
 
         row.Quantity = quantity;
 
-        // ✅ Validate: quantity must be a multiple of rawPackingQuantity
+        // Validate: quantity must be a multiple of rawPackingQuantity
         row.quantityError = this._getQuantityError(quantity, row.rawPackingQuantity);
-
-        // packingQuantity column does NOT change when quantity changes —
-        // it always shows DRC_NBC_Packing_Qauntity__c from the DB record
 
         this.updateTotal(index);
         this.filteredData = [...this.filteredData];
@@ -720,14 +703,14 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
     }
 
     handleProductSelect(event) {
-        const index       = parseInt(event.target.dataset.index);
-        const selectedId  = event.target.dataset.id;
+        const index          = parseInt(event.target.dataset.index);
+        const selectedId     = event.target.dataset.id;
         const selectedProduct = this.productsMasterList.find(p => p.Id === selectedId);
 
         if (selectedProduct) {
             const unitPrice = selectedProduct.UnitPrice || 0;
 
-            // ✅ Fetch packing details from cached map for selected product
+            // Fetch packing details from cached map for selected product
             const packingDetails     = this.getPackingDetailsForProduct(selectedProduct.Product2Id);
             const packingSizeOptions = this.buildPackingSizeOptions(packingDetails);
 
@@ -751,8 +734,11 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 packingSizeOptions,
                 selectedPackingSize:            '',
                 rawPackingQuantity:             '',
-                packingQuantity:                '',   // blank until packing size selected
-                quantityError:                  ''
+                packingQuantity:                '',
+                quantityError:                  '',
+                // ── NEW: pre-populate from Product2 for newly selected products ──
+                isHazardous:                    selectedProduct.Product2?.DRC_NBC_Hazardous__c  ?? false,
+                marksAndNos:                    selectedProduct.Product2?.DRC_NBC_MARKS_NOS__c  || ''
             };
             this.updateTotal(index);
             this.filteredData = [...this.filteredData];
@@ -794,15 +780,19 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 selectedPackingSize:            '',
                 rawPackingQuantity:             '',
                 packingQuantity:                '',
-                quantityError:                  ''
+                quantityError:                  '',
+                // ── NEW: defaults for blank rows ──
+                isHazardous:                    false,
+                marksAndNos:                    ''
             }
         };
     }
 
     updateTotal(index) {
-        let record      = this.filteredData[index].recordData;
+        let record          = this.filteredData[index].recordData;
         const modifiedPrice = parseFloat(record.modifiedPrice) || 0;
         const quantity      = parseFloat(record.Quantity)      || 0;
         const discount      = parseFloat(record.Discount)      || 0;
+        record.totalAmount  = (modifiedPrice * quantity * (1 - discount / 100));
     }
 }

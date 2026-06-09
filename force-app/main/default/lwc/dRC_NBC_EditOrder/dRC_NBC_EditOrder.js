@@ -324,7 +324,14 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     get getCustomerIcon()       { return this.isCustomerOpen      ? 'utility:chevrondown' : 'utility:chevronright'; }
     get getAddressIcon()        { return this.isAddressOpen       ? 'utility:chevrondown' : 'utility:chevronright'; }
     get getProductIcon()        { return this.isProductOpen       ? 'utility:chevrondown' : 'utility:chevronright'; }
+
     get hasProducts()           { return this.filteredData && this.filteredData.length > 0; }
+    get showFrightChargeFields() {
+        return this.isExport && (
+            this.orderRec?.Fright_Required__c === true ||
+            this.orderRec?.Fright_Required__c === 'true'
+        );
+    }
 
     // ─── Sales Person Code ────────────────────────────────────────────────────
 
@@ -344,15 +351,27 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         return this.packingDetailsMap[product2Id] || [];
     }
 
+    /**
+     * Validates that the entered quantity is a positive multiple of the packing quantity.
+     * Skipped entirely for Sample orders (isSample = true).
+     * Skipped when no packing size is selected or packing quantity is zero/blank.
+     * Returns an error string, or null if valid.
+     */
     _validateQuantityMultiple(rowData) {
         if (this.isSample) return null;
+
         const rawPkgQty = parseFloat(rowData.rawPackingQuantity) || 0;
+
         if (rawPkgQty <= 0 || !rowData.selectedPackingSize) return null;
+
         const qty = parseFloat(rowData.Quantity) || 0;
+
         if (qty <= 0) return null;
+
         if (qty % rawPkgQty !== 0) {
-            return `Quantity must be a multiple of ${rawPkgQty} (packing quantity). Allowed values: ${rawPkgQty}, ${rawPkgQty * 2}, ${rawPkgQty * 3}, …`;
+            return `Quantity must be a multiple of ${rawPkgQty}. Allowed: ${rawPkgQty}, ${rawPkgQty * 2}, ${rawPkgQty * 3}, …`;
         }
+
         return null;
     }
 
@@ -396,7 +415,6 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                     this.orderRec.CurrencyIsoCode = result.Opportunity.CurrencyIsoCode;
                 }
 
-                // Pre-populate searchable picklist display values from saved record
                 this.transportAgentName   = result.DRC_NBC_Transport_Agent__c   || '';
                 this.portOfLoadingName    = result.DRC_NBC_Port_of_Loading__c   || '';
                 this.portOfDischargeName  = result.DRC_NBC_Port_Of_Discharge__c || '';
@@ -502,7 +520,11 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 OriginalUnitPrice:       originalUnitPrice,
                 DRC_NBC_FG_Code__c:      item.Product2?.DRC_NBC_FG_Code__c      || '-',
                 DRC_NBC_HSN_SAC_Code__c: item.Product2?.DRC_NBC_HSN_SAC_Code__c || '-',
-                UOM:                     item.Product2?.QuantityUnitOfMeasure    || '-',
+                UOM:                     item.Product2?.QuantityUnitOfMeasure    || 'KGS',
+                // FIX: read Mark & Nos and Hazardous from OrderItem fields (not Product2)
+                // for existing rows; use === true to correctly handle false booleans
+                DRC_NBC_MARKS_NOS__c:    item.DRC_NBC_MARKS_NOS__c || '',
+                DRC_NBC_Hazardous__c:    item.DRC_NBC_Hazardous__c === true,
                 showSearch:              false,
                 modifiedPrice:           savedModifiedPrice,
                 packingDetails:          packingDetails,
@@ -673,30 +695,41 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
     // ─── Product table handlers ───────────────────────────────────────────────
 
     handleValueChange(event) {
-        const index = event.target.dataset.index;
+        const index = parseInt(event.target.dataset.index, 10);
         const field = event.target.name;
-        const value = event.target.value;
+
+        const value = event.target.type === 'checkbox'
+            ? event.target.checked
+            : event.target.value;
+
         this.filteredData[index].recordData[field] = value;
 
         if (field === 'ProductName' && value.length >= 2) {
             const selectedProduct2Ids = this.filteredData
-                .filter((_, i) => i !== parseInt(index))
+                .filter((_, i) => i !== index)
                 .map(row => row.recordData.Product2Id)
                 .filter(Boolean)
                 .map(id => String(id));
+
             const matches = this.productsMasterList.filter(product => {
                 const product2Id  = String(product.Product2Id || product.Product2?.Id || '');
                 const nameMatch   = product.Product2.Name.toLowerCase().includes(value.toLowerCase());
                 const notSelected = !selectedProduct2Ids.includes(product2Id);
                 return nameMatch && notSelected;
             });
+
             this.filteredData[index].recordData.searchResults  = matches;
             this.filteredData[index].recordData.noResultsFound = matches.length === 0;
         } else if (field === 'ProductName') {
             this.filteredData[index].recordData.searchResults  = [];
             this.filteredData[index].recordData.noResultsFound = false;
         }
-        if (field === 'Quantity') { this.handleQuantityChange(event); }
+
+        if (field === 'Quantity') {
+            this.handleQuantityChange(event);
+        }
+
+        this.filteredData = [...this.filteredData];
     }
 
     handlePackingSizeChange(event) {
@@ -721,8 +754,10 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         const index    = parseInt(event.target.dataset.index);
         const quantity = parseFloat(event.target.value) || 0;
         this.filteredData[index].recordData.Quantity = quantity;
+
         const qtyError = this._validateQuantityMultiple(this.filteredData[index].recordData);
         this.filteredData[index].recordData.quantityError = qtyError || '';
+
         this.updateTotal(index);
         this.filteredData = [...this.filteredData];
     }
@@ -778,6 +813,10 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 OriginalUnitPrice:       unitPrice,
                 DRC_NBC_HSN_SAC_Code__c: selectedProduct.Product2.DRC_NBC_HSN_SAC_Code__c,
                 DRC_NBC_FG_Code__c:      selectedProduct.Product2.DRC_NBC_FG_Code__c,
+                // FIX: for NEW products, seed Mark & Nos and Hazardous from Product2
+                // so defaults are pre-filled but remain editable by the user
+                DRC_NBC_MARKS_NOS__c:    selectedProduct.Product2.DRC_NBC_MARKS_NOS__c || '',
+                DRC_NBC_Hazardous__c:    selectedProduct.Product2.DRC_NBC_Hazardous__c,
                 PricebookEntryId:        selectedProduct.Id,
                 UOM:                     selectedProduct.Product2.QuantityUnitOfMeasure,
                 modifiedPrice:           unitPrice,
@@ -805,17 +844,35 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         for (let record of this.filteredData) {
             rowCount++;
             const row = record.recordData;
-            if (!row.ProductName && !row.Product2Id) { this.showToastEvent("Error", `Product Name is required for row ${rowCount}`, 'error'); isValid = false; }
-            if (!row.Quantity)                        { this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error'); isValid = false; }
-            const qtyError = this._validateQuantityMultiple(row);
-            if (qtyError) { this.showToastEvent("Error", `Row ${rowCount}: ${qtyError}`, 'error'); isValid = false; }
+
+            if (!row.ProductName && !row.Product2Id) {
+                this.showToastEvent("Error", `Product Name is required for row ${rowCount}`, 'error');
+                isValid = false;
+            }
+            if (!row.Quantity) {
+                this.showToastEvent("Error", `Quantity is required for row ${rowCount}`, 'error');
+                isValid = false;
+            }
+
+            if (!this.isSample) {
+                const qtyError = this._validateQuantityMultiple(row);
+                if (qtyError) {
+                    record.recordData.quantityError = qtyError;
+                    this.showToastEvent("Error", `Row ${rowCount}: ${qtyError}`, 'error');
+                    isValid = false;
+                }
+            }
         }
+
+        this.filteredData = [...this.filteredData];
 
         if (this.isPartiallyShipped)          { this.showToastEvent('Error', 'Order cannot be modified because the order is partially shipped.', 'error'); isValid = false; }
         if (!this.orderRec?.EffectiveDate)    { this.showToastEvent("Error", "Effective Date is required", "error"); isValid = false; }
         if (!this.orderRec?.EndDate)          { this.showToastEvent("Error", "End Date is required", "error"); isValid = false; }
         if (!this.orderRec?.DRC_NBC_Warehouse__c)         { this.showToastEvent("Error", "Warehouse is required", "error"); isValid = false; }
         if (!this.orderRec?.DRC_NBC_SalesPerson_Code__c)  { this.showToastEvent("Error", "Sales Person Code is required", "error"); isValid = false; }
+        if (!this.orderRec?.DRC_NBC_Part_Shipment__c)     { this.showToastEvent("Error", "Part Shipment is required", "error");  isValid = false; }
+        if (!this.orderRec?.DRC_NBC_Trans_Shipment__c)    { this.showToastEvent("Error", "Trans Shipment is required", "error"); isValid = false; }
 
         if (this.orderRec?.EndDate) {
             const endDate = new Date(this.orderRec.EndDate); endDate.setHours(0,0,0,0);
@@ -853,6 +910,9 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 OrderId:                    this.recordId,
                 PricebookEntryId:           r.PricebookEntryId,
                 Description:                r.Description,
+                // Both existing and new rows always send current editable values
+                DRC_NBC_MARKS_NOS__c:        r.DRC_NBC_MARKS_NOS__c || '',
+                DRC_NBC_Hazardous__c:        r.DRC_NBC_Hazardous__c === true,
                 DRC_NBC_Packing_Size__c:    r.selectedPackingSize || '',
                 DRC_NBC_Packing_Quantity__c: r.rawPackingQuantity || ''
             };
@@ -874,6 +934,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             DRC_NBC_Other_Rejection_Reason__c:    this.orderRec.DRC_NBC_Other_Rejection_Reason__c,
             DRC_NBC_Inco_Terms__c:                this.orderRec.DRC_NBC_Inco_Terms__c,
             DRC_NBC_Warehouse__c:                 this.orderRec.DRC_NBC_Warehouse__c,
+            Fright_Required__c:                   this.orderRec.Fright_Required__c,
             DRC_NBC_SalesPerson_Code__c:          this.orderRec.DRC_NBC_SalesPerson_Code__c,
             DRC_NBC_Select_Bank__c:               this.orderRec.DRC_NBC_Select_Bank__c,
             DRC_NBC_Terms_and_Conditions__c:      this.orderRec.DRC_NBC_Terms_and_Conditions__c,
@@ -899,7 +960,10 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             updatedOrder.DRC_NBC_Shipment_Method__c   = this.orderRec.DRC_NBC_Shipment_Method__c;
             updatedOrder.DRC_NBC_Prepayment_Method__c = this.orderRec.DRC_NBC_Prepayment_Method__c;
             updatedOrder.DRC_NBC_Shipment_Date__c     = this.orderRec.DRC_NBC_Shipment_Date__c;
+            updatedOrder.DRC_NBC_Part_Shipment__c     = this.orderRec.DRC_NBC_Part_Shipment__c;
+            updatedOrder.DRC_NBC_Trans_Shipment__c    = this.orderRec.DRC_NBC_Trans_Shipment__c;
         }
+
         if (this.isExport) {
             updatedOrder.DRC_NBC_Country_of_Origin__c            = this.orderRec.DRC_NBC_Country_of_Origin__c;
             updatedOrder.DRC_NBC_Country_of_Final_Destination__c = this.orderRec.DRC_NBC_Country_of_Final_Destination__c;
@@ -914,7 +978,11 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             updatedOrder.DRC_NBC_Trans_Shipment__c               = this.orderRec.DRC_NBC_Trans_Shipment__c;
             updatedOrder.DRC_NBC_Final_Destination__c            = this.orderRec.DRC_NBC_Final_Destination__c;
             updatedOrder.DRC_NBC_Required_Documents__c           = this.orderRec.DRC_NBC_Required_Documents__c;
+            updatedOrder.DRC_NBC_Fright_Charges__c               = this.orderRec.DRC_NBC_Fright_Charges__c;
+            updatedOrder.DRC_NBC_Insurance__c                    = this.orderRec.DRC_NBC_Insurance__c;
+            updatedOrder.DRC_NBC_Delivery_Terms__c               = this.orderRec.DRC_NBC_Delivery_Terms__c;
         }
+
         if (this.isSample) {
             updatedOrder.DRC_NBC_Sample_Name__c            = this.orderRec.DRC_NBC_Sample_Name__c;
             updatedOrder.DRC_NBC_Sample_Type__c            = this.orderRec.DRC_NBC_Sample_Type__c;
@@ -928,6 +996,8 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
             updatedOrder.DRC_NBC_Sample_Amount__c          = this.orderRec.DRC_NBC_Sample_Amount__c;
             updatedOrder.DRC_NBC_Rejection_Reason__c       = this.orderRec.DRC_NBC_Rejection_Reason__c;
             updatedOrder.DRC_NBC_Remarks__c                = this.orderRec.DRC_NBC_Remarks__c;
+            updatedOrder.DRC_NBC_Part_Shipment__c          = this.orderRec.DRC_NBC_Part_Shipment__c;
+            updatedOrder.DRC_NBC_Trans_Shipment__c         = this.orderRec.DRC_NBC_Trans_Shipment__c;
             updatedOrder.Type                              = 'Sample Order';
         }
 
@@ -963,6 +1033,7 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 Id: '', Name: '', PricebookEntryId: '', Description: '', Product2Id: '',
                 Quantity: 1, UnitPrice: 0, OriginalUnitPrice: 0, ProductName: '',
                 DRC_NBC_FG_Code__c: '', DRC_NBC_HSN_SAC_Code__c: '', UOM: '',
+                DRC_NBC_MARKS_NOS__c: '', DRC_NBC_Hazardous__c: false,
                 modifiedPrice: 0, totalAmount: 0, showSearch: true,
                 searchResults: [], noResultsFound: false,
                 packingDetails: [], packingSizeOptions: [],

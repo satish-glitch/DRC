@@ -865,9 +865,10 @@ public class DRC_NBC_GenerateQuotes_ControllerTest {
         List<DRC_NBC_GenerateQuotes_Controller.PackingDetailWrapper> packingList =
             new List<DRC_NBC_GenerateQuotes_Controller.PackingDetailWrapper>{ pdw };
                 
+                // AFTER
                 DRC_NBC_GenerateQuotes_Controller.ProductWrapper pw =
                 new DRC_NBC_GenerateQuotes_Controller.ProductWrapper(
-                    null, null, 'My Product', 99.00, 'FG001', 'HSN001', 'KGS', packingList
+                    null, null, 'My Product', 99.00, 'FG001', 'HSN001', 'KGS', packingList, false, null
                 );
         
         DRC_NBC_GenerateQuotes_Controller.LineItemWrapper li =

@@ -1,7 +1,48 @@
 <template>
-    <lightning-quick-action-panel header="Send Order to BC">
-        <template if:true={isLoading}>
-            <lightning-spinner alternative-text="Sending to BC..." size="medium"></lightning-spinner>
-        </template>
-    </lightning-quick-action-panel>
+    <!-- Spinner — shown while fetching payment term or during integration -->
+    <template if:true={isLoading}>
+        <lightning-quick-action-panel header="Send Order to Business Central">
+            <div class="slds-p-around_large slds-align_absolute-center">
+                <lightning-spinner
+                    alternative-text="Processing..."
+                    size="medium">
+                </lightning-spinner>
+            </div>
+        </lightning-quick-action-panel>
+    </template>
+
+    <!-- 100%ADV confirmation — spinner stops, user must confirm -->
+    <template if:true={showConfirmation}>
+        <lightning-quick-action-panel header="Send Order to Business Central">
+            <div class="slds-p-around_medium">
+                <div class="slds-media slds-media_center">
+                    <div class="slds-media__figure">
+                        <lightning-icon
+                            icon-name="utility:warning"
+                            variant="warning"
+                            size="small">
+                        </lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                        <p class="slds-text-body_regular">
+                            Payment Term is <strong>100%ADV</strong>. Do you still want to sync this order to Business Central?
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div slot="footer">
+                <lightning-button
+                    label="Cancel"
+                    variant="neutral"
+                    onclick={handleCancel}>
+                </lightning-button>
+                <lightning-button
+                    label="Yes, Sync to BC"
+                    variant="brand"
+                    onclick={handleConfirm}
+                    class="slds-m-left_x-small">
+                </lightning-button>
+            </div>
+        </lightning-quick-action-panel>
+    </template>
 </template>

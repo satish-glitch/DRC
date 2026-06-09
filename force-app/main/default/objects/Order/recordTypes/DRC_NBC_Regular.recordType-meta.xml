@@ -23,21 +23,6 @@
         </values>
     </picklistValues>
     <picklistValues>
-        <picklist>DRC_NBC_Delivery_Terms__c</picklist>
-        <values>
-            <fullName>CFR</fullName>
-            <default>false</default>
-        </values>
-        <values>
-            <fullName>CIF</fullName>
-            <default>false</default>
-        </values>
-        <values>
-            <fullName>CPT</fullName>
-            <default>false</default>
-        </values>
-    </picklistValues>
-    <picklistValues>
         <picklist>DRC_NBC_Delivery_status__c</picklist>
         <values>
             <fullName>Delivered</fullName>

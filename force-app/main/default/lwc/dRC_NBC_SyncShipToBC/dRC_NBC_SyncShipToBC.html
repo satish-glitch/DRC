@@ -1,0 +1,88 @@
+<template>
+    <lightning-quick-action-panel header="Sync Shipping Address to Business Central">
+
+        <!-- IDLE STATE -->
+        <template if:false={isDone}>
+            <div class="slds-var-p-around_medium slds-text-align_center">
+                <template if:false={isLoading}>
+                    <div class="icon-wrap">
+                        <lightning-icon
+                            icon-name="standard:address"
+                            size="large"
+                            alternative-text="Sync"
+                        ></lightning-icon>
+                    </div>
+                    <p class="slds-var-m-top_medium slds-text-body_regular slds-text-color_default">
+                        This will sync the current shipping address to Business Central.
+                    </p>
+                </template>
+
+                <!-- SPINNER -->
+                <template if:true={isLoading}>
+                    <div class="spinner-container">
+                        <lightning-spinner
+                            alternative-text="Syncing to BC..."
+                            size="medium"
+                            variant="brand"
+                        ></lightning-spinner>
+                        <p class="slds-var-m-top_large slds-text-body_small slds-text-color_weak spinner-label">
+                            Syncing to Business Central…
+                        </p>
+                    </div>
+                </template>
+            </div>
+
+            <div slot="footer">
+                <lightning-button
+                    label="Cancel"
+                    onclick={handleCancel}
+                    disabled={isLoading}
+                ></lightning-button>
+                <lightning-button
+                    label="Sync to BC"
+                    variant="brand"
+                    onclick={handleSync}
+                    disabled={isLoading}
+                    class="slds-var-m-left_x-small"
+                ></lightning-button>
+            </div>
+        </template>
+
+        <!-- RESULT STATE -->
+        <template if:true={isDone}>
+            <div class="slds-var-p-around_medium slds-text-align_center">
+                <div class="icon-wrap">
+                    <template if:true={isSuccess}>
+                        <lightning-icon
+                            icon-name="action:approval"
+                            size="large"
+                            alternative-text="Success"
+                            class="success-icon"
+                        ></lightning-icon>
+                    </template>
+                    <template if:false={isSuccess}>
+                        <lightning-icon
+                            icon-name="action:close"
+                            size="large"
+                            alternative-text="Error"
+                            class="error-icon"
+                        ></lightning-icon>
+                    </template>
+                </div>
+
+                <p class={resultClass}>
+                    {resultMessage}
+                </p>
+            </div>
+
+            <div slot="footer">
+                <lightning-button
+                    label="Close"
+                    variant={closeVariant}
+                    onclick={handleCancel}
+                ></lightning-button>
+            </div>
+        </template>
+
+    </lightning-quick-action-panel>
+</template>

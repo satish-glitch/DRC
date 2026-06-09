@@ -7,6 +7,8 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
     }
 
     public void execute(QueueableContext context) {
+        Id accountIdForLog;
+
         try {
             // Step 1: Fetch Order and AccountId
             Order ord = [
@@ -16,12 +18,11 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
                 LIMIT 1
             ];
 
+            accountIdForLog = ord.AccountId;
+
             if (ord.AccountId == null) {
                 System.debug('No Account on Order. Skipping SalesPersonCode.');
-                // Chain to Account sync only in production
-                if (!Test.isRunningTest()) {
-                    System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
-                }
+                callAccountQueueable();
                 return;
             }
 
@@ -34,11 +35,8 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
             ];
 
             if (String.isBlank(acc.SalesPerson_Code__c)) {
-                System.debug('No SalesPerson Code on Account. Skipping callout.');
-                // Chain to Account sync only in production
-                if (!Test.isRunningTest()) {
-                    System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
-                }
+                System.debug('No SalesPerson Code on Account. Skipping SalesPersonCode callout.');
+                callAccountQueueable();
                 return;
             }
 
@@ -52,10 +50,7 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
 
             if (mdtRecords.isEmpty()) {
                 System.debug('No metadata found for SalesPerson: ' + acc.SalesPerson_Code__c);
-                // Chain to Account sync only in production
-                if (!Test.isRunningTest()) {
-                    System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
-                }
+                callAccountQueueable();
                 return;
             }
 
@@ -70,41 +65,40 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
                 'Phone_No' => spMdt.Phone__c,
                 'E_Mail'   => spMdt.Email__c
             };
+
             String payload = JSON.serialize(payloadMap);
             System.debug('SalesPersonCode Payload: ' + payload);
 
-            // Step 5: Pure callout — no DML before this
-            DRC_NBC_SalesPerson_BC_Integration integration = new DRC_NBC_SalesPerson_BC_Integration(
-                apiPath,
-                'POST',
-                payload,
-                ord.AccountId
-            );
+            // Step 5: SalesPerson callout
+            DRC_NBC_SalesPerson_BC_Integration integration =
+                new DRC_NBC_SalesPerson_BC_Integration(
+                    apiPath,
+                    'POST',
+                    payload,
+                    ord.AccountId
+                );
+
             HttpResponse response = integration.executeAndReturnResponse();
 
-            // Step 6: Log after callout — DML safe now
             if (integration.httpStatusCode != null
-                    && integration.httpStatusCode >= 200
-                    && integration.httpStatusCode < 300) {
+                && integration.httpStatusCode >= 200
+                && integration.httpStatusCode < 300) {
+
                 System.debug('SalesPersonCode → SUCCESS');
+
             } else {
-                System.debug('SalesPersonCode → FAILED. Status: ' +
-                    String.valueOf(integration.httpStatusCode));
-                DRC_NBC_API_Log_Handler.createApiLog(
-                    'DRC_NBC_SalesPersonCode_Callout',
-                    apiPath,
-                    payload,
-                    'POST',
-                    response != null ? response.getBody() : 'null',
-                    integration.httpStatusCode,
-                    null,
-                    'Error',
-                    ord.AccountId
+                System.debug(
+                    'SalesPersonCode → FAILED. Status: ' +
+                    String.valueOf(integration.httpStatusCode)
                 );
             }
 
+            // SalesPerson pass or fail, Account queueable should run
+            callAccountQueueable();
+
         } catch (Exception e) {
             System.debug('SalesPersonCode Exception: ' + e.getMessage());
+
             DRC_NBC_API_Log_Handler.createApiLog(
                 'DRC_NBC_SalesPersonCode_Callout',
                 null,
@@ -114,13 +108,19 @@ public class DRC_NBC_SalesPersonCode_Callout implements Queueable, Database.Allo
                 null,
                 e.getStackTraceString(),
                 'Error',
-                null
+                accountIdForLog
             );
-        }
 
-        // Always chain to Account sync in production — pass or fail
+            // Exception case also call Account queueable
+            callAccountQueueable();
+        }
+    }
+
+    private void callAccountQueueable() {
         if (!Test.isRunningTest()) {
-            System.enqueueJob(new DRC_NBC_Account_BC_Callout_Queueable(orderId));
+            System.enqueueJob(
+                new DRC_NBC_Account_BC_Callout_Queueable(orderId)
+            );
         }
     }
 }

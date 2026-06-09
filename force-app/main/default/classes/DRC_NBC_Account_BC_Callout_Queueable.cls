@@ -35,7 +35,7 @@ public class DRC_NBC_Account_BC_Callout_Queueable implements System.Queueable, D
             if (String.isBlank(checkAcc.DRC_NBC_Customer_Number__c)) {
                 DRC_NBC_AccountNumberGenerator_Helper.generateAccountNumbersSync(accountId);
                 
-                // After DML, we need to chain to another queueable for the callout
+                // After DML, chain to second queue for the callout
                 System.enqueueJob(new DRC_NBC_Account_BC_Callout_Second_Queue(orderId, accountId));
                 return;
             }
@@ -52,37 +52,42 @@ public class DRC_NBC_Account_BC_Callout_Queueable implements System.Queueable, D
         try {
             Account acc = DRC_NBC_Account_BC_Callout.getAccountDetails(accountId);
             
-          /*  if (acc.DRC_NBC_BC_Approval_Status__c) {
-                System.enqueueJob(new DRC_NBC_Order_BC_Callout(orderId));
-                return;
-            }*/
-            
-         /*   Boolean hasShippingAddressInIndia = false;
-            for (DRC_NBC_Addresses__c addr : acc.Address__r) {
-                if (addr.DRC_NBC_Type__c == 'Shipping' &&
-                    addr.DRC_NBC_Address__CountryCode__s == 'IND') {
-                    hasShippingAddressInIndia = true;
-                    break;
-                }
-            }*/
-            
-            DRC_NBC_Integration_Payload.CustomerPayload payload = DRC_NBC_Account_BC_Callout.mapAccountToPayload(acc);
+            DRC_NBC_Integration_Payload.CustomerPayload payload = 
+                DRC_NBC_Account_BC_Callout.mapAccountToPayload(acc);
             String jsonBody = JSON.serialize(payload, true);
             String endpoint = DRC_NBC_BC_Callout_Utility.getConfig().DRC_NBC_Endpoint__c;
             
-            DRC_NBC_Account_BC_Integration integration = new DRC_NBC_Account_BC_Integration(endpoint, 'POST', jsonBody, accountId);
+            DRC_NBC_Account_BC_Integration integration = 
+                new DRC_NBC_Account_BC_Integration(endpoint, 'POST', jsonBody, accountId);
             HttpResponse response = integration.executeAndReturnResponse();
             
-          // if (response != null && response.getStatusCode() == 201) {
-             //   System.enqueueJob(new DRC_NBC_SalesPersonCode_Callout(orderId));
-              /*  if (hasShippingAddressInIndia) {
-                    System.enqueueJob(new DRC_NBC_Shipping_BC_Callout(accountId, orderId));
-                }*/
-             //   DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
-           // }
             if (response != null && response.getStatusCode() == 201) {
-                System.enqueueJob( new DRC_NBC_CustomerItems_Callout_Queueable(orderId, accountId));
-               // DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
+                
+                // ✅ Null-safe downstream checks
+                List<DRC_NBC_Restricted_Product__c> restrictedProducts = 
+                    DRC_NBC_CustomerItems_BC_Callout.getRestrictedProducts(accountId);
+                
+                List<DRC_NBC_Consignee_Bank_Details__c> bankDetails = 
+                    DRC_NBC_ConsigneeBank_Callout.getBankDetails(accountId);
+                
+                Boolean hasRestrictedProducts = (restrictedProducts != null && !restrictedProducts.isEmpty());
+                Boolean hasBankDetails        = (bankDetails != null && !bankDetails.isEmpty());
+                
+                if (!hasRestrictedProducts && !hasBankDetails) {
+                    // CASE 1: Nothing downstream → mark posted and stop
+                    DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
+                    
+                } else if (hasRestrictedProducts) {
+                    // CASE 2: Has products (with or without banks)
+                    // CustomerItems will automatically chain to ConsigneeBank
+                    // ConsigneeBank will call updatePostedStatus at the end
+                    System.enqueueJob(new DRC_NBC_CustomerItems_Callout_Queueable(orderId, accountId));
+                    
+                } else {
+                    // CASE 3: No products but has banks → go directly to ConsigneeBank
+                    // ConsigneeBank will call updatePostedStatus at the end
+                    System.enqueueJob(new DRC_NBC_ConsigneeBank_Callout_Queueable(orderId, accountId));
+                }
             }
             
         } catch (Exception e) {

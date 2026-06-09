@@ -16,6 +16,10 @@
 * 1.7 | Apr 2026   | Changed to use Standard Price Book instead of custom price book
 * 1.8 | Apr 2026   | Product search by name pattern only (not currency-filtered);
 *                  | currency auto-set from Opportunity; packing qty always returned
+* 1.9 | Jun 2026   | ProductWrapper now exposes IsHazardous + MarksAndNos from
+*                  | Product2 so the LWC can pre-populate new product rows.
+*                  | getExistingOLIs now also fetches OLI-level DRC_NBC_Hazardous__c
+*                  | and DRC_NBC_MARKS_NOS__c so saved values round-trip correctly.
 **/
 public with sharing class DRC_NBC_GenerateQuotes_Controller {
 
@@ -39,9 +43,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         @AuraEnabled public String accountSpecialInstruction;
         @AuraEnabled public String paymentTerm;
         @AuraEnabled public String paymentTermDescription;
-         @AuraEnabled public String incoterms;
+        @AuraEnabled public String incoterms;
     }
-    
 
     public class AccountAddressWrapper {
         @AuraEnabled public String street;
@@ -71,6 +74,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         }
     }
 
+    // v1.9: Added IsHazardous + MarksAndNos so the LWC pre-populates new rows
     public class ProductWrapper {
         @AuraEnabled public Id      PricebookEntryId;
         @AuraEnabled public Id      Product2Id;
@@ -80,11 +84,15 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         @AuraEnabled public String  HSNCode;
         @AuraEnabled public String  QuantityUnitOfMeasure;
         @AuraEnabled public List<PackingDetailWrapper> PackingDetails;
+        @AuraEnabled public Boolean IsHazardous;   // from Product2.DRC_NBC_Hazardous__c
+        @AuraEnabled public String  MarksAndNos;   // from Product2.DRC_NBC_MARKS_NOS__c
 
         public ProductWrapper(
             Id pbeId, Id p2Id, String nm, Decimal price,
             String fg, String hsn, String uom,
-            List<PackingDetailWrapper> packing
+            List<PackingDetailWrapper> packing,
+            Boolean isHaz,
+            String  marksNos
         ) {
             this.PricebookEntryId      = pbeId;
             this.Product2Id            = p2Id;
@@ -94,6 +102,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             this.HSNCode               = hsn;
             this.QuantityUnitOfMeasure = uom;
             this.PackingDetails        = packing;
+            this.IsHazardous           = isHaz;
+            this.MarksAndNos           = marksNos;
         }
     }
 
@@ -107,6 +117,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         @AuraEnabled public String  QuantityUnitOfMeasure { get; set; }
         @AuraEnabled public String  PackingSize           { get; set; }
         @AuraEnabled public String  PackingQuantity       { get; set; }
+        @AuraEnabled public Boolean hazardous   { get; set; }
+        @AuraEnabled public String  marksAndNos { get; set; }
 
         public LineItemWrapper() {}
     }
@@ -122,18 +134,18 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         QuoteWrapper w = new QuoteWrapper();
         Opportunity opp = [
             SELECT CurrencyISOCode, AccountId, Account.DRC_NBC_Special_Instructions__c,
-            Account.DRC_NBC_Payment_Terms__c,
-            Account.DRC_NBC_Payment_Terms_Description__c, Account.DRC_Inco_Term__c
+                   Account.DRC_NBC_Payment_Terms__c,
+                   Account.DRC_NBC_Payment_Terms_Description__c, Account.DRC_Inco_Term__c
             FROM Opportunity
             WHERE Id = :oppId
             LIMIT 1
         ];
-        w.oppCurrency              = opp.CurrencyISOCode;
-        w.accountId                = opp.AccountId;
+        w.oppCurrency               = opp.CurrencyISOCode;
+        w.accountId                 = opp.AccountId;
         w.accountSpecialInstruction = opp.Account.DRC_NBC_Special_Instructions__c;
-        w.paymentTerm = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms__c : null;
-        w.paymentTermDescription = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms_Description__c : null;
-        w.incoterms              = opp.Account != null ? opp.Account.DRC_Inco_Term__c : null;
+        w.paymentTerm               = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms__c             : null;
+        w.paymentTermDescription    = opp.Account != null ? opp.Account.DRC_NBC_Payment_Terms_Description__c : null;
+        w.incoterms                 = opp.Account != null ? opp.Account.DRC_Inco_Term__c                     : null;
         return w;
     }
 
@@ -160,7 +172,6 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             Opportunity opp = [
                 SELECT Account.BillingStreet, Account.BillingCity, Account.BillingState,
                        Account.BillingPostalCode, Account.BillingCountry, Account.BillingCountryCode
-                        
                 FROM Opportunity
                 WHERE Id = :oppId
                 LIMIT 1
@@ -198,6 +209,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
     // v1.8: Searches by product name pattern ONLY — no currency filter.
     //       Returns the best available PricebookEntry (matching opp currency first,
     //       then INR, then any active entry) so the modal works regardless of currency.
+    // v1.9: Also fetches DRC_NBC_Hazardous__c + DRC_NBC_MARKS_NOS__c from Product2
+    //       and passes them through ProductWrapper so new rows are pre-populated.
     @AuraEnabled
     public static List<ProductWrapper> searchProducts(String keyword, String currencyIsoCode, Id accountId) {
         try {
@@ -220,11 +233,14 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                 }
             }
 
-            // ── 2. Fetch matching products ────────────────────────────────────
+            // ── 2. Fetch matching products — now includes Hazardous + MarksAndNos ─
             List<Product2> products;
             if (!allowedProductIds.isEmpty()) {
                 products = [
-                    SELECT Id, Name, DRC_NBC_FG_Code__c, DRC_NBC_HSN_SAC_Code__c, QuantityUnitOfMeasure
+                    SELECT Id, Name, DRC_NBC_FG_Code__c, DRC_NBC_HSN_SAC_Code__c,
+                           QuantityUnitOfMeasure,
+                           DRC_NBC_Hazardous__c,    // v1.9
+                           DRC_NBC_MARKS_NOS__c     // v1.9
                     FROM   Product2
                     WHERE  IsActive = true
                     AND    Name     LIKE :likePattern
@@ -232,20 +248,11 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                     ORDER BY Name
                     LIMIT 100
                 ];
-            } /*else {
-                products = [
-                    SELECT Id, Name, DRC_NBC_FG_Code__c, DRC_NBC_HSN_SAC_Code__c, QuantityUnitOfMeasure
-                    FROM   Product2
-                    WHERE  IsActive = true
-                    AND    Name     LIKE :likePattern
-                    ORDER BY Name
-                    LIMIT 100
-                ];
-            }*/
+            }
 
-            if (products.isEmpty()) return new List<ProductWrapper>();
+            if (products == null || products.isEmpty()) return new List<ProductWrapper>();
 
-            Set<Id> product2Ids = new Set<Id>();
+            Set<Id> product2Ids   = new Set<Id>();
             Map<Id, Product2> productById = new Map<Id, Product2>();
             for (Product2 p : products) {
                 product2Ids.add(p.Id);
@@ -253,14 +260,11 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             }
 
             // ── 3. Ensure PricebookEntries exist for the target currency ──────
-            // (creates them if missing, based on INR price)
             if (String.isNotBlank(currencyIsoCode) && currencyIsoCode != 'INR') {
                 ensurePricebookEntriesForCurrency(product2Ids, currencyIsoCode, standardPricebookId);
             }
 
             // ── 4. Fetch ALL active PBEs for these products (any currency) ────
-            //       We'll pick the best one per product in priority order:
-            //       (a) target currency  (b) INR  (c) first available
             List<PricebookEntry> allEntries = [
                 SELECT Id, Product2Id, UnitPrice, CurrencyIsoCode
                 FROM   PricebookEntry
@@ -277,13 +281,10 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             for (PricebookEntry pbe : allEntries) {
                 PricebookEntry existing = bestPbeByProduct.get(pbe.Product2Id);
                 if (existing == null) {
-                    // first entry seen — use it
                     bestPbeByProduct.put(pbe.Product2Id, pbe);
                 } else if (pbe.CurrencyIsoCode == targetCcy) {
-                    // target currency wins over anything else
                     bestPbeByProduct.put(pbe.Product2Id, pbe);
                 } else if (pbe.CurrencyIsoCode == 'INR' && existing.CurrencyIsoCode != targetCcy) {
-                    // INR wins over "any other" fallback
                     bestPbeByProduct.put(pbe.Product2Id, pbe);
                 }
             }
@@ -310,16 +311,23 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             List<ProductWrapper> results = new List<ProductWrapper>();
             for (Product2 prod : products) {
                 PricebookEntry pbe = bestPbeByProduct.get(prod.Id);
-                if (pbe == null) continue;   // no active PBE at all — skip
+                if (pbe == null) continue;
 
                 List<PackingDetailWrapper> packing = productPackingMap.containsKey(prod.Id)
                     ? productPackingMap.get(prod.Id)
                     : new List<PackingDetailWrapper>();
 
                 results.add(new ProductWrapper(
-                    pbe.Id, prod.Id, prod.Name, pbe.UnitPrice,
-                    prod.DRC_NBC_FG_Code__c, prod.DRC_NBC_HSN_SAC_Code__c,
-                    prod.QuantityUnitOfMeasure, packing
+                    pbe.Id,
+                    prod.Id,
+                    prod.Name,
+                    pbe.UnitPrice,
+                    prod.DRC_NBC_FG_Code__c,
+                    prod.DRC_NBC_HSN_SAC_Code__c,
+                    prod.QuantityUnitOfMeasure,
+                    packing,
+                    prod.DRC_NBC_Hazardous__c,    // v1.9
+                    prod.DRC_NBC_MARKS_NOS__c      // v1.9
                 ));
             }
 
@@ -333,6 +341,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
     }
 
     // ─── getExistingOLIs ─────────────────────────────────────────────────────
+    // v1.9: Added DRC_NBC_Hazardous__c + DRC_NBC_MARKS_NOS__c at the OLI level
+    //       so previously saved values round-trip when the modal opens.
     @AuraEnabled
     public static OLIWrapper getExistingOLIs(Id oppId) {
         if (String.isBlank(oppId)) {
@@ -343,9 +353,11 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             SELECT Id,
                    Product2.Name, Product2.QuantityUnitOfMeasure,
                    Product2.DRC_NBC_FG_Code__c, Product2.DRC_NBC_HSN_SAC_Code__c,
+                   Product2.DRC_NBC_MARKS_NOS__c, Product2.DRC_NBC_Hazardous__c,
                    PricebookEntryId, Description, Discount,
                    Product2Id, Quantity, UnitPrice,
                    DRC_NBC_Packing_Size__c, DRC_NBC_Packing_Qauntity__c
+                  
             FROM  OpportunityLineItem
             WHERE OpportunityId = :oppId
         ];
@@ -374,8 +386,8 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             }
         }
 
-        OLIWrapper result  = new OLIWrapper();
-        result.olis            = olis;
+        OLIWrapper result     = new OLIWrapper();
+        result.olis           = olis;
         result.packingDetailsMap = packingMap;
         return result;
     }
@@ -419,7 +431,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             quoteData.Status        = String.isNotBlank(quoteData.Status) ? quoteData.Status : 'Draft';
 
             // Currency always comes from Opportunity
-            String effectiveCurrency = opp.CurrencyIsoCode;
+            String effectiveCurrency  = opp.CurrencyIsoCode;
             quoteData.CurrencyIsoCode = effectiveCurrency;
 
             insert quoteData;
@@ -453,12 +465,12 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                     LIMIT 1
                 ];
                 if (oppA.Account != null) {
-                    quoteData.BillingStreet     = oppA.Account.BillingStreet;
-                    quoteData.BillingCity       = oppA.Account.BillingCity;
-                    quoteData.BillingState      = oppA.Account.BillingState;
-                    quoteData.BillingPostalCode = oppA.Account.BillingPostalCode;
-                    quoteData.BillingCountry    = oppA.Account.BillingCountry;
-                    quoteData.BillingCountryCode= oppA.Account.BillingCountryCode;
+                    quoteData.BillingStreet      = oppA.Account.BillingStreet;
+                    quoteData.BillingCity        = oppA.Account.BillingCity;
+                    quoteData.BillingState       = oppA.Account.BillingState;
+                    quoteData.BillingPostalCode  = oppA.Account.BillingPostalCode;
+                    quoteData.BillingCountry     = oppA.Account.BillingCountry;
+                    quoteData.BillingCountryCode = oppA.Account.BillingCountryCode;
                 }
             }
             update quoteData;
@@ -480,16 +492,16 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
             for (PricebookEntry pbe : [
                 SELECT Id, Product2Id
                 FROM   PricebookEntry
-                WHERE  Pricebook2Id = :standardPricebookId
-                AND    Product2Id   IN :product2Ids
-                AND    IsActive     = true
+                WHERE  Pricebook2Id    = :standardPricebookId
+                AND    Product2Id      IN :product2Ids
+                AND    IsActive        = true
                 AND    CurrencyIsoCode = :effectiveCurrency
             ]) {
                 productIdToPBE.put(pbe.Product2Id, pbe.Id);
             }
 
-            List<QuoteLineItem> qlis        = new List<QuoteLineItem>();
-            List<String>        missingProds = new List<String>();
+            List<QuoteLineItem> qlis         = new List<QuoteLineItem>();
+            List<String>        missingProds  = new List<String>();
 
             for (LineItemWrapper w : lineItems) {
                 if (w.Product2Id == null) continue;
@@ -514,9 +526,11 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
                     Description      = w.Description
                 );
 
-                if (String.isNotBlank(w.PackingSize))     qli.DRC_NBC_Packing_Size__c      = w.PackingSize;
-                if (String.isNotBlank(w.PackingQuantity)) qli.DRC_NBC_Packing_Qauntity__c  = w.PackingQuantity;
-
+                if (String.isNotBlank(w.PackingSize))     qli.DRC_NBC_Packing_Size__c     = w.PackingSize;
+                if (String.isNotBlank(w.PackingQuantity)) qli.DRC_NBC_Packing_Qauntity__c = w.PackingQuantity;
+                // Save user-edited values (may differ from Product2 defaults)
+                if (w.hazardous   != null)                qli.DRC_NBC_Hazardous__c        = w.hazardous;
+                if (String.isNotBlank(w.marksAndNos))     qli.DRC_NBC_MARKS_NOS__c        = w.marksAndNos;
                 qlis.add(qli);
             }
 
@@ -555,7 +569,7 @@ public with sharing class DRC_NBC_GenerateQuotes_Controller {
         Id      pricebook2Id
     ) {
         if (productIds == null || productIds.isEmpty()
-                || String.isBlank(targetCurrency) || pricebook2Id == null) return;
+            || String.isBlank(targetCurrency) || pricebook2Id == null) return;
 
         Map<Id, PricebookEntry> targetPbeByProductId = new Map<Id, PricebookEntry>();
         List<PricebookEntry>    toActivate            = new List<PricebookEntry>();

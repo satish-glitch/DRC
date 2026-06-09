@@ -7,7 +7,7 @@ public class Generate_Export_PI_Controller {
     public String companyWebsite { get; set; }
     
     public Order orderRecord { get; set; }
-   
+    
     
     // Shipper Information
     public String shipperName { get; set; }
@@ -18,6 +18,7 @@ public class Generate_Export_PI_Controller {
     public String shipperCountry { get; set; }
     public String orderType {get; set;}
     public String exportSequence {get; set;}
+    public String incoTermCode { get; set; }
     
     // Consignee Information
     public String consigneeName { get; set; }
@@ -63,10 +64,10 @@ public class Generate_Export_PI_Controller {
     private void loadData() {
         try {
             orderRecord = [
-                SELECT Id, OrderNumber, EffectiveDate, PoNumber,
-                Account.Name, Account.Phone, Account.Website,
+                SELECT Id, OrderNumber, EffectiveDate, PoNumber, PODate,
+                Account.Name, Account.Phone, Account.Website, Account.DRC_NBC_Account_Email_Email__c, Account.Other_Email__c,
                 Account.BillingStreet, Account.BillingCity, Account.BillingState,
-                Account.BillingPostalCode, Account.BillingCountry,
+                Account.BillingPostalCode, Account.BillingCountry,DRC_NBC_Delivery_Terms__c,
                 BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry,
                 ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry,
                 CurrencyIsoCode, DRC_NBC_Consignee_Bank_Name__c,
@@ -79,6 +80,9 @@ public class Generate_Export_PI_Controller {
                 DRC_NBC_Country_Of_Origin__c,
                 DRC_NBC_Trans_Shipment__c,
                 DRC_NBC_Part_Shipment__c,
+                DRC_NBC_Insurance__c,
+                DRC_NBC_Fright_Charges__c,
+                Fright_Required__c,
                 DRC_NBC_Shipment_Method__c,
                 DRC_NBC_PLACE_OF_RECEIPT_BY_CARRIAG__c,
                 DRC_NBC_Notify_Party__c,
@@ -90,7 +94,7 @@ public class Generate_Export_PI_Controller {
                 DRC_NBC_Select_Bank__c,
                 DRC_NBC_Consignee_Bank_Account_Number__c,
                 DRC_NBC_Cust_Order_Number__c,
-                
+                DRC_NBC_Other_Tax_Amount__c,
                 DRC_NBC_Payment_Term_Description__c,
                 AccountId  // ← needed to query Account Products
                 FROM Order
@@ -103,9 +107,34 @@ public class Generate_Export_PI_Controller {
             assignOrderSequenceNumber(orderRecord);
             
             if (orderRecord.DRC_NBC_Type__c == 'Export' && orderRecord.DRC_NBC_Cust_Order_Number__c != null) {
-                    exportSequence =  orderRecord.DRC_NBC_Cust_Order_Number__c;
+                exportSequence =  orderRecord.DRC_NBC_Cust_Order_Number__c;
             } else {
                 exportSequence = '';
+            }
+            
+            // Fetch Inco Terms Metadata
+            Warehouse_Location_Code__mdt incoTermsMeta;
+            String incoTermsLabel = orderRecord.DRC_NBC_Inco_Terms__c;
+            String termType = 'Inco Terms';
+            
+            List<Warehouse_Location_Code__mdt> incoTermsList = [
+                SELECT MasterLabel, DRC_NBC_Code__c, DRC_NBC_Type__c 
+                FROM Warehouse_Location_Code__mdt
+                WHERE MasterLabel = :incoTermsLabel 
+                AND DRC_NBC_Type__c = :termType
+                LIMIT 1
+            ];
+            
+            if (!incoTermsList.isEmpty()) {
+                incoTermsMeta = incoTermsList[0];
+                incoTermCode = String.isBlank(incoTermsMeta.DRC_NBC_Code__c)
+                    ? incoTermsLabel
+                    : incoTermsMeta.DRC_NBC_Code__c;
+                
+                System.debug('Fetched Inco Terms Metadata Code: ' + incoTermCode);
+                System.debug('Fetched Inco Terms Metadata Code: ' + incoTermsMeta.DRC_NBC_Code__c);
+            } else {
+                System.debug('No matching Inco Terms metadata found for Label: ' + incoTermsLabel);
             }
             
             // Company Info
@@ -124,6 +153,9 @@ public class Generate_Export_PI_Controller {
             consigneePostalCode = orderRecord.BillingPostalCode;
             consigneeCountry = orderRecord.BillingCountry;
             consigneePhone   = orderRecord.Account.Phone;
+            consigneeEmail  = String.isNotBlank(orderRecord.Account.DRC_NBC_Account_Email_Email__c)
+                ? orderRecord.Account.DRC_NBC_Account_Email_Email__c
+                : orderRecord.Account.Other_Email__c;
             
             // Load BANK DETAILS dynamically
             loadBankDetails();
@@ -156,7 +188,7 @@ public class Generate_Export_PI_Controller {
             
             DRC_NBC_Bank_Master__mdt bank = [
                 SELECT DRC_Name_Bank_Name__c, DRC_NBC_Bank_Address__c, DRC_NBC_Account_Number__c,
-                       DRC_NBC_Swift_Code__c, DRC_NBC_IFSC_Code__c
+                DRC_NBC_Swift_Code__c, DRC_NBC_IFSC_Code__c
                 FROM DRC_NBC_Bank_Master__mdt
                 WHERE MasterLabel = :orderRecord.DRC_NBC_Select_Bank__c
                 LIMIT 1
@@ -185,13 +217,13 @@ public class Generate_Export_PI_Controller {
             // ── Step 1: Fetch all Order Items ──────────────────────────────────────
             List<OrderItem> orderItems = [
                 SELECT Id, Quantity, UnitPrice, TotalPrice, Description,
-                       Product2Id,
-                       Product2.Name, Product2.ProductCode,
-                       Product2.DRC_NBC_HSN_SAC_Code__c,
-                       Product2.DRC_NBC_Hazardous__c,
-                       Product2.DRC_NBC_MARKS_NOS__c,
-                       Product2.DRC_NBC_KIND_OF_PKG__c,
-                       DRC_NBC_Packing_Size__c
+                Product2Id, DRC_NBC_Packing_Quantity__c, DRC_NBC_MARKS_NOS__c, DRC_NBC_Hazardous__c,
+                Product2.Name, Product2.ProductCode,
+                Product2.DRC_NBC_HSN_SAC_Code__c,
+                Product2.DRC_NBC_Hazardous__c,
+                Product2.DRC_NBC_MARKS_NOS__c,
+                Product2.DRC_NBC_KIND_OF_PKG__c,
+                DRC_NBC_Packing_Size__c
                 FROM OrderItem
                 WHERE OrderId = :recordId
             ];
@@ -237,32 +269,66 @@ public class Generate_Export_PI_Controller {
                 // -----------------------------------------------------------
                 String customerCode = productIdToCustomerCode.get(oi.Product2Id);
                 
-                if (String.isNotBlank(customerCode)) {
-                    lineItem.marksAndNos = customerCode;
-                } 
-                else {
-                    lineItem.marksAndNos = '';
-                }
+                /* if (String.isNotBlank(customerCode)) {
+lineItem.marksAndNos = customerCode;
+} 
+else {
+lineItem.marksAndNos = '';
+}*/
                 
                 lineItem.description = 
                     oi.Description != null ? oi.Description : oi.Product2.Name;
+                lineItem.marksAndNos = 
+                    oi.DRC_NBC_MARKS_NOS__c != null ? oi.DRC_NBC_MARKS_NOS__c : oi.Product2.Name;
                 
-                String hazardousValue = String.valueOf(oi.Product2.DRC_NBC_Hazardous__c);
+                String hazardousValue = String.valueOf(oi.DRC_NBC_Hazardous__c);
                 lineItem.hazardous = 
                     (hazardousValue == 'true' || hazardousValue == 'Yes') ? 'Yes' : 'No';
                 
                 lineItem.hscCode       = oi.Product2.DRC_NBC_HSN_SAC_Code__c;
+                String packingQtyStr = oi.DRC_NBC_Packing_Quantity__c;
+                if (
+                    oi.Quantity != null &&
+                    String.isNotBlank(packingQtyStr)
+                ) {
+                    Decimal packingQty = Decimal.valueOf(packingQtyStr);
+                    
+                    if (packingQty > 0) {
+                        Decimal qtyPerPacking = oi.Quantity / packingQty;
+                        lineItem.quantityPerPacking = qtyPerPacking.setScale(2).toPlainString();
+                    } else {
+                        lineItem.quantityPerPacking = '';
+                    }
+                } else {
+                    lineItem.quantityPerPacking = '';
+                }
                 lineItem.kindOfPackage = oi.DRC_NBC_Packing_Size__c;
                 lineItem.quantityKgs   = oi.Quantity.setScale(2).toPlainString();
                 lineItem.rate          = oi.UnitPrice.setScale(2);
                 lineItem.amount        = oi.TotalPrice.setScale(2);
                 
                 items.add(lineItem);
-                totalAmount += oi.TotalPrice;
+                totalAmount += oi.TotalPrice != null ? oi.TotalPrice : 0;
             }
+            // Add Freight Charges if greater than 0
+            if (orderRecord.DRC_NBC_Fright_Charges__c != null &&
+                orderRecord.DRC_NBC_Fright_Charges__c > 0) {
+                    totalAmount += orderRecord.DRC_NBC_Fright_Charges__c;
+                }
+            
+            // Add Insurance if greater than 0
+            if (orderRecord.DRC_NBC_Insurance__c != null &&
+                orderRecord.DRC_NBC_Insurance__c > 0) {
+                    totalAmount += orderRecord.DRC_NBC_Insurance__c;
+                }
+            
+            // Add Other Tax Amount if greater than 0
+            if (orderRecord.DRC_NBC_Other_Tax_Amount__c != null &&
+                orderRecord.DRC_NBC_Other_Tax_Amount__c > 0) {
+                    totalAmount += orderRecord.DRC_NBC_Other_Tax_Amount__c;
+                }
             
             amountInWords = convertAmountToWords(totalAmount, orderRecord.CurrencyIsoCode);
-            
         } catch (Exception e) {
             ApexPages.addMessage(
                 new ApexPages.Message(ApexPages.Severity.ERROR,
@@ -327,11 +393,11 @@ public class Generate_Export_PI_Controller {
         if (num == 0) return 'ZERO';
         
         String[] ones  = new String[]{'','ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE'};
-        String[] teens = new String[]{'TEN','ELEVEN','TWELVE','THIRTEEN','FOURTEEN',
-                                      'FIFTEEN','SIXTEEN','SEVENTEEN','EIGHTEEN','NINETEEN'};
-        String[] tens  = new String[]{'','','TWENTY','THIRTY','FORTY','FIFTY','SIXTY','SEVENTY','EIGHTY','NINETY'};
-        
-        String result = '';
+            String[] teens = new String[]{'TEN','ELEVEN','TWELVE','THIRTEEN','FOURTEEN',
+                'FIFTEEN','SIXTEEN','SEVENTEEN','EIGHTEEN','NINETEEN'};
+                    String[] tens  = new String[]{'','','TWENTY','THIRTY','FORTY','FIFTY','SIXTY','SEVENTY','EIGHTY','NINETY'};
+                        
+                        String result = '';
         Boolean isINR = (currencies == 'INR');
         
         if (!isINR) {
@@ -425,13 +491,13 @@ public class Generate_Export_PI_Controller {
     }
     
     public String getFormattedEffectiveDate() {
-        if (orderRecord != null && orderRecord.EffectiveDate != null) {
-            DateTime dt = DateTime.newInstance(orderRecord.EffectiveDate, Time.newInstance(0, 0, 0, 0));
+        if (orderRecord != null && orderRecord.PODate != null) {
+            DateTime dt = DateTime.newInstance(orderRecord.PODate, Time.newInstance(0, 0, 0, 0));
             return dt.format('dd-MMM-yyyy');
         }
         return '';
     }
-
+    
     // ======================
     // LINE ITEM CLASS
     // ======================
@@ -440,9 +506,28 @@ public class Generate_Export_PI_Controller {
         public String  description    { get; set; }
         public String  hazardous      { get; set; }
         public String  hscCode        { get; set; }
+        public String  quantityPerPacking { get; set; }
         public String  kindOfPackage  { get; set; }
         public String  quantityKgs    { get; set; }
         public Decimal rate           { get; set; }
         public Decimal amount         { get; set; }
+    }
+    
+    public Boolean getShowFreightCharges() {
+        return orderRecord != null &&
+            orderRecord.DRC_NBC_Fright_Charges__c != null &&
+            orderRecord.DRC_NBC_Fright_Charges__c > 0;
+    }
+    
+    public Boolean getShowInsurance() {
+        return orderRecord != null &&
+            orderRecord.DRC_NBC_Insurance__c != null &&
+            orderRecord.DRC_NBC_Insurance__c > 0;
+    }
+    
+    public Boolean getShowOtherTaxAmount() {
+        return orderRecord != null &&
+            orderRecord.DRC_NBC_Other_Tax_Amount__c != null &&
+            orderRecord.DRC_NBC_Other_Tax_Amount__c > 0;
     }
 }

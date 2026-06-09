@@ -182,13 +182,13 @@
                 
                 /* Special Instructions aligned toward middle-right */
                 .SpecialInstruction-inline {
-                  position: absolute;
+                position: absolute;
                 top: 0;
                 left: 320px;
                 width: 300px;
                 font-size: 8pt;
                 padding-left: 30px;
-                margin-top: -1px;
+                margin-top: -2px;
                 page-break-inside: avoid;
                 
                 }
@@ -314,7 +314,7 @@
                         </td>
                         <td style="vertical-align: top; padding-top: 5px; padding-left: 25px;">
                             <p style="margin: 0; font-size: 8pt;"><strong>TO SHIPPED</strong></p>
-                             <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!consigneeName}</p>
+                            <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!consigneeName}</p>
                             <p style="margin: 0; font-size: 8pt; font-weight: bold;">{!orderRecord.ShippingStreet}</p>
                             <p style="margin: 0; font-size: 8pt;">{!orderRecord.ShippingCity}</p>
                             <p style="margin: 0; font-size: 8pt;">{!orderRecord.ShippingState} {!orderRecord.ShippingPostalCode} {!orderRecord.ShippingCountry}</p>
@@ -453,21 +453,32 @@
                     <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
                         {!orderRecord.CurrencyIsoCode}
                     </td>
-                </tr>                             
+                </tr>     
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
+                        <strong>Delivery Terms </strong>
+                    </td>
+                </tr>                
+                <!-- Row 6: Values -->
+                <tr>
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                        {!orderRecord.DRC_NBC_Delivery_Terms__c}
+                    </td>
+                </tr>        
             </table>            
             <!-- Items Table -->
             <table class="items-table">
                 <thead>
                     <tr>
                         <th style="width: 4%;">No.</th>
-                        <th style="width: 20%;">Item Refrence No.</th>
+                        <th style="width: 20%;">Marks &amp; NOS</th>
                         <th style="width: 20%;">DESCRIPTION OF GOODS</th>
                         <th style="width: 5%;">Hazardous</th>
                         <th style="width: 8%;">HSC Code</th>
                         <th style="width: 8%;">KIND OF PKG</th>
                         <th style="width: 10%;">QUANTITY IN KGS</th>
-                        <th style="width: 9%;">RATE {!Inco} {!orderRecord.CurrencyIsoCode}</th>
-                        <th style="width: 10%;">AMOUNT {!Inco} {!orderRecord.CurrencyIsoCode}</th>
+                        <th style="width: 9%;">RATE {!incoTermCode} {!orderRecord.CurrencyIsoCode}</th>
+                        <th style="width: 10%;">AMOUNT {!incoTermCode} {!orderRecord.CurrencyIsoCode}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -479,7 +490,7 @@
                             <td class="left"><strong>{!item.description}</strong></td>
                             <td class="left">{!item.hazardous}</td>
                             <td class="left">{!item.hscCode}</td>
-                            <td class="left">{!item.kindOfPackage}</td>
+                            <td class="left">{!item.quantityPerPacking} {!item.kindOfPackage}</td>
                             <td class="right">{!item.quantityKgs}</td>
                             <td class="right">{!item.rate}</td>
                             <td class="right">{!item.amount}</td>
@@ -490,13 +501,44 @@
             </table>
             
             <!-- Total Section -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 8pt; font-weight: bold; margin: 10px 0;">
-                <div style="text-align: left; margin-left: 10px; max-width: 70%; word-wrap: break-word; white-space: normal;">
-                    {!orderRecord.CurrencyIsoCode} {!amountInWords}
+            <!--<div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 8pt; font-weight: bold; margin: 10px 0;">
+<div style="text-align: left; margin-left: 10px; max-width: 70%; word-wrap: break-word; white-space: normal;">
+{!orderRecord.CurrencyIsoCode} {!amountInWords}
+</div>
+<div style="text-align: right; margin-top: -13px;">
+TOTAL {!totalAmount} {!orderRecord.CurrencyIsoCode}
+</div>
+</div>-->
+            <!-- Charges and Total Section -->
+            <div style="font-size: 8pt; font-weight: bold; margin: 10px 0;">
+                
+                <apex:outputPanel rendered="{!showFreightCharges}">
+                    <div style="text-align: right; margin-bottom: 3px;">
+                        FREIGHT CHARGES = {!orderRecord.DRC_NBC_Fright_Charges__c} {!orderRecord.CurrencyIsoCode}
+                    </div>
+                </apex:outputPanel>
+                
+                <apex:outputPanel rendered="{!showInsurance}">
+                    <div style="text-align: right; margin-bottom: 3px;">
+                        INSURANCE = {!orderRecord.DRC_NBC_Insurance__c} {!orderRecord.CurrencyIsoCode}
+                    </div>
+                </apex:outputPanel>
+                
+                <apex:outputPanel rendered="{!showOtherTaxAmount}">
+                    <div style="text-align: right; margin-bottom: 3px;">
+                        OTHER TAX AMOUNT  = {!orderRecord.DRC_NBC_Other_Tax_Amount__c} {!orderRecord.CurrencyIsoCode}
+                    </div>
+                </apex:outputPanel>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 7px;">
+                    <div style="text-align: left; margin-left: 10px; max-width: 70%; word-wrap: break-word; white-space: normal;">
+                        {!orderRecord.CurrencyIsoCode} {!amountInWords}
+                    </div>
+                    <div style="text-align: right;  margin-top: 7px;">
+                        TOTAL {!totalAmount} {!orderRecord.CurrencyIsoCode}
+                    </div>
                 </div>
-                <div style="text-align: right; margin-top: -13px;">
-                    TOTAL {!totalAmount} {!orderRecord.CurrencyIsoCode}
-                </div>
+                
             </div>
             
             <div class="header-divider1"></div>
@@ -512,14 +554,14 @@
                     <div class="documents-section">
                         
                         <!-- Required Documents : Show only if list is not empty -->
-                        <apex:outputPanel rendered="{!requiredDocuments.size > 0}">
+                        <!--<apex:outputPanel rendered="{!requiredDocuments.size > 0}">-->
                             <h3>Required Documents</h3>
                             <ul>
                                 <apex:repeat value="{!requiredDocuments}" var="doc">
                                     <li>{!doc}</li>
                                 </apex:repeat>
                             </ul>
-                        </apex:outputPanel>
+                       <!-- </apex:outputPanel>-->
                         
                         <!-- Special Instructions : Show only if not blank -->
                         <apex:outputPanel rendered="{!NOT(ISBLANK(orderRecord.DRC_NBC_Special_Instructions__c))}">

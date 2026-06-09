@@ -47,26 +47,15 @@
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="DRC_NBC_Type__c" onchange={handleFieldChange} required></lightning-input-field>
                             </div>
-                          <!--  <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Payment_Term_Description__c" onchange={handleFieldChange} required></lightning-input-field>
-                            </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Payemnt_Term__c" onchange={handleFieldChange} required></lightning-input-field>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Inco_terms__c" onchange={handleFieldChange} required></lightning-input-field>
-                            </div>-->
-
-                           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field 
-                                    field-name="DRC_NBC_Payment_Term_Description__c" 
+                                <lightning-input-field
+                                    field-name="DRC_NBC_Payment_Term_Description__c"
                                     value={quoteRec.DRC_NBC_Payment_Term_Description__c}
                                     onchange={handleFieldChange}>
                                 </lightning-input-field>
                             </div>
-                           
-                           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field 
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-input-field
                                     field-name="DRC_NBC_Inco_terms__c"
                                     value={quoteRec.DRC_NBC_Inco_terms__c}
                                     onchange={handleFieldChange}>
@@ -83,7 +72,7 @@
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="Description" onchange={handleFieldChange}></lightning-input-field>
                             </div>
-                           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field
                                     field-name="DRC_NBC_Special_Requirements__c"
                                     value={quoteRec.DRC_NBC_Special_Requirements__c}
@@ -158,17 +147,17 @@
 
                         <!-- Email -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input label="Email"  value={selectedContactEmail} required disabled></lightning-input>
+                            <lightning-input label="Email" value={selectedContactEmail} required disabled></lightning-input>
                         </div>
 
                         <!-- Phone -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input label="Phone"  value={selectedContactPhone} required disabled></lightning-input>
+                            <lightning-input label="Phone" value={selectedContactPhone} required disabled></lightning-input>
                         </div>
 
                         <!-- Fax -->
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input label="Fax"    value={selectedContactFax}   disabled></lightning-input>
+                            <lightning-input label="Fax" value={selectedContactFax} disabled></lightning-input>
                         </div>
                     </div>
                 </div>
@@ -270,6 +259,10 @@
                                                 <th style="text-align: center;">HSN Code</th>
                                                 <th>Quantity <span style="color: red;">*</span></th>
                                                 <th style="text-align: center;">UOM</th>
+                                                <th style="text-align: center;">Hazardous</th>
+                                                <template if:true={isExport}>
+                                                    <th style="padding-right: 2.5rem;">Marks &amp; Nos</th>
+                                                </template>
                                                 <th style="padding-right: 2.5rem;">Packing Size</th>
                                                 <th style="text-align: center;">Packing Quantity</th>
                                                 <th style="padding-right: 2.5rem;">Sales Price</th>
@@ -340,7 +333,7 @@
                                                     <!-- HSN Code -->
                                                     <td style="text-align: center;">{data.recordData.DRC_NBC_HSN_SAC_Code__c}</td>
 
-                                                    <!-- Quantity — with inline error message -->
+                                                    <!-- Quantity -->
                                                     <td class="input-cell">
                                                         <div>
                                                             <lightning-input
@@ -351,7 +344,6 @@
                                                                 data-index={index}
                                                                 onchange={handleQuantityChange}>
                                                             </lightning-input>
-                                                            <!-- Inline error shown below the field -->
                                                             <template if:true={data.recordData.quantityError}>
                                                                 <p style="color: #c23934; font-size: 0.75rem; margin-top: 2px; white-space: normal; max-width: 200px;">
                                                                     {data.recordData.quantityError}
@@ -362,6 +354,31 @@
 
                                                     <!-- UOM -->
                                                     <td style="text-align: center; vertical-align: middle;">{data.recordData.DRC_NBC_Unit_Of_Measurement__c}</td>
+
+                                                    <!-- Hazardous — pre-filled from Product2, editable by user -->
+                                                    <td style="text-align: center; vertical-align: middle;">
+                                                        <lightning-input
+                                                            type="checkbox"
+                                                            variant="label-hidden"
+                                                            name="DRC_NBC_Hazardous__c"
+                                                            data-index={index}
+                                                            checked={data.recordData.DRC_NBC_Hazardous__c}
+                                                            onchange={handleCheckboxChange}>
+                                                        </lightning-input>
+                                                    </td>
+
+                                                    <!-- Marks & Nos — pre-filled from Product2, editable by user (Export only) -->
+                                                    <template if:true={isExport}>
+                                                        <td class="input-cell">
+                                                            <lightning-input
+                                                                style="width: 180px;"
+                                                                value={data.recordData.DRC_NBC_MARKS_NOS__c}
+                                                                name="DRC_NBC_MARKS_NOS__c"
+                                                                data-index={index}
+                                                                onchange={handleValueChange}>
+                                                            </lightning-input>
+                                                        </td>
+                                                    </template>
 
                                                     <!-- Packing Size -->
                                                     <td class="input-cell">
@@ -381,7 +398,7 @@
                                                         </template>
                                                     </td>
 
-                                                    <!-- Packing Quantity (calculated, read-only) -->
+                                                    <!-- Packing Quantity (read-only) -->
                                                     <td style="text-align: center; vertical-align: middle;">
                                                         <template if:true={data.recordData.packingQuantity}>
                                                             {data.recordData.packingQuantity}

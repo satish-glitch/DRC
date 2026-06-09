@@ -882,6 +882,65 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '</soap:Envelope>';
     }
     
+    /*  private static String buildUpdateOrderSOAPRequest(
+String bcKey,
+DRC_NBC_Integration_Payload.OrderPayload payload,
+Order ord) {
+
+if (String.isNotBlank(ord.DRC_NBC_Warehouse__c)) {
+List<Warehouse_Location_Code__mdt> metaList = [
+SELECT DRC_NBC_Code__c FROM Warehouse_Location_Code__mdt
+WHERE MasterLabel = :ord.DRC_NBC_Warehouse__c
+AND DRC_NBC_Type__c = 'Warehouse Location'
+LIMIT 1
+];
+if (!metaList.isEmpty()) {
+payload.Location_Code = metaList[0].DRC_NBC_Code__c;
+}
+}
+
+System.debug('Order Payload => ' + JSON.serialize(payload));
+System.debug('bcKey => ' + bcKey);
+System.debug('Order Id => ' + ord.Id);
+
+return
+'<?xml version="1.0" encoding="utf-8"?>' +
+'<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
+'<soap:Body>' +
+'<Update xmlns="' + SOAP_ORDER_NAMESPACE + '">' +
+'<SalesOrderSalesForce>' +
+'<Key>'                         + escapeXml(bcKey)                               + '</Key>' +
+'<No>'                          + escapeXml(payload.No)                          + '</No>' +
+'<Document_Type>Order</Document_Type>' +
+'<Sell_to_Customer_No>'         + escapeXml(payload.Sell_to_Customer_No)         + '</Sell_to_Customer_No>' +
+'<Sell_to_Customer_Name>'       + escapeXml(payload.Sell_to_Customer_Name)       + '</Sell_to_Customer_Name>' +
+'<Sell_to_Address>'             + escapeXml(payload.Sell_to_Address)             + '</Sell_to_Address>' +
+'<Sell_to_Address_2>'           + escapeXml(payload.Sell_to_Address_2)           + '</Sell_to_Address_2>' +
+'<Sell_to_City>'                + escapeXml(payload.Sell_to_City)                + '</Sell_to_City>' +
+'<Sell_to_Post_Code>'           + escapeXml(payload.Sell_to_Post_Code)           + '</Sell_to_Post_Code>' +
+'<Order_Date>'                  + escapeXml(payload.Order_Date)                  + '</Order_Date>' +
+'<External_Document_No>'        + escapeXml(payload.External_Document_No)        + '</External_Document_No>' +
+'<Salesperson_Code>'            + escapeXml(payload.Salesperson_Code)            + '</Salesperson_Code>' +
+'<Status>Open</Status>' +
+'<Location_Code>' + escapeXml(payload.Location_Code) +  '</Location_Code>' +
+'<Payment_Terms_Code>'          + escapeXml(payload.Payment_Terms_Code)          + '</Payment_Terms_Code>' +
+'<Shipment_Method_Code>'        + escapeXml(payload.Shipment_Method_Code)        + '</Shipment_Method_Code>' +
+'<Sample_Sales>'                + payload.Sample_Sales                           + '</Sample_Sales>' +
+'<Salesforce_So_No>'            + escapeXml(payload.Salesforce_So_No)            + '</Salesforce_So_No>' +
+'<Ship_to_Code>'                + escapeXml(payload.Ship_to_Code)                + '</Ship_to_Code>' +
+'<Ship_to_Name>'                + escapeXml(payload.Ship_to_Name)                + '</Ship_to_Name>' +
+'<Ship_to_Name_2>'              + escapeXml(payload.Ship_to_Name_2)              + '</Ship_to_Name_2>' +
+'<Ship_to_Address>'             + escapeXml(payload.Ship_to_Address)             + '</Ship_to_Address>' +
+'<Ship_to_Address_2>'           + escapeXml(payload.Ship_to_Address_2)           + '</Ship_to_Address_2>' +
+'<Ship_to_Post_Code>'           + escapeXml(payload.Ship_to_Post_Code)           + '</Ship_to_Post_Code>' +
+'<Ship_to_Country_Region_Code>' + escapeXml(payload.Ship_to_Country_Region_Code) + '</Ship_to_Country_Region_Code>' +
+'<Salesforce_Order_Amount>'     + payload.Salesforce_Order_Amount                + '</Salesforce_Order_Amount>' +
+'<Salesforce_Order_Created>'    + payload.Salesforce_Order_Created               + '</Salesforce_Order_Created>' +
+'</SalesOrderSalesForce>' +
+'</Update>' +
+'</soap:Body>' +
+'</soap:Envelope>';
+}*/
     private static String buildUpdateOrderSOAPRequest(
         String bcKey,
         DRC_NBC_Integration_Payload.OrderPayload payload,
@@ -900,46 +959,134 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             }
             
             System.debug('Order Payload => ' + JSON.serialize(payload));
-            System.debug('bcKey => ' + bcKey);
-            System.debug('Order Id => ' + ord.Id);
+            System.debug('bcKey => '         + bcKey);
+            System.debug('Order Id => '      + ord.Id);
+            System.debug('Order Type => '    + ord.DRC_NBC_Type__c);
             
-            return
+            // ── Determine order type flags ───────────────────────────────────────────
+            Boolean isDomestic = ord.DRC_NBC_Type__c == 'Domestic';
+            Boolean isExport   = ord.DRC_NBC_Type__c == 'Export';
+            Boolean isSample   = (ord.RecordType != null && ord.DRC_NBC_Record_Type_Name__c == 'Sample Order');
+            
+            // ── Safely handle nullable String fields ─────────────────────────────────
+            String dispatchDateVal            = String.isNotBlank(payload.DispatchDate)
+                ? payload.DispatchDate : '';
+            String poDateVal                  = String.isNotBlank(payload.PO_Date)
+                ? payload.PO_Date : '';
+            String requestedDeliveryDateVal   = String.isNotBlank(payload.Requested_Delivery_Date)
+                ? payload.Requested_Delivery_Date : '';
+            String courierDateVal             = String.isNotBlank(payload.Courier_Date)
+                ? payload.Courier_Date : '';
+            String modeOfTransportVal         = String.isNotBlank(payload.Mode_of_Transport)
+                ? payload.Mode_of_Transport : '';
+            String companyBankCodeVal         = String.isNotBlank(payload.Company_Bank_Account_Code_New)
+                ? payload.Company_Bank_Account_Code_New : '';
+            String partShipmentVal            = String.isNotBlank(payload.Part_Shipment)
+                ? payload.Part_Shipment : '';
+            String transShipmentVal           = String.isNotBlank(payload.Trans_Shipment)
+                ? payload.Trans_Shipment : '';
+            
+            // ── Domestic-specific ────────────────────────────────────────────────────
+            String transporterCodeVal         = String.isNotBlank(payload.Transporter_Code)
+                ? payload.Transporter_Code : '';
+            String courierNumberVal           = String.isNotBlank(payload.Courier_Number)
+                ? payload.Courier_Number : '';
+            
+            // ── Export-specific ──────────────────────────────────────────────────────
+            String countryOfOriginVal         = String.isNotBlank(payload.Country_Of_Origin_Of_Goods)
+                ? payload.Country_Of_Origin_Of_Goods : '';
+            String countryOfFinalDestVal      = String.isNotBlank(payload.Country_Of_Final_Destination)
+                ? payload.Country_Of_Final_Destination : '';
+            String notifyNameVal              = String.isNotBlank(payload.Notify_Name)
+                ? payload.Notify_Name : '';
+            String vesselFlightNoVal          = String.isNotBlank(payload.Vessel_Flight_No)
+                ? payload.Vessel_Flight_No : '';
+            String portOfDischargeVal         = String.isNotBlank(payload.Port_Of_Discharge)
+                ? payload.Port_Of_Discharge : '';
+            String portOfLoadingVal           = String.isNotBlank(payload.Port_of_Loading)
+                ? payload.Port_of_Loading : '';
+            String finalDestinationVal        = String.isNotBlank(payload.Final_Destination)
+                ? payload.Final_Destination : '';
+            String placeOfReceiptVal          = String.isNotBlank(payload.Place_of_receipt_pre_carrier)
+                ? payload.Place_of_receipt_pre_carrier : '';
+            String currencyCodeVal            = String.isNotBlank(payload.Currency_Code)
+                ? payload.Currency_Code : '';
+            
+            // ── Build common SOAP body ───────────────────────────────────────────────
+            String soapBody =
                 '<?xml version="1.0" encoding="utf-8"?>' +
                 '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
                 '<soap:Body>' +
                 '<Update xmlns="' + SOAP_ORDER_NAMESPACE + '">' +
                 '<SalesOrderSalesForce>' +
-                '<Key>'                         + escapeXml(bcKey)                               + '</Key>' +
-                '<No>'                          + escapeXml(payload.No)                          + '</No>' +
+                
+                // ── Core fields (all order types) ────────────────────────────────────
+                '<Key>'                             + escapeXml(bcKey)                               + '</Key>' +
+                '<No>'                              + escapeXml(payload.No)                          + '</No>' +
                 '<Document_Type>Order</Document_Type>' +
-                '<Sell_to_Customer_No>'         + escapeXml(payload.Sell_to_Customer_No)         + '</Sell_to_Customer_No>' +
-                '<Sell_to_Customer_Name>'       + escapeXml(payload.Sell_to_Customer_Name)       + '</Sell_to_Customer_Name>' +
-                '<Sell_to_Address>'             + escapeXml(payload.Sell_to_Address)             + '</Sell_to_Address>' +
-                '<Sell_to_Address_2>'           + escapeXml(payload.Sell_to_Address_2)           + '</Sell_to_Address_2>' +
-                '<Sell_to_City>'                + escapeXml(payload.Sell_to_City)                + '</Sell_to_City>' +
-                '<Sell_to_Post_Code>'           + escapeXml(payload.Sell_to_Post_Code)           + '</Sell_to_Post_Code>' +
-                '<Order_Date>'                  + escapeXml(payload.Order_Date)                  + '</Order_Date>' +
-                '<External_Document_No>'        + escapeXml(payload.External_Document_No)        + '</External_Document_No>' +
-                '<Salesperson_Code>'            + escapeXml(payload.Salesperson_Code)            + '</Salesperson_Code>' +
+                '<Sell_to_Customer_No>'             + escapeXml(payload.Sell_to_Customer_No)         + '</Sell_to_Customer_No>' +
+                '<Sell_to_Customer_Name>'           + escapeXml(payload.Sell_to_Customer_Name)       + '</Sell_to_Customer_Name>' +
+                '<Sell_to_Address>'                 + escapeXml(payload.Sell_to_Address)             + '</Sell_to_Address>' +
+                '<Sell_to_Address_2>'               + escapeXml(payload.Sell_to_Address_2)           + '</Sell_to_Address_2>' +
+                '<Sell_to_City>'                    + escapeXml(payload.Sell_to_City)                + '</Sell_to_City>' +
+                '<Sell_to_Post_Code>'               + escapeXml(payload.Sell_to_Post_Code)           + '</Sell_to_Post_Code>' +
+                '<Order_Date>'                      + escapeXml(payload.Order_Date)                  + '</Order_Date>' +
+                '<External_Document_No>'            + escapeXml(payload.External_Document_No)        + '</External_Document_No>' +
+                '<Salesperson_Code>'                + escapeXml(payload.Salesperson_Code)            + '</Salesperson_Code>' +
                 '<Status>Open</Status>' +
-                '<Location_Code>' + escapeXml(payload.Location_Code) +  '</Location_Code>' +
-                '<Payment_Terms_Code>'          + escapeXml(payload.Payment_Terms_Code)          + '</Payment_Terms_Code>' +
-                '<Shipment_Method_Code>'        + escapeXml(payload.Shipment_Method_Code)        + '</Shipment_Method_Code>' +
-                '<Sample_Sales>'                + payload.Sample_Sales                           + '</Sample_Sales>' +
-                '<Salesforce_So_No>'            + escapeXml(payload.Salesforce_So_No)            + '</Salesforce_So_No>' +
-                '<Ship_to_Code>'                + escapeXml(payload.Ship_to_Code)                + '</Ship_to_Code>' +
-                '<Ship_to_Name>'                + escapeXml(payload.Ship_to_Name)                + '</Ship_to_Name>' +
-                '<Ship_to_Name_2>'              + escapeXml(payload.Ship_to_Name_2)              + '</Ship_to_Name_2>' +
-                '<Ship_to_Address>'             + escapeXml(payload.Ship_to_Address)             + '</Ship_to_Address>' +
-                '<Ship_to_Address_2>'           + escapeXml(payload.Ship_to_Address_2)           + '</Ship_to_Address_2>' +
-                '<Ship_to_Post_Code>'           + escapeXml(payload.Ship_to_Post_Code)           + '</Ship_to_Post_Code>' +
-                '<Ship_to_Country_Region_Code>' + escapeXml(payload.Ship_to_Country_Region_Code) + '</Ship_to_Country_Region_Code>' +
-                '<Salesforce_Order_Amount>'     + payload.Salesforce_Order_Amount                + '</Salesforce_Order_Amount>' +
-                '<Salesforce_Order_Created>'    + payload.Salesforce_Order_Created               + '</Salesforce_Order_Created>' +
+                '<Location_Code>'                   + escapeXml(payload.Location_Code)               + '</Location_Code>' +
+                '<Payment_Terms_Code>'              + escapeXml(payload.Payment_Terms_Code)          + '</Payment_Terms_Code>' +
+                '<Shipment_Method_Code>'            + escapeXml(payload.Shipment_Method_Code)        + '</Shipment_Method_Code>' +
+                '<Sample_Sales>'                    + payload.Sample_Sales                           + '</Sample_Sales>' +
+                '<Salesforce_So_No>'                + escapeXml(payload.Salesforce_So_No)            + '</Salesforce_So_No>' +
+                '<Ship_to_Code>'                    + escapeXml(payload.Ship_to_Code)                + '</Ship_to_Code>' +
+                '<Ship_to_Name>'                    + escapeXml(payload.Ship_to_Name)                + '</Ship_to_Name>' +
+                '<Ship_to_Name_2>'                  + escapeXml(payload.Ship_to_Name_2)              + '</Ship_to_Name_2>' +
+                '<Ship_to_Address>'                 + escapeXml(payload.Ship_to_Address)             + '</Ship_to_Address>' +
+                '<Ship_to_Address_2>'               + escapeXml(payload.Ship_to_Address_2)           + '</Ship_to_Address_2>' +
+                '<Ship_to_Post_Code>'               + escapeXml(payload.Ship_to_Post_Code)           + '</Ship_to_Post_Code>' +
+                '<Ship_to_Country_Region_Code>'     + escapeXml(payload.Ship_to_Country_Region_Code) + '</Ship_to_Country_Region_Code>' +
+                '<Salesforce_Order_Amount>'         + payload.Salesforce_Order_Amount                + '</Salesforce_Order_Amount>' +
+                '<Salesforce_Order_Created>'        + payload.Salesforce_Order_Created               + '</Salesforce_Order_Created>' +
+                
+                // ── Shared across all types ───────────────────────────────────────────
+                '<Export_Document>'                 + payload.Export_Document                        + '</Export_Document>' +
+                '<Company_Bank_Account_Code_New>'   + escapeXml(companyBankCodeVal)                  + '</Company_Bank_Account_Code_New>' +
+                '<PO_Date>'                         + escapeXml(poDateVal)                           + '</PO_Date>' +
+                '<Requested_Delivery_Date>'         + escapeXml(requestedDeliveryDateVal)            + '</Requested_Delivery_Date>' +
+                '<Courier_Date>'                    + escapeXml(courierDateVal)                      + '</Courier_Date>' +
+                '<DispatchDate>'                    + escapeXml(dispatchDateVal)                     + '</DispatchDate>' +
+                '<Mode_of_Transport>'               + escapeXml(modeOfTransportVal)                  + '</Mode_of_Transport>' +
+                '<Part_Shipment>'                   + escapeXml(partShipmentVal)                     + '</Part_Shipment>' +
+                '<Trans_Shipment>'                  + escapeXml(transShipmentVal)                    + '</Trans_Shipment>';
+            
+            // ── DOMESTIC specific fields ─────────────────────────────────────────────
+            System.debug('Adding Domestic/Sample specific fields...');
+            soapBody +=
+                '<Transporter_Code>'            + escapeXml(transporterCodeVal)                  + '</Transporter_Code>' +
+                '<Courier_Number>'              + escapeXml(courierNumberVal)                    + '</Courier_Number>';
+            
+            // ── EXPORT specific fields ───────────────────────────────────────────────
+            soapBody +=
+                '<Currency_Code>'               + escapeXml(currencyCodeVal)                     + '</Currency_Code>' +
+                '<Country_Of_Origin_Of_Goods>'  + escapeXml(countryOfOriginVal)                  + '</Country_Of_Origin_Of_Goods>' +
+                '<Country_Of_Final_Destination>'+ escapeXml(countryOfFinalDestVal)               + '</Country_Of_Final_Destination>' +
+                '<Notify_Name>'                 + escapeXml(notifyNameVal)                        + '</Notify_Name>' +
+                '<Place_of_receipt_pre_carrier>'+ escapeXml(placeOfReceiptVal)                   + '</Place_of_receipt_pre_carrier>' +
+                '<Vessel_Flight_No>'            + escapeXml(vesselFlightNoVal)                   + '</Vessel_Flight_No>' +
+                '<Port_Of_Discharge>'           + escapeXml(portOfDischargeVal)                  + '</Port_Of_Discharge>' +
+                '<Port_of_Loading>'             + escapeXml(portOfLoadingVal)                    + '</Port_of_Loading>' +
+                '<Final_Destination>'           + escapeXml(finalDestinationVal)                 + '</Final_Destination>';
+            
+            // ── Close envelope ───────────────────────────────────────────────────────
+            soapBody +=
                 '</SalesOrderSalesForce>' +
                 '</Update>' +
                 '</soap:Body>' +
                 '</soap:Envelope>';
+            
+            System.debug('SOAP Request Body: ' + soapBody);
+            return soapBody;
         }
     
     private static String buildReadMultipleSOAPRequest(String bcOrderNo) {

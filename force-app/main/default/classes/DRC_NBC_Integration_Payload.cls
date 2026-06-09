@@ -46,6 +46,8 @@ global with sharing class DRC_NBC_Integration_Payload {
         global String ProductCategoryL1;
         global String ProductCategoryL2;
         global String ProductCategoryL3;
+        global boolean hazardous;
+        global String marksnos;
     }
     
     global class PackingDetail {
@@ -87,20 +89,33 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Home_Page;
         public String Business_type;
         public String Other_E_Mail;
-         public String Salesperson_Code;
+        public String Salesperson_Code;
+        public String Transporter_Code;
     }
     
     // Add inside DRC_NBC_Integration_Payload class
     global class CustomerItemPayload {
         public String Cust_No;
         public String Item_No;
-       // public String Item_Description;
+        // public String Item_Description;
         public String UOM;
         public Decimal Unit_Price;
         public Decimal Quantity_Month;
         public Decimal Amount;
         public String Remarks;
     } 
+    
+    global class CustomerItemReferencePayload {
+        public String Item_No;
+        public String Variant_Code;
+        public String Unit_of_Measure;
+        public String Reference_Type;
+        public String Reference_Type_No;
+        public String Reference_No;
+        public String Reference_Type_Name;
+        public String Description;
+        public String Description_2;
+    }
     
     global class ConsigneeBankPayload {
         public String Customer_No;
@@ -187,6 +202,7 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Mode_of_Transport;
         public String Courier_Number;
         public String Courier_Date;
+        public String Delivery_Terms;
     }
     
     public class OrderLinePayload {
@@ -210,6 +226,12 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String GST_Group_Code;
         public String Packing_Details;
         public Decimal No_of_Pkg_for_Qty;
+        public Boolean Hazardous;
+        public String MarkNosContainerNos;
+        public String Item_Reference_No;
+        public String Item_Reference_Type;
+        public String Item_Reference_Type_No;
+        public String Item_Reference_Unit_of_Measure;
     }
     
     public class BCResponse {
