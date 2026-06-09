@@ -352,4 +352,148 @@ public class DRC_NBC_Shipping_Integration_SOAP_Test {
         Test.stopTest();
         
     }
+    
+    private static DRC_NBC_Integration_Payload.ShipToPayload makePayload() {
+        DRC_NBC_Integration_Payload.ShipToPayload payload =
+            new DRC_NBC_Integration_Payload.ShipToPayload();
+        
+        payload.CustomerNo = 'CUST001';
+        payload.ShiptoCode = 'SHP001';
+        payload.Name = 'Test Customer';
+        payload.ShippingAddress = '123 Test Street';
+        payload.ShippingAddress2 = '';
+        payload.ShippingCity = 'Mumbai';
+        payload.State = 'MH';
+        payload.ShippingPostCode = '400001';
+        payload.ShippingCountry = 'IND';
+        payload.ShippingPhoneNo = '1234567890';
+        payload.ShippingGSTRegistrationNo = '27AWVPY9594J1ZY';
+        payload.Ship_to_GST_Customer_Type = 'Registered';
+        
+        return payload;
+    }
+    
+    // Covers: faultString != null ? faultString.getText()
+    private class MockUpdateSoapFaultWithFaultString implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(500);
+            res.setBody(
+                '<?xml version="1.0"?>'
+                + '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">'
+                +   '<soapenv:Body>'
+                +     '<soapenv:Fault>'
+                +       '<faultcode>soapenv:Server</faultcode>'
+                +       '<faultstring>Record not found in BC</faultstring>'
+                +     '</soapenv:Fault>'
+                +   '</soapenv:Body>'
+                + '</soapenv:Envelope>'
+            );
+            return res;
+        }
+    }
+    
+    @isTest
+    static void testParseSoapFault_FaultStringCovered() {
+        Test.setMock(HttpCalloutMock.class, new MockUpdateSoapFaultWithFaultString());
+        
+        Test.startTest();
+        String result = DRC_NBC_Shipping_BC_Integration_SOAP.updateShipTo(
+            makePayload(),
+            'BC-KEY-12345'
+        );
+        Test.stopTest();
+        
+        System.assertEquals('FAILURE: Record not found in BC', result);
+    }
+    
+    // Covers: body == null
+    private class MockUpdateSoapFaultNoBody implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(500);
+            res.setBody(
+                '<?xml version="1.0"?>'
+                + '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">'
+                +   '<soapenv:Header/>'
+                + '</soapenv:Envelope>'
+            );
+            return res;
+        }
+    }
+    
+    @isTest
+    static void testParseSoapFault_NoBodyCovered() {
+        Test.setMock(HttpCalloutMock.class, new MockUpdateSoapFaultNoBody());
+        
+        Test.startTest();
+        String result = DRC_NBC_Shipping_BC_Integration_SOAP.updateShipTo(
+            makePayload(),
+            'BC-KEY-12345'
+        );
+        Test.stopTest();
+        
+        System.assertEquals('FAILURE: Unknown error (no Body).', result);
+    }
+    
+    // Covers: fault == null
+    private class MockUpdateSoapFaultNoFaultNode implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(500);
+            res.setBody(
+                '<?xml version="1.0"?>'
+                + '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">'
+                +   '<soapenv:Body>'
+                +     '<SomeOtherNode/>'
+                +   '</soapenv:Body>'
+                + '</soapenv:Envelope>'
+            );
+            return res;
+        }
+    }
+    
+    @isTest
+    static void testParseSoapFault_NoFaultNodeCovered() {
+        Test.setMock(HttpCalloutMock.class, new MockUpdateSoapFaultNoFaultNode());
+        
+        Test.startTest();
+        String result = DRC_NBC_Shipping_BC_Integration_SOAP.updateShipTo(
+            makePayload(),
+            'BC-KEY-12345'
+        );
+        Test.stopTest();
+    }
+    
+    // Covers: catch block
+    private class MockUpdateMalformedXml implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(500);
+            res.setBody('NOT VALID XML <<<>>>');
+            return res;
+        }
+    }
+    
+    @isTest
+    static void testParseSoapFault_MalformedXmlCovered() {
+        Test.setMock(HttpCalloutMock.class, new MockUpdateMalformedXml());
+        
+        Test.startTest();
+        String result = DRC_NBC_Shipping_BC_Integration_SOAP.updateShipTo(
+            makePayload(),
+            'BC-KEY-12345'
+        );
+        Test.stopTest();
+        
+    }
+    
+    @isTest
+	static void testUpsertShipTo_CatchBlock_NullPayload() {
+    Test.startTest();
+
+    String result = DRC_NBC_Shipping_BC_Integration_SOAP.upsertShipTo(null);
+
+    Test.stopTest();
+}
 }
