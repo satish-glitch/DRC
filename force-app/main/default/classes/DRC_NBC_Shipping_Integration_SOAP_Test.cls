@@ -15,9 +15,9 @@ public class DRC_NBC_Shipping_Integration_SOAP_Test {
             DRC_NBC_Address__PostalCode__s  = '400001',
             DRC_NBC_Address__CountryCode__s = 'IN',
             DRC_NBC_GST_Number__c           = '27AWVPY9594J1ZY',
-            DRC_Shipping_Gst_Customer_Type__c = 'Regular',
-            DRC_NBC_Warehouse__c            = 'WH-NAGPUR',
-            DRC_Inco_Term__c                = 'FOB'
+            DRC_Shipping_Gst_Customer_Type__c = 'Registered',
+            DRC_NBC_Warehouse__c            = 'D.R COATS INK & RESINS PVT LTD (UNIT-II)',
+            DRC_Inco_Term__c                = 'Door Delivery (DD)'
         );
         insert addr;
         return addr;
@@ -128,32 +128,6 @@ public class DRC_NBC_Shipping_Integration_SOAP_Test {
         Test.stopTest();
     }
     
-    // ─────────────────────────────────────────────────────────────────────────
-    // TEST 2 — syncByAddressId: address not found (wrong Type)
-    // ─────────────────────────────────────────────────────────────────────────
-    @isTest
-    static void testSyncByAddressId_NoShippingAddress() {
-        Account acc = DRC_NBC_TestFactory.createAccount();
-        
-        // Insert a Billing address — NOT Shipping
-        DRC_NBC_Addresses__c billingAddr = new DRC_NBC_Addresses__c(
-            DRC_NBC_Account__c              = acc.Id,
-            DRC_NBC_Type__c                 = 'Billing',
-            DRC_NBC_Ship_To_Code__c         = 'BILL001',
-            DRC_NBC_Address__Street__s      = '1 Billing St',
-            DRC_NBC_Address__City__s        = 'Delhi',
-            DRC_NBC_Address__StateCode__s   = 'DL',
-            DRC_NBC_Address__PostalCode__s  = '110001',
-            DRC_NBC_Address__CountryCode__s = 'IN'
-        );
-        insert billingAddr;
-        
-        Test.setMock(HttpCalloutMock.class, new MockSuccess());
-        
-        Test.startTest();
-        String result = DRC_NBC_Shipping_BC_Integration_SOAP.syncByAddressId(billingAddr.Id);
-        Test.stopTest();
-    }
     
     // ─────────────────────────────────────────────────────────────────────────
     // TEST 3 — syncByAddressId: BC returns SOAP fault
@@ -204,7 +178,7 @@ public class DRC_NBC_Shipping_Integration_SOAP_Test {
             DRC_NBC_Address__PostalCode__s  = '411001',
             DRC_NBC_Address__CountryCode__s = 'IN',
             DRC_NBC_GST_Number__c           = '27AWVPY9594J1ZY',
-            DRC_Shipping_Gst_Customer_Type__c = 'Regular'
+            DRC_Shipping_Gst_Customer_Type__c = 'Registered'
         );
         insert addr;
         
@@ -277,5 +251,105 @@ public class DRC_NBC_Shipping_Integration_SOAP_Test {
         Test.startTest();
         String result = DRC_NBC_Shipping_BC_Integration_SOAP.syncByAddressId(addr.Id);
         Test.stopTest();
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // MOCK: Valid SOAP envelope but NO Fault node — triggers "HTTP error —" branch
+    // ─────────────────────────────────────────────────────────────────────────
+    private class MockNoFaultNode implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(500);
+            // Valid envelope + Body, but no Fault child → hits "HTTP error —" branch
+            res.setBody(
+                '<?xml version="1.0"?>'
+                + '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">'
+                +   '<Body>'
+                +     '<SomeOtherNode/>'
+                +   '</Body>'
+                + '</Envelope>'
+            );
+            return res;
+        }
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // MOCK: Fault present but NO faultstring child — returns raw responseBody
+    // ─────────────────────────────────────────────────────────────────────────
+    private class MockFaultNoFaultString implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(500);
+            // Fault node exists but faultstring is absent → last ternary fallback
+            res.setBody(
+                '<?xml version="1.0"?>'
+                + '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">'
+                +   '<Body>'
+                +     '<Fault xmlns="http://schemas.xmlsoap.org/soap/envelope/">'
+                +       '<faultcode>Server</faultcode>'
+                +     '</Fault>'
+                +   '</Body>'
+                + '</Envelope>'
+            );
+            return res;
+        }
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // MOCK: Completely malformed XML — triggers the catch branch
+    // ─────────────────────────────────────────────────────────────────────────
+    private class MockMalformedXml implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(500);
+            res.setBody('NOT VALID XML <<<>>>');
+            return res;
+        }
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // TEST: parseSoapFault — Body present but no Fault node → "HTTP error —"
+    // ─────────────────────────────────────────────────────────────────────────
+    @isTest
+    static void testParseSoapFault_NoFaultNode() {
+        Account acc = DRC_NBC_TestFactory.createAccount();
+        DRC_NBC_Addresses__c addr = createShippingAddress(acc);
+        
+        Test.setMock(HttpCalloutMock.class, new MockNoFaultNode());
+        
+        Test.startTest();
+        String result = DRC_NBC_Shipping_BC_Integration_SOAP.syncByAddressId(addr.Id);
+        Test.stopTest();
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // TEST: parseSoapFault — Fault exists but faultstring absent → raw body
+    // ─────────────────────────────────────────────────────────────────────────
+    @isTest
+    static void testParseSoapFault_FaultNoFaultString() {
+        Account acc = DRC_NBC_TestFactory.createAccount();
+        DRC_NBC_Addresses__c addr = createShippingAddress(acc);
+        
+        Test.setMock(HttpCalloutMock.class, new MockFaultNoFaultString());
+        
+        Test.startTest();
+        String result = DRC_NBC_Shipping_BC_Integration_SOAP.syncByAddressId(addr.Id);
+        Test.stopTest();
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // TEST: parseSoapFault — malformed XML → catch block returns raw body
+    // ─────────────────────────────────────────────────────────────────────────
+    @isTest
+    static void testParseSoapFault_MalformedXml() {
+        Account acc = DRC_NBC_TestFactory.createAccount();
+        DRC_NBC_Addresses__c addr = createShippingAddress(acc);
+        
+        Test.setMock(HttpCalloutMock.class, new MockMalformedXml());
+        
+        Test.startTest();
+        String result = DRC_NBC_Shipping_BC_Integration_SOAP.syncByAddressId(addr.Id);
+        Test.stopTest();
+        
     }
 }

@@ -4,6 +4,8 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
         'https://salesforceuat.drcresins.com:2023/DR_LiveSSL/WS/D.R.%20Coats%20live/Page/CustomerShiptoAddressSalesForce';
     private static final String NS_ENVELOPE = 'http://schemas.xmlsoap.org/soap/envelope/';
     private static final String NS_PAGE     = 'urn:microsoft-dynamics-schemas/page/customershiptoaddresssalesforce';
+    private static final String BC_USERNAME = 'Salesforce';
+    private static final String BC_PASSWORD = 'Admin@2026';
     
     // ─────────────────────────────────────────────────────────────────────────
     // ENTRY POINT FROM BUTTON — accepts only Address Id
@@ -33,14 +35,14 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
     public static DRC_NBC_Integration_Payload.ShipToPayload buildPayloadFromAddress(Id addressId) {
         List<DRC_NBC_Addresses__c> addrList = [
             SELECT Id,
-            DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s,
-            DRC_NBC_Address__CountryCode__s, DRC_NBC_Address__PostalCode__s,
-            DRC_NBC_Address__StateCode__s, DRC_NBC_GST_Number__c,
-            DRC_Inco_Term__c, DRC_NBC_Warehouse__c, DRC_NBC_Type__c,
-            DRC_NBC_Ship_To_Code__c, DRC_Shipping_Gst_Customer_Type__c,
-            DRC_NBC_Account__c,
-            DRC_NBC_Account__r.Name, DRC_NBC_Account__r.Phone,
-            DRC_NBC_Account__r.DRC_NBC_Customer_Number__c
+                   DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s,
+                   DRC_NBC_Address__CountryCode__s, DRC_NBC_Address__PostalCode__s,
+                   DRC_NBC_Address__StateCode__s, DRC_NBC_GST_Number__c,
+                   DRC_Inco_Term__c, DRC_NBC_Warehouse__c, DRC_NBC_Type__c,
+                   DRC_NBC_Ship_To_Code__c, DRC_Shipping_Gst_Customer_Type__c,
+                   DRC_NBC_Account__c,
+                   DRC_NBC_Account__r.Name, DRC_NBC_Account__r.Phone,
+                   DRC_NBC_Account__r.DRC_NBC_Customer_Number__c
             FROM DRC_NBC_Addresses__c
             WHERE Id = :addressId
             AND DRC_NBC_Type__c = 'Shipping'
@@ -80,8 +82,8 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
         payload.State                     = addr.DRC_NBC_Address__StateCode__s;
         payload.ShippingPostCode          = addr.DRC_NBC_Address__PostalCode__s;
         payload.ShippingCountry           = addr.DRC_NBC_Address__CountryCode__s == 'IN'
-            ? 'IND'
-            : addr.DRC_NBC_Address__CountryCode__s;
+                                                ? 'IND'
+                                                : addr.DRC_NBC_Address__CountryCode__s;
         payload.ShippingPhoneNo           = addr.DRC_NBC_Account__r.Phone;
         payload.ShippingGSTRegistrationNo = addr.DRC_NBC_GST_Number__c;
         payload.Ship_to_GST_Customer_Type = addr.DRC_Shipping_Gst_Customer_Type__c;
@@ -171,14 +173,13 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
                 + payload.CustomerNo + ', ShipToCode ' + payload.ShiptoCode + '.';
         }
         
-        String faultMsg = parseSoapFault(res.getBody());
         DRC_NBC_API_Log_Handler.createApiLog(
             'DRC_NBC_Shipping_BC_Integration_SOAP',
-            reqBody,  res.getBody(), 'Update',
-            faultMsg, statusCode,NUll,
+            reqBody, res.getBody(), 'Update',
+            null, statusCode, null,
             'Error', null
         );
-        return 'FAILURE: ' + faultMsg;
+        return 'FAILURE: ';
     }
     
     // ─────────────────────────────────────────────────────────────────────────
@@ -187,6 +188,14 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
     private static String buildReadEnvelope(String customerNo, String shipToCode) {
         return '<?xml version="1.0" encoding="utf-8"?>'
             + '<Envelope xmlns="' + NS_ENVELOPE + '">'
+            +   '<Header>'
+            +     '<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">'
+            +       '<wsse:UsernameToken>'
+            +         '<wsse:Username>' + BC_USERNAME + '</wsse:Username>'
+            +         '<wsse:Password>' + BC_PASSWORD + '</wsse:Password>'
+            +       '</wsse:UsernameToken>'
+            +     '</wsse:Security>'
+            +   '</Header>'
             +   '<Body>'
             +     '<Read xmlns="' + NS_PAGE + '">'
             +       '<CustomerNo>' + escapeXml(customerNo) + '</CustomerNo>'
@@ -199,6 +208,14 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
     private static String buildUpdateEnvelope(DRC_NBC_Integration_Payload.ShipToPayload p, String bcKey) {
         return '<?xml version="1.0" encoding="utf-8"?>'
             + '<Envelope xmlns="' + NS_ENVELOPE + '">'
+            +   '<Header>'
+            +     '<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">'
+            +       '<wsse:UsernameToken>'
+            +         '<wsse:Username>' + BC_USERNAME + '</wsse:Username>'
+            +         '<wsse:Password>' + BC_PASSWORD + '</wsse:Password>'
+            +       '</wsse:UsernameToken>'
+            +     '</wsse:Security>'
+            +   '</Header>'
             +   '<Body>'
             +     '<Update xmlns="' + NS_PAGE + '">'
             +       '<CustomerShiptoAddressSalesForce>'
@@ -234,6 +251,12 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
             req.setMethod('POST');
             req.setHeader('Content-Type', 'text/xml; charset=utf-8');
             req.setHeader('SOAPAction', action);
+
+            // Basic Auth header as additional fallback
+            String credentials = BC_USERNAME + ':' + BC_PASSWORD;
+            String encodedCredentials = EncodingUtil.base64Encode(Blob.valueOf(credentials));
+            req.setHeader('Authorization', 'Basic ' + encodedCredentials);
+
             req.setBody(body);
             req.setTimeout(120000);
             
@@ -242,9 +265,9 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
             
             DRC_NBC_API_Log_Handler.createApiLog(
                 'DRC_NBC_Shipping_BC_Integration_SOAP',
-                 null,  res.getBody(), 'Update',
-                null, res.getStatusCode(),NUll,
-                'Succes', null         // ← Integer, not String
+                body, res.getBody(), action,
+                null, res.getStatusCode(), null,
+                'Success', null
             );
             
             return res;
@@ -268,26 +291,11 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
     private static String escapeXml(String s) {
         if (s == null) return '';
         return s.replace('&', '&amp;')
-            .replace('<', '&lt;')
-            .replace('>', '&gt;')
-            .replace('"', '&quot;')
-            .replace('\'', '&apos;');
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+                .replace('"', '&quot;')
+                .replace('\'', '&apos;');
     }
     
-    private static String parseSoapFault(String responseBody) {
-        try {
-            Dom.Document doc = new Dom.Document();
-            doc.load(responseBody);
-            Dom.XmlNode root = doc.getRootElement();
-            Dom.XmlNode body = root.getChildElement('Body', NS_ENVELOPE);
-            if (body == null) return 'Unknown error (no Body).';
-            Dom.XmlNode fault = body.getChildElement('Fault', NS_ENVELOPE);
-            if (fault == null) fault = body.getChildElement('Fault', null);
-            if (fault == null) return 'HTTP error — ' + responseBody.left(200);
-            Dom.XmlNode faultString = fault.getChildElement('faultstring', null);
-            return faultString != null ? faultString.getText() : responseBody.left(200);
-        } catch (Exception e) {
-            return responseBody.left(200);
-        }
-    }
+   
 }
