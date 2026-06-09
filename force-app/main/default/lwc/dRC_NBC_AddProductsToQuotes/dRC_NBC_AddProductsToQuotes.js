@@ -14,7 +14,7 @@ import AddProductCSS from '@salesforce/resourceUrl/DRC_NBC_Order_Button_CSS';
 export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(LightningElement) {
     @track allData = [];
     @track filteredData = [];
-    @api recordId;
+    @api recordId; 
     @track showFilterData = false;
     @track showLoading = false;
     showAddProducts = false;

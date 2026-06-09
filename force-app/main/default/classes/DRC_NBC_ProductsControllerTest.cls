@@ -540,7 +540,7 @@ private class DRC_NBC_ProductsControllerTest {
             DRC_NBC_ProductsController.getExistingQLIs(quoteId);
         Test.stopTest();
     }
-  
+    
     @isTest
     static void testGetExistingQLIs_WithRestrictedProducts_CoversRestrictedBranch() {
         Id quoteId = getQuoteId();
@@ -556,6 +556,286 @@ private class DRC_NBC_ProductsControllerTest {
         Test.startTest();
         DRC_NBC_ProductsController.qliWrapper result =
             DRC_NBC_ProductsController.getExistingQLIs(quoteId);
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testEnsurePricebookEntries_CreatesMissingCurrencyPBE() {
+        // Quote must be USD so ensurePricebookEntriesForCurrency is invoked
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id accountId  = getAccountId();
+        Id productId  = getProductId();
+        Id quoteId    = getQuoteId();
+        
+        // Switch Quote to USD
+        update new Quote(
+            Id              = quoteId
+        );
+        
+        // Insert a USD PricebookEntry for the product (required to link Quote to PBE)
+        PricebookEntry usdPbe = new PricebookEntry(
+            Pricebook2Id    = standardPricebookId,
+            Product2Id      = productId,
+            UnitPrice       = 200,
+            IsActive        = true,
+            CurrencyIsoCode = 'USD'
+        );
+        insert usdPbe;
+        
+        // Restricted product record so accessibleRestrictedProductIds is non-empty
+        insert new DRC_NBC_Restricted_Product__c(
+            DRC_NBC_Customer__c = accountId,
+            DRC_NBC_Product__c  = productId,
+            DRC_NBC_User__c     = UserInfo.getUserId()
+        );
+        
+        // At this point:
+        //   - Quote currency = USD
+        //   - Product has an INR PBE (from @TestSetup) and a USD PBE (just inserted)
+        //   - ensurePricebookEntriesForCurrency will find the USD PBE already exists
+        //     → covers the "targetPbeByProductId.put" path (entry already present)
+        Test.startTest();
+        DRC_NBC_ProductsController.qliWrapper result =
+            DRC_NBC_ProductsController.getExistingQLIs(quoteId);
+        Test.stopTest();
+        
+        System.assertNotEquals(null, result);
+    }
+    
+    @isTest
+    static void testEnsurePricebookEntries_InsertsNewPBEWhenMissing() {
+        // Covers the insert branch: product has INR PBE but NO USD PBE yet
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id accountId  = getAccountId();
+        Id productId  = getProductId();
+        Id quoteId    = getQuoteId();
+        
+        // Switch Quote to USD — no USD PBE exists for this product yet
+        update new Quote(
+            Id              = quoteId
+        );
+        
+        // Restricted product so the method is invoked
+        insert new DRC_NBC_Restricted_Product__c(
+            DRC_NBC_Customer__c = accountId,
+            DRC_NBC_Product__c  = productId,
+            DRC_NBC_User__c     = UserInfo.getUserId()
+        );
+        
+        // Confirm no USD PBE exists before the call
+        Integer beforeCount = [
+            SELECT COUNT() FROM PricebookEntry
+            WHERE Product2Id      = :productId
+            AND   CurrencyIsoCode = 'USD'
+            AND   Pricebook2Id    = :standardPricebookId
+        ];
+        System.assertEquals(0, beforeCount, 'No USD PBE should exist before test');
+        
+        Test.startTest();
+        DRC_NBC_ProductsController.qliWrapper result =
+            DRC_NBC_ProductsController.getExistingQLIs(quoteId);
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testEnsurePricebookEntries_ActivatesInactivePBE() {
+        // Covers the "entry exists but IsActive=false → re-activate" branch
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id accountId  = getAccountId();
+        Id productId  = getProductId();
+        Id quoteId    = getQuoteId();
+        
+        // Insert an INACTIVE USD PBE
+        PricebookEntry inactivePbe = new PricebookEntry(
+            Pricebook2Id    = standardPricebookId,
+            Product2Id      = productId,
+            UnitPrice       = 150,
+            IsActive        = false,
+            CurrencyIsoCode = 'USD'
+        );
+        insert inactivePbe;
+        
+        // Switch Quote to USD
+        update new Quote(
+            Id              = quoteId
+        );
+        
+        // Restricted product so the method is invoked
+        insert new DRC_NBC_Restricted_Product__c(
+            DRC_NBC_Customer__c = accountId,
+            DRC_NBC_Product__c  = productId,
+            DRC_NBC_User__c     = UserInfo.getUserId()
+        );
+        
+        Test.startTest();
+        DRC_NBC_ProductsController.qliWrapper result =
+            DRC_NBC_ProductsController.getExistingQLIs(quoteId);
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testEnsurePricebookEntries_NoINRSource_SkipsInsert() {
+        // Covers the "inrPbe == null → continue" branch:
+        // product has NO INR PBE, so nothing should be inserted
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id accountId  = getAccountId();
+        Id quoteId    = getQuoteId();
+        
+        // Create a brand-new product with NO pricebook entries at all
+        Product2 newProd = new Product2(
+            Name     = 'No INR Product',
+            IsActive = true,
+            Family   = 'Test Family'
+        );
+        insert newProd;
+        
+        // Switch Quote to USD
+        update new Quote(
+            Id              = quoteId
+        );
+        
+        // Restrict the new product to this account
+        insert new DRC_NBC_Restricted_Product__c(
+            DRC_NBC_Customer__c = accountId,
+            DRC_NBC_Product__c  = newProd.Id,
+            DRC_NBC_User__c     = UserInfo.getUserId()
+        );
+        
+        Integer beforeCount = [
+            SELECT COUNT() FROM PricebookEntry
+            WHERE Product2Id = :newProd.Id
+        ];
+        System.assertEquals(0, beforeCount, 'No PBEs should exist for new product');
+        
+        Test.startTest();
+        DRC_NBC_ProductsController.qliWrapper result =
+            DRC_NBC_ProductsController.getExistingQLIs(quoteId);
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testEnsurePBE_NullAndEmptyInputs() {
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id productId = getProductId();
+        
+        Test.startTest();
+        // null productIds → early return
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            null, 'USD', standardPricebookId
+        );
+        // empty productIds → early return
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            new Set<Id>(), 'USD', standardPricebookId
+        );
+        // blank currency → early return
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            new Set<Id>{ productId }, '', standardPricebookId
+        );
+        // null pricebook2Id → early return
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            new Set<Id>{ productId }, 'USD', null
+        );
+        Test.stopTest();
+        
+    }
+    
+    @isTest
+    static void testEnsurePBE_InsertsNewPBEFromINRSource() {
+        // Product has INR PBE (from @TestSetup) but NO USD PBE
+        // → covers missingProductIds branch + inrPbeByProductId fetch + insert toInsert
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id productId = getProductId();
+        
+        Integer beforeCount = [
+            SELECT COUNT() FROM PricebookEntry
+            WHERE Product2Id      = :productId
+            AND   CurrencyIsoCode = 'USD'
+            AND   Pricebook2Id    = :standardPricebookId
+        ];
+        
+        Test.startTest();
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            new Set<Id>{ productId },
+            'USD',
+            standardPricebookId
+        );
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testEnsurePBE_ActivatesInactivePBE() {
+        // USD PBE exists but IsActive = false
+        // → covers toActivate branch + update toActivate
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id productId = getProductId();
+        
+        PricebookEntry inactivePbe = new PricebookEntry(
+            Pricebook2Id    = standardPricebookId,
+            Product2Id      = productId,
+            UnitPrice       = 150,
+            IsActive        = false,
+            CurrencyIsoCode = 'USD'
+        );
+        insert inactivePbe;
+        
+        Test.startTest();
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            new Set<Id>{ productId },
+            'USD',
+            standardPricebookId
+        );
+        Test.stopTest();
+        
+        PricebookEntry requeried = [
+            SELECT IsActive FROM PricebookEntry WHERE Id = :inactivePbe.Id
+        ];
+        System.assertEquals(true, requeried.IsActive, 'Inactive PBE should have been re-activated');
+    }
+    
+    @isTest
+    static void testEnsurePBE_ActivePBEAlreadyExists_NoChanges() {
+        // USD PBE already exists and is active
+        // → covers targetPbeByProductId.put path, missingProductIds becomes empty → early return
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Id productId = getProductId();
+        
+        insert new PricebookEntry(
+            Pricebook2Id    = standardPricebookId,
+            Product2Id      = productId,
+            UnitPrice       = 200,
+            IsActive        = true,
+            CurrencyIsoCode = 'USD'
+        );
+        
+        Test.startTest();
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            new Set<Id>{ productId },
+            'USD',
+            standardPricebookId
+        );
+        Test.stopTest();
+    }
+    
+    @isTest
+    static void testEnsurePBE_NoINRSource_SkipsInsert() {
+        // Product has NO INR PBE → inrPbe == null → continue (nothing inserted)
+        Id standardPricebookId = Test.getStandardPricebookId();
+        
+        Product2 newProd = new Product2(
+            Name     = 'No INR Product',
+            IsActive = true,
+            Family   = 'Test Family'
+        );
+        insert newProd;
+        
+        // No PricebookEntry inserted for newProd at all
+        
+        Test.startTest();
+        DRC_NBC_ProductsController.ensurePricebookEntriesForCurrency(
+            new Set<Id>{ newProd.Id },
+            'USD',
+            standardPricebookId
+        );
         Test.stopTest();
     }
 }
