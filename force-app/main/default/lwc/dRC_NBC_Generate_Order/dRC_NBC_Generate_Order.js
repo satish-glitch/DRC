@@ -435,6 +435,7 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
             .then(result => {
                 this.processDefaultValues(result);
                 const orderType                  = result.types;
+                this.samplingRec.Is_Domestic_Merchnat__c = false;
                 this.selectedOrderType           = orderType;
                 this.samplingRec.DRC_NBC_Type__c = orderType;
                 this.showExportSection           = orderType === 'Export';
