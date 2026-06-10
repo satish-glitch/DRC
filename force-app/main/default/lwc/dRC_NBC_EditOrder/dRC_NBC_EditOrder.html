@@ -14,7 +14,7 @@
                         aria-controls="order-details-content">
                     <lightning-icon icon-name={getOrderDetailsIcon} size="small" class="slds-section__title-icon"></lightning-icon>
                     <span class="slds-truncate slds-p-horizontal_small">Order Details</span>
-                </button>
+                </button> 
             </h3> 
             <div id="order-details-content" class="slds-section__content">
                 <lightning-record-edit-form object-api-name="Order" record-id={recordId}>
@@ -119,6 +119,9 @@
                                 <lightning-input-field field-name="DRC_NBC_Special_Instructions__c" onchange={handleFieldChange}></lightning-input-field>
                             </div>
                         </template>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                            <lightning-input-field field-name="Is_Domestic_Merchnat__c" onchange={handleFieldChange}></lightning-input-field>
+                        </div>
                     </div>
                 </lightning-record-edit-form>
             </div>

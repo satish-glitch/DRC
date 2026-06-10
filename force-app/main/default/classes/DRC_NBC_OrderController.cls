@@ -36,6 +36,7 @@ public class DRC_NBC_OrderController {
                 Status,
                 Name,
                 EffectiveDate,
+                Is_Domestic_Merchnat__c,
                 EndDate,
                 DRC_NBC_Type__c,
                 DRC_NBC_Payment_Terms__c,
@@ -489,6 +490,7 @@ public class DRC_NBC_OrderController {
                     OpportunityId                            = orderData.OpportunityId,
                     QuoteId                                  = orderData.QuoteId,
                     BillToContactId                          = orderData.BillToContactId,
+                    Is_Domestic_Merchnat__c =                  orderData.Is_Domestic_Merchnat__c,
                     ShipToContactId                          = orderData.ShipToContactId,
                     DRC_NBC_Shipping_Address__c              = orderData.DRC_NBC_Shipping_Address__c
                 );
