@@ -95,6 +95,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     DRC_NBC_Consignee_Bank_Address__c,
                     DRC_NBC_Special_Instructions__c,
                     SalesPerson_Code__c,
+                    DRC_NBC_Transport_Agent__c,
                     (
                         SELECT
                             ID,
@@ -140,6 +141,8 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             
             // Sales Person Code from Account
             ord.salesPersonCode = ord.acc[0].SalesPerson_Code__c;
+            ord.transportAgent = ord.acc[0].DRC_NBC_Transport_Agent__c;   // ← ADD THIS
+
             
             // Add Account Billing Address
             ord.BillingStreet = quoteObj.Account.BillingStreet;
@@ -367,6 +370,9 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         // Sales Person Code from Account
         @AuraEnabled
         public String salesPersonCode;
+        @AuraEnabled
+        public String transportAgent;   // ← ADD THIS
+
         
         // Billing Address from Account
         @AuraEnabled public String BillingStreet;

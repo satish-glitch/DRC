@@ -474,6 +474,12 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
         this.samplingRec.DRC_NBC_Delivery_Terms__c           = result.deliveryTerm;
 
         const acc = result.acc[0];
+                // ── Transport Agent (from Account) ───────────────────────────────────────
+        const accountTransportAgent                  = result.transportAgent || acc.DRC_NBC_Transport_Agent__c || '';
+        this.samplingRec.DRC_NBC_Transport_Agent__c  = accountTransportAgent;
+        const matchedAgent                           = this.transportAgentOptions.find(o => o.value === accountTransportAgent);
+        this.transportAgentDisplay                   = matchedAgent ? matchedAgent.label : accountTransportAgent;
+        this.filteredTransportAgents                 = [...this.transportAgentOptions];
         this.samplingRec.DRC_NBC_Consignee_Bank_Address__c        = acc.DRC_NBC_Consignee_Bank_Address__c;
         this.samplingRec.DRC_NBC_Special_Instructions__c          = acc.DRC_NBC_Special_Instructions__c;
         this.samplingRec.DRC_NBC_Consignee_Bank_Name__c           = acc.DRC_NBC_Consignee_Bank_Name__c;
