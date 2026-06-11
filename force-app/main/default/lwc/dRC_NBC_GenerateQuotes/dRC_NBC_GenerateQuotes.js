@@ -376,7 +376,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
     }
 
     // ─── Product name search ──────────────────────────────────────────────────
-    handleValueChange(event) {
+   /* handleValueChange(event) {
         const index = parseInt(event.target.dataset.index);
         const field = event.target.name;
         const value = event.target.value;
@@ -402,6 +402,37 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
 
                 this.filteredData[index].recordData.searchResults  = filteredResults;
                 this.filteredData[index].recordData.noResultsFound = filteredResults.length === 0;
+                this.filteredData = [...this.filteredData];
+            })
+            .catch(error => {
+                console.error('Product search error:', error);
+                this.filteredData[index].recordData.searchResults  = [];
+                this.filteredData[index].recordData.noResultsFound = false;
+                this.filteredData = [...this.filteredData];
+            });
+        } else if (field === 'ProductName' && value.length < 2) {
+            this.filteredData[index].recordData.searchResults  = [];
+            this.filteredData[index].recordData.noResultsFound = false;
+            this.filteredData = [...this.filteredData];
+        }
+    } */
+
+    handleValueChange(event) {
+        const index = parseInt(event.target.dataset.index);
+        const field = event.target.name;
+        const value = event.target.value;
+
+        this.filteredData[index].recordData[field] = value;
+
+        if (field === 'ProductName' && value.length >= 2) {
+            searchProducts({
+                keyword:         value,
+                currencyIsoCode: this.currencyCode,
+                accountId:       this.accountId
+            })
+            .then(results => {
+                this.filteredData[index].recordData.searchResults  = results;
+                this.filteredData[index].recordData.noResultsFound = results.length === 0;
                 this.filteredData = [...this.filteredData];
             })
             .catch(error => {

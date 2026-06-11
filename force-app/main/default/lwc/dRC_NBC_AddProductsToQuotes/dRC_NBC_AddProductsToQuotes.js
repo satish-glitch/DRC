@@ -595,7 +595,7 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
         }
     }
 
-    handleValueChange(event) {
+   /* handleValueChange(event) {
         const index = parseInt(event.target.dataset.index, 10);
         const field = event.target.name;
         const value = event.target.value || '';
@@ -623,6 +623,46 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 const isDuplicateInSearch = seenProduct2Ids.has(product2Id);
 
                 if (isNameMatched && !isAlreadySelected && !isDuplicateInSearch) {
+                    seenProduct2Ids.add(product2Id);
+                    return true;
+                }
+                return false;
+            });
+
+            this.filteredData[index].recordData.searchResults  = matches;
+            this.filteredData[index].recordData.noResultsFound = matches.length === 0;
+        } else if (field === 'ProductName') {
+            this.filteredData[index].recordData.searchResults  = [];
+            this.filteredData[index].recordData.noResultsFound = false;
+        }
+
+        if (['Quantity', 'Discount'].includes(field)) {
+            this.updateTotal(index);
+        }
+
+        this.filteredData = [...this.filteredData];
+    }*/
+
+    handleValueChange(event) {
+        const index = parseInt(event.target.dataset.index, 10);
+        const field = event.target.name;
+        const value = event.target.value || '';
+
+        this.filteredData[index].recordData[field] = value;
+
+        if (field === 'ProductName' && value.trim().length >= 2) {
+            const seenProduct2Ids = new Set();
+
+            const matches = this.productsMasterList.filter(product => {
+                const product2Id  = product.Product2Id || product.Product2?.Id;
+                const productName = product.Product2?.Name || '';
+
+                if (!product2Id) return false;
+
+                const isNameMatched       = productName.toLowerCase().includes(value.toLowerCase());
+                const isDuplicateInSearch = seenProduct2Ids.has(product2Id);
+
+                if (isNameMatched && !isDuplicateInSearch) {
                     seenProduct2Ids.add(product2Id);
                     return true;
                 }
