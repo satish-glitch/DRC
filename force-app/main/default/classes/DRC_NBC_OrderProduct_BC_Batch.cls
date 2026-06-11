@@ -29,6 +29,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             Order.DRC_NBC_Other_Tax_Amount__c,
             Order.DRC_NBC_Sample_Shipping_Cost__c,
             Order.DRC_NBC_Sample_Amount__c,
+            Order.Is_Domestic_Merchnat__c,
             DRC_NBC_Total_Price__c,
             Order.DRC_NBC_Cust_Order_Number__c,
             Order.AccountId,
@@ -126,8 +127,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                 
                 Map<String, String> headers = new Map<String, String>{
                     'Content-Type' => 'application/json'
-                };
-                requestBlock.put('headers', headers);
+                        };
+                            requestBlock.put('headers', headers);
                 requestBlock.put('body', payload);
                 
                 System.debug('--- REQUEST BLOCK #' + requestCounter + ' ---');
@@ -169,8 +170,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'
-                    };
-                    requestBlock.put('headers', headers);
+                            };
+                                requestBlock.put('headers', headers);
                     requestBlock.put('body', otherTaxPayload);
                     
                     System.debug('--- OTHER TAX REQUEST BLOCK #' + requestCounter + ' ---');
@@ -218,8 +219,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'
-                    };
-                    requestBlock.put('headers', headers);
+                            };
+                                requestBlock.put('headers', headers);
                     requestBlock.put('body', tcsPayload);
                     
                     System.debug('--- TCS AMOUNT REQUEST BLOCK #' + requestCounter + ' ---');
@@ -267,8 +268,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'
-                    };
-                    requestBlock.put('headers', headers);
+                            };
+                                requestBlock.put('headers', headers);
                     requestBlock.put('body', freightPayload);
                     
                     System.debug('--- FREIGHT CHARGES REQUEST BLOCK #' + requestCounter + ' ---');
@@ -316,8 +317,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'
-                    };
-                    requestBlock.put('headers', headers);
+                            };
+                                requestBlock.put('headers', headers);
                     requestBlock.put('body', insurancePayload);
                     
                     System.debug('--- INSURANCE REQUEST BLOCK #' + requestCounter + ' ---');
@@ -365,8 +366,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'
-                    };
-                    requestBlock.put('headers', headers);
+                            };
+                                requestBlock.put('headers', headers);
                     requestBlock.put('body', sampleShippingPayload);
                     
                     System.debug('--- SAMPLE SHIPPING COST REQUEST BLOCK #' + requestCounter + ' ---');
@@ -414,8 +415,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
                     
                     Map<String, String> headers = new Map<String, String>{
                         'Content-Type' => 'application/json'
-                    };
-                    requestBlock.put('headers', headers);
+                            };
+                                requestBlock.put('headers', headers);
                     requestBlock.put('body', sampleAmountPayload);
                     
                     System.debug('--- SAMPLE AMOUNT REQUEST BLOCK #' + requestCounter + ' ---');
@@ -448,9 +449,9 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         if (!requestList.isEmpty()) {
             Map<String, Object> payloadWrapper = new Map<String, Object>{
                 'requests' => requestList
-            };
-            
-            String jsonBody = JSON.serialize(payloadWrapper, true);
+                    };
+                        
+                        String jsonBody = JSON.serialize(payloadWrapper, true);
             
             System.debug('=======================================================');
             System.debug('=== COMPLETE PAYLOAD WRAPPER ===');
@@ -581,15 +582,21 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Quantity = item.Quantity != null ? item.Quantity : 0;
         payload.Unit_of_Measure_Code = 'KGS';
         payload.Unit_Price = isSampleOrder ? 0 : (item.UnitPrice != null ? item.UnitPrice : 0);
-        payload.Line_Amount = totalPrice;
+            payload.Line_Amount = totalPrice;
         payload.Line_Discount_Percent = discountPercent;
         payload.Line_Discount_Amount = lineDiscountAmount;
         payload.Inv_Discount_Amount = lineDiscountAmount;
-        payload.HSN_SAC_Code = item.Product2.DRC_NBC_HSN_SAC_Code__c;
-        payload.GST_Group_Code = String.isNotBlank(item.Product2.DRC_NBC_GST_Group_Code__c) ? item.Product2.DRC_NBC_GST_Group_Code__c : '';
+        if( Item.Order.Is_Domestic_Merchnat__c) {
+            payload.GST_Group_Code = label.Merchnat_GST_Group_Code;
+        }
+        else{
+            payload.HSN_SAC_Code = item.Product2.DRC_NBC_HSN_SAC_Code__c;
+            payload.GST_Group_Code = String.isNotBlank(item.Product2.DRC_NBC_GST_Group_Code__c) ? item.Product2.DRC_NBC_GST_Group_Code__c : '';
+        }
+        
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = String.isNotBlank(item.DRC_NBC_Packing_Size__c) ? item.DRC_NBC_Packing_Size__c : '';
-        Decimal packingQty = String.isNotBlank(item.DRC_NBC_Packing_Quantity__c)
+        Decimal packingQty = String.isNotBlank(item.DRC_NBC_Packing_Quantity__c) 
             ? Decimal.valueOf(item.DRC_NBC_Packing_Quantity__c)
             : 0;
         payload.No_of_Pkg_for_Qty = packingQty > 0
@@ -632,8 +639,14 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_Discount_Percent = 0;
         payload.Line_Discount_Amount = 0;
         payload.Inv_Discount_Amount = 0;
-        payload.HSN_SAC_Code = '';
-        payload.GST_Group_Code = '';
+        if( ord.Is_Domestic_Merchnat__c  == true) {
+            payload.GST_Group_Code = label.Merchnat_GST_Group_Code;
+        }
+        else{
+            payload.HSN_SAC_Code = '';
+            payload.GST_Group_Code = '';
+        }
+        
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
@@ -673,8 +686,13 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_Discount_Percent = 0;
         payload.Line_Discount_Amount = 0;
         payload.Inv_Discount_Amount = 0;
-        payload.HSN_SAC_Code = '';
-        payload.GST_Group_Code = '';
+        if( ord.Is_Domestic_Merchnat__c  == true) {
+            payload.GST_Group_Code = label.Merchnat_GST_Group_Code;
+        }
+        else{
+            payload.HSN_SAC_Code = '';
+            payload.GST_Group_Code = '';
+        }
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
@@ -713,8 +731,13 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_Discount_Percent = 0;
         payload.Line_Discount_Amount = 0;
         payload.Inv_Discount_Amount = 0;
-        payload.HSN_SAC_Code = '';
-        payload.GST_Group_Code = '';
+        if( ord.Is_Domestic_Merchnat__c  == true) {
+            payload.GST_Group_Code = label.Merchnat_GST_Group_Code;
+        }
+        else{
+            payload.HSN_SAC_Code = '';
+            payload.GST_Group_Code = '';
+        }
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
@@ -753,8 +776,13 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_Discount_Percent = 0;
         payload.Line_Discount_Amount = 0;
         payload.Inv_Discount_Amount = 0;
-        payload.HSN_SAC_Code = '';
-        payload.GST_Group_Code = '';
+        if( ord.Is_Domestic_Merchnat__c  == true) {
+            payload.GST_Group_Code = label.Merchnat_GST_Group_Code;
+        }
+        else{
+            payload.HSN_SAC_Code = '';
+            payload.GST_Group_Code = '';
+        }
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
@@ -795,8 +823,13 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_Discount_Percent = 0;
         payload.Line_Discount_Amount = 0;
         payload.Inv_Discount_Amount = 0;
-        payload.HSN_SAC_Code = '';
-        payload.GST_Group_Code = '';
+        if( ord.Is_Domestic_Merchnat__c  == true) {
+            payload.GST_Group_Code = label.Merchnat_GST_Group_Code;
+        }
+        else{
+            payload.HSN_SAC_Code = '';
+            payload.GST_Group_Code = '';
+        }
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;
@@ -837,8 +870,13 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Line_Discount_Percent = 0;
         payload.Line_Discount_Amount = 0;
         payload.Inv_Discount_Amount = 0;
-        payload.HSN_SAC_Code = '';
-        payload.GST_Group_Code = '';
+        if( ord.Is_Domestic_Merchnat__c  == true) {
+            payload.GST_Group_Code = label.Merchnat_GST_Group_Code;
+        }
+        else{
+            payload.HSN_SAC_Code = '';
+            payload.GST_Group_Code = '';
+        }
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = '';
         payload.No_of_Pkg_for_Qty = 1;

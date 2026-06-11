@@ -121,6 +121,7 @@ public class DRC_NBC_Order_BC_Callout implements Database.AllowsCallouts {
             Account.Name,
             ShippingCity, 
             ShippingCountry,
+            Is_Domestic_Merchnat__c,
             DRC_NBC_Order_Sync_To_BC__c,
             ShippingPostalCode, 
             ShippingStreet, 
@@ -237,10 +238,10 @@ public class DRC_NBC_Order_BC_Callout implements Database.AllowsCallouts {
         payload.Sell_to_City = String.isNotBlank(ord.Account.BillingCity) ? ord.Account.BillingCity : '';
         payload.Order_Date = ord.EffectiveDate != null ? String.valueOf(ord.EffectiveDate) : '';
         payload.Status = 'Open';
-        payload.Delivery_Terms = String.isNotBlank(ord.DRC_NBC_Delivery_Terms__c) ? ord.DRC_NBC_Delivery_Terms__c : '';
+       // payload.Delivery_Terms = String.isNotBlank(ord.DRC_NBC_Delivery_Terms__c) ? ord.DRC_NBC_Delivery_Terms__c : '';
         payload.Sample_Sales = sampleSales;
-        // payload.Payment_Terms_Code = String.isNotBlank(ord.DRC_NBC_Payment_Terms__c) ? ord.DRC_NBC_Payment_Terms__c : '';
-        payload.Payment_Terms_Code = '10 Days';
+        payload.Payment_Terms_Code = String.isNotBlank(ord.DRC_NBC_Payment_Terms__c) ? ord.DRC_NBC_Payment_Terms__c : '';
+        //payload.Payment_Terms_Code = '10 Days';
         
         payload.Shipment_Method_Code = (incoTermsMeta != null && 
                                         String.isNotBlank(incoTermsMeta.DRC_NBC_Code__c)) ? 
@@ -448,9 +449,9 @@ payload.Final_Destination = String.isNotBlank(ord.DRC_NBC_Final_Destination__c) 
 portNameToCodeMap.containsKey(ord.DRC_NBC_Final_Destination__c)
 ? portNameToCodeMap.get(ord.DRC_NBC_Final_Destination__c)
 : '';*/
-        payload.Port_Of_Discharge = String.isBlank(ord.DRC_NBC_Port_of_Loading__c)
+        payload.Port_Of_Discharge = String.isBlank(ord.DRC_NBC_Port_Of_Discharge__c)
             ? ''
-            : ord.DRC_NBC_Port_of_Loading__c;
+            : ord.DRC_NBC_Port_Of_Discharge__c;
         
         payload.Final_Destination = String.isBlank(ord.DRC_NBC_Final_Destination__c)
             ? ''

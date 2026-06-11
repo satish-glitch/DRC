@@ -61,7 +61,7 @@ public class DRC_NBC_AccountSummary {
                     wrapper.totalCancelledOrdersCount++;
                     wrapper.totalCancelledOrdersAmount += ord.DRC_NBC_Total_Amount__c != null ? ord.DRC_NBC_Total_Amount__c : 0;
                 }
-                if (ord.Status == 'Activated' || ord.Status == 'Submitted') {
+                if (ord.Status == 'Accepted' || ord.Status == 'Submit' ||ord.Status == 'Released' || ord.Status == 'Short Closed'  || ord.Status == 'Dispatch') {
                     wrapper.totalOpenOrdersCount++;
                     wrapper.totalOpenOrdersAmount += ord.DRC_NBC_Total_Amount__c != null ? ord.DRC_NBC_Total_Amount__c : 0;
                 }

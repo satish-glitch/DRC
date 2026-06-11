@@ -442,29 +442,27 @@
                         {!orderRecord.DRC_NBC_Part_Shipment__c}
                     </td>
                 </tr>              
-                <!-- Row 5: Headers -->
+                <!-- Row 5: Delivery Terms + Currency Code horizontal -->
                 <tr>
                     <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
-                        <strong>CURRENCY CODE </strong>
+                        <strong>Delivery Terms</strong>
                     </td>
-                </tr>                
-                <!-- Row 6: Values -->
-                <tr>
-                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
-                        {!orderRecord.CurrencyIsoCode}
-                    </td>
-                </tr>     
-                <tr>
                     <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 7pt;">
-                        <strong>Delivery Terms </strong>
+                        <strong>CURRENCY CODE</strong>
                     </td>
-                </tr>                
-                <!-- Row 6: Values -->
+                    <td style="width: 220px;"></td>
+                    <td style="width: 220px;"></td>
+                </tr>
                 <tr>
-                    <td style="width: 220px; vertical-align: top; padding: 2px 5px;">
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 8pt;">
                         {!orderRecord.DRC_NBC_Delivery_Terms__c}
                     </td>
-                </tr>        
+                    <td style="width: 220px; vertical-align: top; padding: 2px 5px; font-size: 8pt;">
+                        {!orderRecord.CurrencyIsoCode}
+                    </td>
+                    <td style="width: 220px;"></td>
+                    <td style="width: 220px;"></td>
+                </tr>
             </table>            
             <!-- Items Table -->
             <table class="items-table">
@@ -555,13 +553,13 @@ TOTAL {!totalAmount} {!orderRecord.CurrencyIsoCode}
                         
                         <!-- Required Documents : Show only if list is not empty -->
                         <!--<apex:outputPanel rendered="{!requiredDocuments.size > 0}">-->
-                            <h3>Required Documents</h3>
-                            <ul>
-                                <apex:repeat value="{!requiredDocuments}" var="doc">
-                                    <li>{!doc}</li>
-                                </apex:repeat>
-                            </ul>
-                       <!-- </apex:outputPanel>-->
+                        <h3>Required Documents</h3>
+                        <ul>
+                            <apex:repeat value="{!requiredDocuments}" var="doc">
+                                <li>{!doc}</li>
+                            </apex:repeat>
+                        </ul>
+                        <!-- </apex:outputPanel>-->
                         
                         <!-- Special Instructions : Show only if not blank -->
                         <apex:outputPanel rendered="{!NOT(ISBLANK(orderRecord.DRC_NBC_Special_Instructions__c))}">

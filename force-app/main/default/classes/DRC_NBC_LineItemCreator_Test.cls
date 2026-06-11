@@ -1,25 +1,8 @@
 /**
  * @File Name : DRC_NBC_LineItemCreator_Test.cls
  * @Description : Comprehensive test class for DRC_NBC_LineItemCreator targeting 90%+ coverage.
- *                Covers all major branches:
- *                  - createLineItemsAtLineNumber: success, failure, exception, empty list, null list
- *                  - createLineItems: legacy counter-based method
- *                  - buildCreateMultipleSOAPRequest:
- *                      * ord.DRC_NBC_Shipping_Address__r != null + warehouse present → metadata lookup
- *                      * ord.DRC_NBC_Shipping_Address__r null → locationCode = ''
- *                      * warehouse blank → locationCode = ''
- *                      * warehouse label with no matching metadata → locationCode = ''
- *                      * isSampleOrder = true → price/discount zeroed
- *                      * isSampleOrder = false (standard) → price/discount used
- *                      * DRC_NBC_Total_Price__c null → totalPrice = 0
- *                      * DRC_NBC_Discount__c null → discountPercent = 0
- *                      * DRC_NBC_Packing_Quantity__c not null → Quantity used
- *                      * DRC_NBC_Packing_Quantity__c null → '0'
- *                      * DRC_NBC_Packing_Size__c not null → used in Packing_Details
- *                      * DRC_NBC_Packing_Size__c null → ''
- *                      * Multiple items → line numbers increment by 10000
  * @Author : Satish Yadav
- * @Last Modified On : April 20, 2026
+ * @Last Modified On : June 11, 2026
  **/
 @isTest
 private class DRC_NBC_LineItemCreator_Test {
@@ -83,7 +66,6 @@ private class DRC_NBC_LineItemCreator_Test {
         );
         insert shipAddr;
 
-        // 5 products to support multi-item tests
         List<Product2> products = new List<Product2>();
         for (Integer i = 1; i <= 5; i++) {
             products.add(new Product2(
@@ -108,7 +90,6 @@ private class DRC_NBC_LineItemCreator_Test {
         }
         insert pbes;
 
-        // Standard order — warehouse set, tax amounts non-zero
         Order standardOrd = new Order(
             AccountId                    = acc.Id,
             Status                       = 'Draft',
@@ -132,7 +113,9 @@ private class DRC_NBC_LineItemCreator_Test {
                 UnitPrice                      = 100,
                 Description                    = 'Test Product ' + (i + 1),
                 DRC_NBC_Discount__c            = 5,
-                DRC_NBC_Unit_Of_Measurement__c = 'KGS'
+                DRC_NBC_Unit_Of_Measurement__c = 'KGS',
+                DRC_NBC_Hazardous__c           = false,
+                DRC_NBC_MARKS_NOS__c           = 'MARK-00' + i
             ));
         }
         insert items;
@@ -175,37 +158,49 @@ private class DRC_NBC_LineItemCreator_Test {
     // HELPERS
     // =========================================================================
 
-    /** Fetch full Order with all fields needed by the creator */
     private static Order getStandardOrder() {
         return [
             SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Warehouse__c,
                    DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
                    DRC_NBC_Other_Tax_Amount__c, DRC_NBC_TCS_Amount__c,
+                   Is_Domestic_Merchnat__c,
+                   AccountId,
+                   Account.DRC_NBC_Customer_Number__c,
+                   Account.Type,
                    RecordType.Name
-            FROM Order WHERE DRC_NBC_Cust_Order_Number__c = 'BC-ORD-001'
+            FROM Order
+            WHERE DRC_NBC_Cust_Order_Number__c = 'BC-ORD-001'
             LIMIT 1
         ];
     }
 
-    /** Fetch OrderItems with every field referenced in buildCreateMultipleSOAPRequest */
     private static List<OrderItem> getOrderItems(Id orderId) {
         return [
             SELECT Id, OrderId, Description, Product2Id, Quantity, UnitPrice,
                    DRC_NBC_Discount__c, DRC_NBC_Total_Price__c,
-                   Product2.DRC_NBC_FG_Code__c, Product2.DRC_NBC_GST_Group_Code__c,
-                   Product2.DRC_NBC_HSN_SAC_Code__c, DRC_NBC_Unit_Of_Measurement__c,
-                   DRC_NBC_Packing_Quantity__c, DRC_NBC_Packing_Size__c,
+                   DRC_NBC_Hazardous__c,
+                   DRC_NBC_MARKS_NOS__c,
+                   Product2.DRC_NBC_FG_Code__c,
+                   Product2.DRC_NBC_GST_Group_Code__c,
+                   Product2.DRC_NBC_HSN_SAC_Code__c,
+                   DRC_NBC_Unit_Of_Measurement__c,
+                   DRC_NBC_Packing_Quantity__c,
+                   DRC_NBC_Packing_Size__c,
                    Order.RecordType.Name,
+                   Order.Is_Domestic_Merchnat__c,
+                   Order.DRC_NBC_Warehouse__c,
                    Order.DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                   Order.DRC_NBC_Warehouse__c
-            FROM OrderItem WHERE OrderId = :orderId
+                   Order.Account.DRC_NBC_Customer_Number__c,
+                   Order.Account.Type
+            FROM OrderItem
+            WHERE OrderId = :orderId
         ];
     }
 
     // =========================================================================
-    // TEST: Single line item created successfully
-    //       Covers: HTTP 200 → 'SUCCESS' return, basic happy path
+    // TESTS
     // =========================================================================
+
     @isTest
     static void test_createSingleLineItem_Success() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -219,10 +214,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Multiple line items — line numbers increment by 10000
-    //       Covers: currentLineNo += 10000 inside the loop
-    // =========================================================================
     @isTest
     static void test_createMultipleLineItems_LineNumberIncrement() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -236,41 +227,17 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Empty items list → 'NO_ITEMS_TO_CREATE' returned immediately
-    //       Covers: orderItems.isEmpty() early return
-    // =========================================================================
     @isTest
     static void test_createEmptyList_NoItemsToCreate() {
         Order ord = getStandardOrder();
-        List<OrderItem> emptyItems = new List<OrderItem>();
 
         Test.startTest();
         String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
-            ord.DRC_NBC_Cust_Order_Number__c, emptyItems, ord, 30000
+            ord.DRC_NBC_Cust_Order_Number__c, new List<OrderItem>(), ord, 30000
         );
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Null items list → 'NO_ITEMS_TO_CREATE' returned immediately
-    //       Covers: orderItems == null early return branch
-    // =========================================================================
-  /*  @isTest
-    static void test_createNullList_NoItemsToCreate() {
-        Order ord = getStandardOrder();
-
-        Test.startTest();
-        String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
-            ord.DRC_NBC_Cust_Order_Number__c, null, ord, 30000
-        );
-        Test.stopTest();
-    }*/
-
-    // =========================================================================
-    // TEST: BC returns HTTP 500 → 'FAILURE: 500'
-    //       Covers: response.getStatusCode() != 200 branch
-    // =========================================================================
     @isTest
     static void test_createLineItem_BCFailure_500() {
         Test.setMock(HttpCalloutMock.class, new FailureMock());
@@ -284,10 +251,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Callout throws exception → 'ERROR: ...' returned
-    //       Covers: catch(Exception ex) block
-    // =========================================================================
     @isTest
     static void test_createLineItem_CalloutException() {
         Test.setMock(HttpCalloutMock.class, new ExceptionMock());
@@ -301,10 +264,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Legacy createLineItems method (counter * 10000 conversion)
-    //       Covers: createLineItems delegate → createLineItemsAtLineNumber
-    // =========================================================================
     @isTest
     static void test_legacyCreateLineItems_CounterBasedLineNumber() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -318,10 +277,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Warehouse blank on order → locationCode = '' (blank guard branch)
-    //       Covers: String.isNotBlank(ord.DRC_NBC_Warehouse__c) → false
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_BlankWarehouse_LocationCodeEmpty() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -329,7 +284,6 @@ private class DRC_NBC_LineItemCreator_Test {
         ord.DRC_NBC_Warehouse__c = null;
         update ord;
 
-        // Re-query after update
         ord = getStandardOrder();
         List<OrderItem> items = getOrderItems(ord.Id);
 
@@ -340,10 +294,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Warehouse label present but no matching Warehouse_Location_Code__mdt
-    //       Covers: metaList.isEmpty() → locationCode stays ''
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_UnknownWarehouse_NoMetadata() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -361,17 +311,11 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: DRC_NBC_Total_Price__c = null → totalPrice defaults to 0
-    //       DRC_NBC_Discount__c = null → discountPercent defaults to 0
-    //       Covers: null-coalescing ternary for both fields in the loop
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_NullTotalPriceAndDiscount_DefaultToZero() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
         Order ord = getStandardOrder();
 
-        // Null out discount so the null-coalescing ternary fires
         List<OrderItem> rawItems = [SELECT Id, DRC_NBC_Discount__c FROM OrderItem WHERE OrderId = :ord.Id];
         for (OrderItem oi : rawItems) {
             oi.DRC_NBC_Discount__c = null;
@@ -387,11 +331,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: DRC_NBC_Packing_Quantity__c set → No_of_Pkg_for_Qty = Quantity value
-    //       DRC_NBC_Packing_Size__c set → Packing_Details = size value
-    //       Covers: != null branches for both packing fields in the loop
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_PackingFieldsPopulated() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -402,7 +341,7 @@ private class DRC_NBC_LineItemCreator_Test {
             FROM OrderItem WHERE OrderId = :ord.Id
         ];
         for (OrderItem oi : rawItems) {
-            oi.DRC_NBC_Packing_Quantity__c = String.valueOf(5);
+            oi.DRC_NBC_Packing_Quantity__c = '5';
             oi.DRC_NBC_Packing_Size__c     = '25 KG BAG';
         }
         update rawItems;
@@ -416,10 +355,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: DRC_NBC_Packing_Quantity__c = null, DRC_NBC_Packing_Size__c = null
-    //       Covers: null branches → No_of_Pkg_for_Qty = '0', Packing_Details = ''
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_PackingFieldsNull() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -444,10 +379,46 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: isSampleOrder = true → Unit_Price = 0, Line_Amount = 0
-    //       Covers: isSampleOrder branch in the loop
-    // =========================================================================
+    @isTest
+    static void test_buildCreateMultiple_HazardousTrue() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Order ord = getStandardOrder();
+
+        List<OrderItem> rawItems = [SELECT Id, DRC_NBC_Hazardous__c FROM OrderItem WHERE OrderId = :ord.Id];
+        for (OrderItem oi : rawItems) {
+            oi.DRC_NBC_Hazardous__c = true;
+        }
+        update rawItems;
+
+        List<OrderItem> items = getOrderItems(ord.Id);
+
+        Test.startTest();
+        String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
+            ord.DRC_NBC_Cust_Order_Number__c, items, ord, 30000
+        );
+        Test.stopTest();
+    }
+
+    @isTest
+    static void test_buildCreateMultiple_MarksNosBlank() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Order ord = getStandardOrder();
+
+        List<OrderItem> rawItems = [SELECT Id, DRC_NBC_MARKS_NOS__c FROM OrderItem WHERE OrderId = :ord.Id];
+        for (OrderItem oi : rawItems) {
+            oi.DRC_NBC_MARKS_NOS__c = null;
+        }
+        update rawItems;
+
+        List<OrderItem> items = getOrderItems(ord.Id);
+
+        Test.startTest();
+        String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
+            ord.DRC_NBC_Cust_Order_Number__c, items, ord, 30000
+        );
+        Test.stopTest();
+    }
+
     @isTest
     static void test_buildCreateMultiple_SampleOrder_PriceAndDiscountZeroed() {
         List<RecordType> sampleRT = [
@@ -456,7 +427,6 @@ private class DRC_NBC_LineItemCreator_Test {
             LIMIT 1
         ];
         if (sampleRT.isEmpty()) {
-            // Sample_Order record type not present in this org — skip gracefully
             return;
         }
 
@@ -475,18 +445,11 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Item.UnitPrice = null → Unit_Price = 0 in SOAP body
-    //       Covers: (item.UnitPrice != null ? item.UnitPrice : 0) ternary
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_NullUnitPrice_DefaultsToZero() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
         Order ord = getStandardOrder();
 
-        // UnitPrice cannot be null on OrderItem in Salesforce (required field),
-        // so we verify the ternary path by setting it to zero — covers the branch
-        // that checks item.UnitPrice != null when value happens to be 0
         List<OrderItem> rawItems = [SELECT Id, UnitPrice FROM OrderItem WHERE OrderId = :ord.Id];
         for (OrderItem oi : rawItems) {
             oi.UnitPrice = 0;
@@ -502,10 +465,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Item.Quantity = 0 → Quantity = 0 in SOAP body
-    //       Covers: (item.Quantity != null ? item.Quantity : 0) ternary
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_ZeroQuantity() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -513,7 +472,7 @@ private class DRC_NBC_LineItemCreator_Test {
 
         List<OrderItem> rawItems = [SELECT Id, Quantity FROM OrderItem WHERE OrderId = :ord.Id];
         for (OrderItem oi : rawItems) {
-            oi.Quantity = 1; // Minimum allowed; null not permitted by platform
+            oi.Quantity = 1;
         }
         update rawItems;
 
@@ -526,10 +485,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Item Description = null → empty string in SOAP body
-    //       Covers: (item.Description != null ? item.Description : '') ternary
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_NullDescription_EmptyString() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -550,10 +505,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: Discount > 0 → lineDiscountAmount computed correctly
-    //       Covers: full discount calculation path (non-zero discount)
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_WithDiscount_DiscountAmountCalculated() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -574,9 +525,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: High starting line number (e.g. 100000) to verify no overflow issues
-    // =========================================================================
     @isTest
     static void test_createWithHighStartingLineNumber() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -590,24 +538,21 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: ord.DRC_NBC_Shipping_Address__r is null → location code skipped
-    //       Covers: ord.DRC_NBC_Shipping_Address__r != null → false branch
-    //       We simulate this by passing an ord with no shipping address lookup
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_NullShippingAddressRelationship() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
 
-        // Query Order without the shipping address relationship populated
         Order ord = [
             SELECT Id, DRC_NBC_Cust_Order_Number__c, DRC_NBC_Warehouse__c,
                    DRC_NBC_Other_Tax_Amount__c, DRC_NBC_TCS_Amount__c,
+                   Is_Domestic_Merchnat__c,
+                   AccountId,
+                   Account.DRC_NBC_Customer_Number__c,
+                   Account.Type,
                    RecordType.Name
             FROM Order LIMIT 1
         ];
-        // DRC_NBC_Shipping_Address__r will be null since it wasn't included in the query
-        // and no lookup field was set on this plain Order object
+
         List<OrderItem> items = getOrderItems(ord.Id);
 
         Test.startTest();
@@ -617,10 +562,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: escapeXml with special characters in FG Code / Description
-    //       Covers: escapeXml with non-blank values containing XML special chars
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_XmlSpecialCharactersEscaped() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -639,10 +580,6 @@ private class DRC_NBC_LineItemCreator_Test {
         Test.stopTest();
     }
 
-    // =========================================================================
-    // TEST: DRC_NBC_Unit_Of_Measurement__c = null → escapeXml returns ''
-    //       Covers: escapeXml(String.isBlank(value)) → return '' branch
-    // =========================================================================
     @isTest
     static void test_buildCreateMultiple_NullUOMCode_EscapedToEmpty() {
         Test.setMock(HttpCalloutMock.class, new SuccessMock());
@@ -657,6 +594,43 @@ private class DRC_NBC_LineItemCreator_Test {
         update rawItems;
 
         List<OrderItem> items = getOrderItems(ord.Id);
+
+        Test.startTest();
+        String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
+            ord.DRC_NBC_Cust_Order_Number__c, items, ord, 30000
+        );
+        Test.stopTest();
+    }
+
+    @isTest
+    static void test_buildCreateMultiple_IsDomesticMerchant_GSTGroupFromLabel() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Order ord = getStandardOrder();
+        ord.Is_Domestic_Merchnat__c = true;
+        update ord;
+
+        ord = getStandardOrder();
+        List<OrderItem> items = getOrderItems(ord.Id);
+
+        Test.startTest();
+        String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(
+            ord.DRC_NBC_Cust_Order_Number__c, items, ord, 30000
+        );
+        Test.stopTest();
+    }
+
+    @isTest
+    static void test_buildCreateMultiple_RestrictedProductMap_ItemReferenceNo() {
+        Test.setMock(HttpCalloutMock.class, new SuccessMock());
+        Order ord = getStandardOrder();
+        List<OrderItem> items = getOrderItems(ord.Id);
+
+        // Insert a restricted product matching the first order item's product
+        DRC_NBC_Restricted_Product__c rp = new DRC_NBC_Restricted_Product__c(
+            DRC_NBC_Product__c  = items[0].Product2Id,
+            DRC_NBC_Customer__c = ord.AccountId
+        );
+        insert rp;
 
         Test.startTest();
         String result = DRC_NBC_LineItemCreator.createLineItemsAtLineNumber(

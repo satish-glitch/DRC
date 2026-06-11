@@ -210,4 +210,18 @@
         <shortDescription>DRC_TCS_Tax_Number</shortDescription>
         <value>70563200</value>
     </labels>
+    <labels>
+        <fullName>Merchnat_GST_Group_Code</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Merchnat GST Group Code</shortDescription>
+        <value>123</value>
+    </labels>
+    <labels>
+        <fullName>Merchnat_HSN_SAC_Code</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Merchnat HSN/SAC Code</shortDescription>
+        <value>123456</value>
+    </labels>
 </CustomLabels>

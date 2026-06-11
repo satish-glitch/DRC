@@ -1,8 +1,8 @@
 /**
-* @File Name :         .cls
+* @File Name :         DRC_NBC_UpdateOrderAndLineItems.cls
 * @Description : Handles Order and Line Items sync with Business Central using SOAP
 * @Author : Satish YADAV
-* @Last Modified On : April 17, 2026
+* @Last Modified On : June 10, 2026
 * * 1. Generate Ship-To Code (if missing)
 * 2. Read Order from BC - check status, if Released → reopen to Open, re-read for fresh Key
 * 3. Update Order in BC
@@ -189,7 +189,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             // -----------------------------------------------------------------
             // STEP 1: READ ORDER FROM BC
-            // Failure → readOrderFromBC already logged → return immediately
             // -----------------------------------------------------------------
             System.debug('Step 1: Reading Order from BC...');
             BCOrderReadResult readResult = readOrderFromBC(ord);
@@ -203,7 +202,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             // -----------------------------------------------------------------
             // STEP 2: REOPEN IF RELEASED
-            // Failure → reopenOrderInBC already logged → return immediately
             // -----------------------------------------------------------------
             if (readResult.status == 'Released') {
                 System.debug('Step 2: Order is Released. Reopening...');
@@ -213,8 +211,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     return 'ERROR: Reopen Released Order failed. Process halted. Detail: ' + reopenResult;
                 }
                 
-                // Re-read for fresh Key after reopen
-                // Failure → readOrderFromBC already logged → return immediately
                 System.debug('Step 2b: Re-reading Order for fresh Key after reopen...');
                 BCOrderReadResult freshRead = readOrderFromBC(ord);
                 
@@ -231,7 +227,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             // -----------------------------------------------------------------
             // STEP 3: UPDATE ORDER IN BC
-            // Failure → updateOrderInBC already logged → return immediately
             // -----------------------------------------------------------------
             System.debug('Step 3: Updating Order in BC...');
             String orderUpdateResult = updateOrderInBC(bcKey, ord, false);
@@ -244,10 +239,9 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             // -----------------------------------------------------------------
             // STEP 4: INTELLIGENT LINE ITEM SYNC
-            // Failure → inner callout already logged → return immediately
             // -----------------------------------------------------------------
             System.debug('Step 4: Syncing Line Items...');
-            String lineItemResult = intelligentLineItemSync(ord.DRC_NBC_Cust_Order_Number__c, ord.Id);
+            String lineItemResult = intelligentLineItemSync(ord.DRC_NBC_Cust_Order_Number__c, ord.Id, accountId);
             
             if (lineItemResult.startsWith('ERROR')) {
                 return 'ERROR: Line Item Sync failed. Process halted. Detail: ' + lineItemResult;
@@ -255,7 +249,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             System.debug('Line Items Sync Result: ' + lineItemResult);
             
-            // All steps passed
             resultMessage = 'ORDER_UPDATE_SUCCESS | ' + lineItemResult;
             
         } catch (Exception ex) {
@@ -263,12 +256,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             resultMessage = 'ERROR: ' + ex.getMessage() + ' | Stack: ' + ex.getStackTraceString();
         }
         
-        // -----------------------------------------------------------------
-        // SINGLE FINAL LOG — written only when we reach this line.
-        // If an error caused an early return above, that callout already
-        // logged its own specific error log and we never reach here.
-        // This log captures the full SUCCESS (or any unexpected error bubble).
-        // -----------------------------------------------------------------
         Boolean isError = resultMessage.startsWith('ERROR') || resultMessage.contains('FAILURE');
         DRC_NBC_API_Log_Handler.createApiLog(
             BC_ORDER_ENDPOINT,
@@ -288,21 +275,11 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     // INTELLIGENT LINE ITEM SYNC
     // ========================================================================
     
-    /**
-* Workflow:
-*   1. UPDATE matched lines (products + non-zero tax lines)
-*   2. CREATE new product items
-*   3. DELETE unmatched product items / zeroed tax lines
-*
-* Each inner callout logs its own API error on failure and returns
-* an ERROR/FAILURE string so this method can halt and bubble up.
-*/
-    private static String intelligentLineItemSync(String bcOrderNo, Id orderId) {
+    private static String intelligentLineItemSync(String bcOrderNo, Id orderId, Id accountId) {
         System.debug('  *** Intelligent Line Item Sync Started ***');
         
         try {
             // --- Read BC line items ---
-            // Failure → readMultipleLineItemsWithDetails already logged → halt
             Map<Integer, BCLineItem> bcLineDetails = readMultipleLineItemsWithDetails(bcOrderNo, orderId);
             
             if (bcLineDetails == null) {
@@ -315,12 +292,15 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 DRC_NBC_Discount__c,
                 Order.DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
                 Order.DRC_NBC_TCS_Amount__c, Order.DRC_NBC_Other_Tax_Amount__c,
+                Order.DRC_NBC_Fright_Charges__c,
+                Order.DRC_NBC_Insurance__c,
                 DRC_NBC_Total_Price__c, Order.DRC_NBC_Cust_Order_Number__c,
-                Order.Account.DRC_NBC_Customer_Number__c, Order.RecordType.Name,
+                Order.Account.DRC_NBC_Customer_Number__c, Order.Account.Type,
+                Order.RecordType.Name, Order.Is_Domestic_Merchnat__c,
                 Product2.DRC_NBC_FG_Code__c, Product2.DRC_NBC_GST_Group_Code__c,
                 Product2.DRC_NBC_HSN_SAC_Code__c, DRC_NBC_Unit_Of_Measurement__c,
                 Order.DRC_NBC_Warehouse__c, DRC_NBC_Packing_Quantity__c,
-                DRC_NBC_Packing_Size__c
+                DRC_NBC_Packing_Size__c, DRC_NBC_Hazardous__c, DRC_NBC_MARKS_NOS__c
                 FROM OrderItem
                 WHERE OrderId = :orderId
                 ORDER BY CreatedDate ASC
@@ -329,20 +309,44 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             // --- Order for Tax amounts ---
             Order ord = [
                 SELECT DRC_NBC_Other_Tax_Amount__c, DRC_NBC_TCS_Amount__c,
+                DRC_NBC_Fright_Charges__c, DRC_NBC_Insurance__c,
                 DRC_NBC_Cust_Order_Number__c, RecordType.Name,
-                DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, DRC_NBC_Warehouse__c
+                DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, DRC_NBC_Warehouse__c,
+                Is_Domestic_Merchnat__c
                 FROM Order
                 WHERE Id = :orderId
                 LIMIT 1
             ];
             
+            // ── Build Restricted Product Map (Product2Id → Restricted Product Name) ──
+            Map<Id, String> restrictedProductMap = new Map<Id, String>();
+            if (accountId != null) {
+                try {
+                    for (DRC_NBC_Restricted_Product__c rp : [
+                        SELECT Name, DRC_NBC_Product__c
+                        FROM DRC_NBC_Restricted_Product__c
+                        WHERE DRC_NBC_Customer__c = :accountId
+                    ]) {
+                        restrictedProductMap.put(rp.DRC_NBC_Product__c, rp.Name);
+                    }
+                    System.debug('  Restricted Product Map built. Size: ' + restrictedProductMap.size());
+                    System.debug('  Restricted Product Map: ' + restrictedProductMap);
+                } catch (Exception ex) {
+                    System.debug('  !!! ERROR building Restricted Product Map: ' + ex.getMessage());
+                    System.debug('  Stack Trace: ' + ex.getStackTraceString());
+                }
+            } else {
+                System.debug('  Skipping Restricted Product Map — accountId is null');
+            }
+            
             System.debug('  SF Product Items: ' + orderItems.size());
             System.debug('  BC Line Items: '    + bcLineDetails.size());
             
-            // ── FULL LINE ITEMS + TAX DEBUG ───────────────────────────────────────────
             System.debug('========== ORDER ITEMS & TAX AMOUNTS ==========');
-            System.debug('Other Tax Amount : ' + ord.DRC_NBC_Other_Tax_Amount__c);
-            System.debug('TCS Amount       : ' + ord.DRC_NBC_TCS_Amount__c);
+            System.debug('Other Tax Amount  : ' + ord.DRC_NBC_Other_Tax_Amount__c);
+            System.debug('TCS Amount        : ' + ord.DRC_NBC_TCS_Amount__c);
+            System.debug('Freight Charges   : ' + ord.DRC_NBC_Fright_Charges__c);
+            System.debug('Insurance         : ' + ord.DRC_NBC_Insurance__c);
             System.debug('--- Order Line Items ---');
             for (OrderItem oi : orderItems) {
                 System.debug(
@@ -354,6 +358,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     ' | UOM: '        + oi.DRC_NBC_Unit_Of_Measurement__c +
                     ' | PackSize: '   + oi.DRC_NBC_Packing_Size__c     +
                     ' | PackQty: '    + oi.DRC_NBC_Packing_Quantity__c +
+                    ' | Hazardous: '  + oi.DRC_NBC_Hazardous__c        +
+                    ' | MarksNos: '   + oi.DRC_NBC_MARKS_NOS__c        +
                     ' | Desc: '       + oi.Description
                 );
             }
@@ -371,6 +377,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         bcTaxLines.put('TCS', bcLine);
                     } else if (bcLine.description != null && bcLine.description.contains('Other Tax')) {
                         bcTaxLines.put('OTHER_TAX', bcLine);
+                    } else if (bcLine.description != null && bcLine.description.contains('Freight')) {
+                        bcTaxLines.put('FREIGHT', bcLine);
+                    } else if (bcLine.description != null && bcLine.description.contains('Insurance')) {
+                        bcTaxLines.put('INSURANCE', bcLine);
                     }
                 }
             }
@@ -405,16 +415,28 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             // --- Tax lines: add to update if non-zero ---
             if (bcTaxLines.containsKey('OTHER_TAX') &&
                 ord.DRC_NBC_Other_Tax_Amount__c != null && ord.DRC_NBC_Other_Tax_Amount__c != 0) {
-                    BCLineItem taxLine = bcTaxLines.get('OTHER_TAX');
-                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
-                    System.debug('  OTHER TAX added to UPDATE (amt: ' + ord.DRC_NBC_Other_Tax_Amount__c + ')');
-                }
+                BCLineItem taxLine = bcTaxLines.get('OTHER_TAX');
+                linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                System.debug('  OTHER TAX added to UPDATE (amt: ' + ord.DRC_NBC_Other_Tax_Amount__c + ')');
+            }
             if (bcTaxLines.containsKey('TCS') &&
                 ord.DRC_NBC_TCS_Amount__c != null && ord.DRC_NBC_TCS_Amount__c != 0) {
-                    BCLineItem taxLine = bcTaxLines.get('TCS');
-                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
-                    System.debug('  TCS added to UPDATE (amt: ' + ord.DRC_NBC_TCS_Amount__c + ')');
-                }
+                BCLineItem taxLine = bcTaxLines.get('TCS');
+                linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                System.debug('  TCS added to UPDATE (amt: ' + ord.DRC_NBC_TCS_Amount__c + ')');
+            }
+            if (bcTaxLines.containsKey('FREIGHT') &&
+                ord.DRC_NBC_Fright_Charges__c != null && ord.DRC_NBC_Fright_Charges__c != 0) {
+                BCLineItem taxLine = bcTaxLines.get('FREIGHT');
+                linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                System.debug('  FREIGHT added to UPDATE (amt: ' + ord.DRC_NBC_Fright_Charges__c + ')');
+            }
+            if (bcTaxLines.containsKey('INSURANCE') &&
+                ord.DRC_NBC_Insurance__c != null && ord.DRC_NBC_Insurance__c != 0) {
+                BCLineItem taxLine = bcTaxLines.get('INSURANCE');
+                linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                System.debug('  INSURANCE added to UPDATE (amt: ' + ord.DRC_NBC_Insurance__c + ')');
+            }
             
             // --- Unmatched BC product lines → delete ---
             Map<Integer, String> linesToDelete = new Map<Integer, String>();
@@ -446,17 +468,36 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     System.debug('  TCS PRESERVED (amt: ' + ord.DRC_NBC_TCS_Amount__c + ')');
                 }
             }
+            if (bcTaxLines.containsKey('FREIGHT')) {
+                if (ord.DRC_NBC_Fright_Charges__c == null || ord.DRC_NBC_Fright_Charges__c == 0) {
+                    BCLineItem taxLine = bcTaxLines.get('FREIGHT');
+                    linesToDelete.put(taxLine.lineNo, taxLine.key);
+                    linesToUpdate.remove(taxLine.lineNo);
+                    System.debug('  FREIGHT marked for DELETE (amount → zero)');
+                } else {
+                    System.debug('  FREIGHT PRESERVED (amt: ' + ord.DRC_NBC_Fright_Charges__c + ')');
+                }
+            }
+            if (bcTaxLines.containsKey('INSURANCE')) {
+                if (ord.DRC_NBC_Insurance__c == null || ord.DRC_NBC_Insurance__c == 0) {
+                    BCLineItem taxLine = bcTaxLines.get('INSURANCE');
+                    linesToDelete.put(taxLine.lineNo, taxLine.key);
+                    linesToUpdate.remove(taxLine.lineNo);
+                    System.debug('  INSURANCE marked for DELETE (amount → zero)');
+                } else {
+                    System.debug('  INSURANCE PRESERVED (amt: ' + ord.DRC_NBC_Insurance__c + ')');
+                }
+            }
             
             String updateResult = 'NO_UPDATE';
             String createResult = 'NO_CREATE';
             String deleteResult = 'NO_DELETE';
             
             // --- STEP 1: UPDATE matched lines ---
-            // Failure → updateMultipleLineItems already logged → halt
             if (!linesToUpdate.isEmpty()) {
                 System.debug('  STEP 1: Updating ' + linesToUpdate.size() + ' lines...');
                 updateResult = updateMultipleLineItems(
-                    bcOrderNo, linesToUpdate, orderItems, ord, orderId, bcLineDetails
+                    bcOrderNo, linesToUpdate, orderItems, ord, orderId, bcLineDetails, restrictedProductMap
                 );
                 System.debug('  Update Result: ' + updateResult);
                 
@@ -466,7 +507,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             }
             
             // --- STEP 2: CREATE new items ---
-            // Failure → createLineItemsAtLineNumber already logged → halt
             if (!itemsToCreate.isEmpty()) {
                 Integer maxLineNo = 0;
                 for (Integer lineNo : bcLineDetails.keySet()) {
@@ -485,7 +525,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             }
             
             // --- STEP 3: DELETE unmatched / zeroed lines ---
-            // Failure → deleteLineItems already logged → halt
             if (!linesToDelete.isEmpty()) {
                 System.debug('  STEP 3: Deleting ' + linesToDelete.size() + ' lines...');
                 deleteResult = DRC_NBC_LineItemDeleter.deleteLineItems(linesToDelete);
@@ -512,12 +551,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     // ========================================================================
     // CALLOUT: READ ORDER
-    //
-    // Logs API error (with full request + response body) on:
-    //   - Non-200 HTTP response
-    //   - 200 but Key/Status missing in response body
-    //   - Callout exception
-    // Returns null on any failure → caller returns immediately.
     // ========================================================================
     
     private static BCOrderReadResult readOrderFromBC(Order ord) {
@@ -544,7 +577,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 BCOrderReadResult result = extractKeyAndStatusFromReadResponse(response.getBody());
                 
                 if (result == null || String.isBlank(result.key)) {
-                    // 200 returned but Key/Status absent — treat as failure
                     DRC_NBC_API_Log_Handler.createApiLog(
                         BC_ORDER_ENDPOINT, requestBody, response.getBody(),
                         'readOrderFromBC',
@@ -559,7 +591,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 return result;
                 
             } else {
-                // Non-200 → log failure and halt
                 DRC_NBC_API_Log_Handler.createApiLog(
                     BC_ORDER_ENDPOINT, requestBody, response.getBody(),
                     'readOrderFromBC',
@@ -584,12 +615,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     // ========================================================================
     // CALLOUT: REOPEN ORDER (Released → Open)
-    //
-    // Logs API error (with full request + response body) on:
-    //   - Non-200 HTTP response
-    //   - Callout exception
-    // Returns 'REOPEN_SUCCESS' on 200.
-    // Returns 'FAILURE:...' / 'ERROR:...' on failure → caller returns immediately.
     // ========================================================================
     
     @TestVisible
@@ -641,12 +666,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     // ========================================================================
     // CALLOUT: UPDATE ORDER
-    //
-    // Logs API error (with full request + response body) on:
-    //   - Non-200 HTTP response
-    //   - Callout exception
-    // Returns 'ORDER_UPDATE_SUCCESS' on 200.
-    // Returns 'FAILURE:...' / 'ERROR:...' on failure → caller returns immediately.
     // ========================================================================
     
     private static String updateOrderInBC(String bcKey, Order ord, Boolean updateSF) {
@@ -658,7 +677,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         String requestBody = buildUpdateOrderSOAPRequest(bcKey, payload, ord);
         String sfOrderId   = String.valueOf(ord.Id);
         
-        // ── FULL ORDER PAYLOAD DEBUG ──────────────────────────────────────────────
         System.debug('========== ORDER UPDATE PAYLOAD ==========');
         System.debug('Order Id            : ' + ord.Id);
         System.debug('BC Customer Order No: ' + ord.DRC_NBC_Cust_Order_Number__c);
@@ -666,8 +684,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         System.debug('Full Payload (JSON) : ' + JSON.serializePretty(payload));
         System.debug('SOAP Request Body   : ' + requestBody);
         System.debug('==========================================');
-        
-        System.debug('  Syncing Shipping Address before Order update...');
         
         System.debug('  Syncing Shipping Address before Order update...');
         String shipSyncResult = DRC_NBC_UpdateShippingAddress.syncShippingAddress(ord.Id);
@@ -715,11 +731,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     // ========================================================================
     // CALLOUT: READ MULTIPLE LINE ITEMS
-    //
-    // Logs API error (with full request + response body) on:
-    //   - Non-200 HTTP response
-    //   - Callout exception
-    // Returns parsed map on 200, null on failure → caller returns immediately.
     // ========================================================================
     
     private static Map<Integer, BCLineItem> readMultipleLineItemsWithDetails(
@@ -773,12 +784,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     
     // ========================================================================
     // CALLOUT: UPDATE MULTIPLE LINE ITEMS
-    //
-    // Logs API error (with full request + response body) on:
-    //   - Non-200 HTTP response
-    //   - Callout exception
-    // Returns 'SUCCESS' on 200.
-    // Returns 'FAILURE:...' / 'ERROR:...' on failure → caller returns immediately.
     // ========================================================================
     
     @TestVisible
@@ -788,24 +793,24 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         List<OrderItem> orderItems,
         Order ord,
         Id orderId,
-        Map<Integer, BCLineItem> bcLineDetails) {
+        Map<Integer, BCLineItem> bcLineDetails,
+        Map<Id, String> restrictedProductMap) {
             
             System.debug('    *** UpdateMultiple Started ***');
             
-            // ✅ FIX: Re-fetch order to get the latest Warehouse__c before building payload
-            // The passed-in `ord` may be stale — updateOrderInBC runs before this and
-            // can result in a different location code being needed.
             Order freshOrd = [
                 SELECT DRC_NBC_Warehouse__c, DRC_NBC_Other_Tax_Amount__c,
-                DRC_NBC_TCS_Amount__c, DRC_NBC_Cust_Order_Number__c,
-                RecordType.Name, DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c
+                DRC_NBC_TCS_Amount__c, DRC_NBC_Fright_Charges__c, DRC_NBC_Insurance__c,
+                DRC_NBC_Cust_Order_Number__c, RecordType.Name,
+                DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
+                Is_Domestic_Merchnat__c
                 FROM Order
                 WHERE Id = :orderId
                 LIMIT 1
             ];
             
             String requestBody = buildUpdateMultipleSOAPRequest(
-                bcOrderNo, bcLineKeys, orderItems, freshOrd, bcLineDetails);  // pass freshOrd
+                bcOrderNo, bcLineKeys, orderItems, freshOrd, bcLineDetails, restrictedProductMap);
             String sfOrderId = String.valueOf(orderId);
             
             try {
@@ -882,65 +887,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             '</soap:Envelope>';
     }
     
-    /*  private static String buildUpdateOrderSOAPRequest(
-String bcKey,
-DRC_NBC_Integration_Payload.OrderPayload payload,
-Order ord) {
-
-if (String.isNotBlank(ord.DRC_NBC_Warehouse__c)) {
-List<Warehouse_Location_Code__mdt> metaList = [
-SELECT DRC_NBC_Code__c FROM Warehouse_Location_Code__mdt
-WHERE MasterLabel = :ord.DRC_NBC_Warehouse__c
-AND DRC_NBC_Type__c = 'Warehouse Location'
-LIMIT 1
-];
-if (!metaList.isEmpty()) {
-payload.Location_Code = metaList[0].DRC_NBC_Code__c;
-}
-}
-
-System.debug('Order Payload => ' + JSON.serialize(payload));
-System.debug('bcKey => ' + bcKey);
-System.debug('Order Id => ' + ord.Id);
-
-return
-'<?xml version="1.0" encoding="utf-8"?>' +
-'<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
-'<soap:Body>' +
-'<Update xmlns="' + SOAP_ORDER_NAMESPACE + '">' +
-'<SalesOrderSalesForce>' +
-'<Key>'                         + escapeXml(bcKey)                               + '</Key>' +
-'<No>'                          + escapeXml(payload.No)                          + '</No>' +
-'<Document_Type>Order</Document_Type>' +
-'<Sell_to_Customer_No>'         + escapeXml(payload.Sell_to_Customer_No)         + '</Sell_to_Customer_No>' +
-'<Sell_to_Customer_Name>'       + escapeXml(payload.Sell_to_Customer_Name)       + '</Sell_to_Customer_Name>' +
-'<Sell_to_Address>'             + escapeXml(payload.Sell_to_Address)             + '</Sell_to_Address>' +
-'<Sell_to_Address_2>'           + escapeXml(payload.Sell_to_Address_2)           + '</Sell_to_Address_2>' +
-'<Sell_to_City>'                + escapeXml(payload.Sell_to_City)                + '</Sell_to_City>' +
-'<Sell_to_Post_Code>'           + escapeXml(payload.Sell_to_Post_Code)           + '</Sell_to_Post_Code>' +
-'<Order_Date>'                  + escapeXml(payload.Order_Date)                  + '</Order_Date>' +
-'<External_Document_No>'        + escapeXml(payload.External_Document_No)        + '</External_Document_No>' +
-'<Salesperson_Code>'            + escapeXml(payload.Salesperson_Code)            + '</Salesperson_Code>' +
-'<Status>Open</Status>' +
-'<Location_Code>' + escapeXml(payload.Location_Code) +  '</Location_Code>' +
-'<Payment_Terms_Code>'          + escapeXml(payload.Payment_Terms_Code)          + '</Payment_Terms_Code>' +
-'<Shipment_Method_Code>'        + escapeXml(payload.Shipment_Method_Code)        + '</Shipment_Method_Code>' +
-'<Sample_Sales>'                + payload.Sample_Sales                           + '</Sample_Sales>' +
-'<Salesforce_So_No>'            + escapeXml(payload.Salesforce_So_No)            + '</Salesforce_So_No>' +
-'<Ship_to_Code>'                + escapeXml(payload.Ship_to_Code)                + '</Ship_to_Code>' +
-'<Ship_to_Name>'                + escapeXml(payload.Ship_to_Name)                + '</Ship_to_Name>' +
-'<Ship_to_Name_2>'              + escapeXml(payload.Ship_to_Name_2)              + '</Ship_to_Name_2>' +
-'<Ship_to_Address>'             + escapeXml(payload.Ship_to_Address)             + '</Ship_to_Address>' +
-'<Ship_to_Address_2>'           + escapeXml(payload.Ship_to_Address_2)           + '</Ship_to_Address_2>' +
-'<Ship_to_Post_Code>'           + escapeXml(payload.Ship_to_Post_Code)           + '</Ship_to_Post_Code>' +
-'<Ship_to_Country_Region_Code>' + escapeXml(payload.Ship_to_Country_Region_Code) + '</Ship_to_Country_Region_Code>' +
-'<Salesforce_Order_Amount>'     + payload.Salesforce_Order_Amount                + '</Salesforce_Order_Amount>' +
-'<Salesforce_Order_Created>'    + payload.Salesforce_Order_Created               + '</Salesforce_Order_Created>' +
-'</SalesOrderSalesForce>' +
-'</Update>' +
-'</soap:Body>' +
-'</soap:Envelope>';
-}*/
     private static String buildUpdateOrderSOAPRequest(
         String bcKey,
         DRC_NBC_Integration_Payload.OrderPayload payload,
@@ -963,12 +909,6 @@ return
             System.debug('Order Id => '      + ord.Id);
             System.debug('Order Type => '    + ord.DRC_NBC_Type__c);
             
-            // ── Determine order type flags ───────────────────────────────────────────
-            Boolean isDomestic = ord.DRC_NBC_Type__c == 'Domestic';
-            Boolean isExport   = ord.DRC_NBC_Type__c == 'Export';
-            Boolean isSample   = (ord.RecordType != null && ord.DRC_NBC_Record_Type_Name__c == 'Sample Order');
-            
-            // ── Safely handle nullable String fields ─────────────────────────────────
             String dispatchDateVal            = String.isNotBlank(payload.DispatchDate)
                 ? payload.DispatchDate : '';
             String poDateVal                  = String.isNotBlank(payload.PO_Date)
@@ -985,14 +925,12 @@ return
                 ? payload.Part_Shipment : '';
             String transShipmentVal           = String.isNotBlank(payload.Trans_Shipment)
                 ? payload.Trans_Shipment : '';
-            
-            // ── Domestic-specific ────────────────────────────────────────────────────
+            String deliveryTermsVal           = String.isNotBlank(payload.Delivery_Terms)
+                ? payload.Delivery_Terms : '';
             String transporterCodeVal         = String.isNotBlank(payload.Transporter_Code)
                 ? payload.Transporter_Code : '';
             String courierNumberVal           = String.isNotBlank(payload.Courier_Number)
                 ? payload.Courier_Number : '';
-            
-            // ── Export-specific ──────────────────────────────────────────────────────
             String countryOfOriginVal         = String.isNotBlank(payload.Country_Of_Origin_Of_Goods)
                 ? payload.Country_Of_Origin_Of_Goods : '';
             String countryOfFinalDestVal      = String.isNotBlank(payload.Country_Of_Final_Destination)
@@ -1012,15 +950,12 @@ return
             String currencyCodeVal            = String.isNotBlank(payload.Currency_Code)
                 ? payload.Currency_Code : '';
             
-            // ── Build common SOAP body ───────────────────────────────────────────────
             String soapBody =
                 '<?xml version="1.0" encoding="utf-8"?>' +
                 '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' +
                 '<soap:Body>' +
                 '<Update xmlns="' + SOAP_ORDER_NAMESPACE + '">' +
                 '<SalesOrderSalesForce>' +
-                
-                // ── Core fields (all order types) ────────────────────────────────────
                 '<Key>'                             + escapeXml(bcKey)                               + '</Key>' +
                 '<No>'                              + escapeXml(payload.No)                          + '</No>' +
                 '<Document_Type>Order</Document_Type>' +
@@ -1048,8 +983,6 @@ return
                 '<Ship_to_Country_Region_Code>'     + escapeXml(payload.Ship_to_Country_Region_Code) + '</Ship_to_Country_Region_Code>' +
                 '<Salesforce_Order_Amount>'         + payload.Salesforce_Order_Amount                + '</Salesforce_Order_Amount>' +
                 '<Salesforce_Order_Created>'        + payload.Salesforce_Order_Created               + '</Salesforce_Order_Created>' +
-                
-                // ── Shared across all types ───────────────────────────────────────────
                 '<Export_Document>'                 + payload.Export_Document                        + '</Export_Document>' +
                 '<Company_Bank_Account_Code_New>'   + escapeXml(companyBankCodeVal)                  + '</Company_Bank_Account_Code_New>' +
                 '<PO_Date>'                         + escapeXml(poDateVal)                           + '</PO_Date>' +
@@ -1058,28 +991,19 @@ return
                 '<DispatchDate>'                    + escapeXml(dispatchDateVal)                     + '</DispatchDate>' +
                 '<Mode_of_Transport>'               + escapeXml(modeOfTransportVal)                  + '</Mode_of_Transport>' +
                 '<Part_Shipment>'                   + escapeXml(partShipmentVal)                     + '</Part_Shipment>' +
-                '<Trans_Shipment>'                  + escapeXml(transShipmentVal)                    + '</Trans_Shipment>';
-            
-            // ── DOMESTIC specific fields ─────────────────────────────────────────────
-            System.debug('Adding Domestic/Sample specific fields...');
-            soapBody +=
-                '<Transporter_Code>'            + escapeXml(transporterCodeVal)                  + '</Transporter_Code>' +
-                '<Courier_Number>'              + escapeXml(courierNumberVal)                    + '</Courier_Number>';
-            
-            // ── EXPORT specific fields ───────────────────────────────────────────────
-            soapBody +=
-                '<Currency_Code>'               + escapeXml(currencyCodeVal)                     + '</Currency_Code>' +
-                '<Country_Of_Origin_Of_Goods>'  + escapeXml(countryOfOriginVal)                  + '</Country_Of_Origin_Of_Goods>' +
-                '<Country_Of_Final_Destination>'+ escapeXml(countryOfFinalDestVal)               + '</Country_Of_Final_Destination>' +
-                '<Notify_Name>'                 + escapeXml(notifyNameVal)                        + '</Notify_Name>' +
-                '<Place_of_receipt_pre_carrier>'+ escapeXml(placeOfReceiptVal)                   + '</Place_of_receipt_pre_carrier>' +
-                '<Vessel_Flight_No>'            + escapeXml(vesselFlightNoVal)                   + '</Vessel_Flight_No>' +
-                '<Port_Of_Discharge>'           + escapeXml(portOfDischargeVal)                  + '</Port_Of_Discharge>' +
-                '<Port_of_Loading>'             + escapeXml(portOfLoadingVal)                    + '</Port_of_Loading>' +
-                '<Final_Destination>'           + escapeXml(finalDestinationVal)                 + '</Final_Destination>';
-            
-            // ── Close envelope ───────────────────────────────────────────────────────
-            soapBody +=
+                '<Trans_Shipment>'                  + escapeXml(transShipmentVal)                    + '</Trans_Shipment>' +
+                '<Delivery_Terms>'                  + escapeXml(deliveryTermsVal)                    + '</Delivery_Terms>' +
+                '<Transporter_Code>'                + escapeXml(transporterCodeVal)                  + '</Transporter_Code>' +
+                '<Courier_Number>'                  + escapeXml(courierNumberVal)                    + '</Courier_Number>' +
+                '<Currency_Code>'                   + escapeXml(currencyCodeVal)                     + '</Currency_Code>' +
+                '<Country_Of_Origin_Of_Goods>'      + escapeXml(countryOfOriginVal)                  + '</Country_Of_Origin_Of_Goods>' +
+                '<Country_Of_Final_Destination>'    + escapeXml(countryOfFinalDestVal)               + '</Country_Of_Final_Destination>' +
+                '<Notify_Name>'                     + escapeXml(notifyNameVal)                       + '</Notify_Name>' +
+                '<Place_of_receipt_pre_carrier>'    + escapeXml(placeOfReceiptVal)                   + '</Place_of_receipt_pre_carrier>' +
+                '<Vessel_Flight_No>'                + escapeXml(vesselFlightNoVal)                   + '</Vessel_Flight_No>' +
+                '<Port_Of_Discharge>'               + escapeXml(portOfDischargeVal)                  + '</Port_Of_Discharge>' +
+                '<Port_of_Loading>'                 + escapeXml(portOfLoadingVal)                    + '</Port_of_Loading>' +
+                '<Final_Destination>'               + escapeXml(finalDestinationVal)                 + '</Final_Destination>' +
                 '</SalesOrderSalesForce>' +
                 '</Update>' +
                 '</soap:Body>' +
@@ -1111,11 +1035,12 @@ return
         Map<Integer, String> bcLineKeys,
         List<OrderItem> orderItems,
         Order ord,
-        Map<Integer, BCLineItem> bcLineDetails) {
+        Map<Integer, BCLineItem> bcLineDetails,
+        Map<Id, String> restrictedProductMap) {
             
             System.debug('    *** buildUpdateMultipleSOAPRequest Started ***');
             String orderLocationCode = getLocationCodeFromWarehouse(ord.DRC_NBC_Warehouse__c);
-            System.debug('orderLocationCode for Line item and other taxes ' + orderLocationCode);
+            System.debug('orderLocationCode: ' + orderLocationCode);
             
             String soapBody =
                 '<?xml version="1.0" encoding="utf-8"?>' +
@@ -1141,6 +1066,12 @@ return
                         } else if (bcLine.description != null && bcLine.description.contains('Other Tax')) {
                             taxKeys.put('OTHER_TAX', bcKey);
                             taxLineNos.put('OTHER_TAX', lineNo);
+                        } else if (bcLine.description != null && bcLine.description.contains('Freight')) {
+                            taxKeys.put('FREIGHT', bcKey);
+                            taxLineNos.put('FREIGHT', lineNo);
+                        } else if (bcLine.description != null && bcLine.description.contains('Insurance')) {
+                            taxKeys.put('INSURANCE', bcKey);
+                            taxLineNos.put('INSURANCE', lineNo);
                         }
                     }
                 }
@@ -1154,6 +1085,7 @@ return
                 sfItemsByFGCode.put(item.Product2.DRC_NBC_FG_Code__c, item);
             }
             
+            // ── Product lines ────────────────────────────────────────────────────────
             for (Integer lineNo : sortedProductLineNos) {
                 String     bcKey  = productKeys.get(lineNo);
                 BCLineItem bcLine = bcLineDetails.get(lineNo);
@@ -1172,38 +1104,66 @@ return
                     lineDiscountAmount = 0;
                 }
                 
+                // ✅ GST fields respect Is_Domestic_Merchnat__c
+                String gstGroupCode = '';
+                String hsnSacCode   = '';
+                if (matchedItem.Order.Is_Domestic_Merchnat__c == true) {
+                    gstGroupCode = Label.Merchnat_GST_Group_Code;
+                 //   hsnSacCode   = Label.Merchnat_HSN_SAC_Code;
+                } else {
+                    gstGroupCode = String.isNotBlank(matchedItem.Product2.DRC_NBC_GST_Group_Code__c)
+                        ? matchedItem.Product2.DRC_NBC_GST_Group_Code__c : '';
+                    hsnSacCode   = String.isNotBlank(matchedItem.Product2.DRC_NBC_HSN_SAC_Code__c)
+                        ? matchedItem.Product2.DRC_NBC_HSN_SAC_Code__c : '';
+                }
+                
+                // ✅ Item_Reference_No from Restricted Product map — same logic as batch
+                String itemReferenceNo = restrictedProductMap.containsKey(matchedItem.Product2Id)
+                    ? restrictedProductMap.get(matchedItem.Product2Id)
+                    : '';
+                System.debug('  Item Reference No (Restricted Product Name): ' + itemReferenceNo + ' for FG: ' + bcLine.itemNo);
+                
                 soapBody +=
                     '<SalesOrderLineSalesForce>' +
-                    '<Key>'                   + escapeXml(bcKey)                                                           + '</Key>' +
+                    '<Key>'                            + escapeXml(bcKey)                                                                                     + '</Key>' +
                     '<Document_Type>Order</Document_Type>' +
-                    '<Document_No>'           + escapeXml(bcOrderNo)                                                       + '</Document_No>' +
-                    '<Line_No>'               + lineNo                                                                     + '</Line_No>' +
+                    '<Document_No>'                    + escapeXml(bcOrderNo)                                                                                 + '</Document_No>' +
+                    '<Line_No>'                        + lineNo                                                                                               + '</Line_No>' +
                     '<Type>Item</Type>' +
-                    '<No>'                    + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c)                         + '</No>' +
-                    '<Customer_item_no>'      + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c)                         + '</Customer_item_no>' +
-                    '<Description>'           + escapeXml(matchedItem.Description != null ? matchedItem.Description : '') + '</Description>' +
-                    '<Quantity>'              + (matchedItem.Quantity  != null ? matchedItem.Quantity  : 0)                + '</Quantity>' +
+                    '<No>'                             + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c)                                                   + '</No>' +
+                    '<Customer_item_no>'               + escapeXml(matchedItem.Product2.DRC_NBC_FG_Code__c)                                                   + '</Customer_item_no>' +
+                    '<Description>'                    + escapeXml(matchedItem.Description != null ? matchedItem.Description : '')                            + '</Description>' +
+                    '<Quantity>'                       + (matchedItem.Quantity  != null ? matchedItem.Quantity  : 0)                                          + '</Quantity>' +
                     '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
-                    '<Unit_Price>'            + (isSampleOrder ? 0 : (matchedItem.UnitPrice != null ? matchedItem.UnitPrice : 0)) + '</Unit_Price>' +
-                    '<Line_Amount>'           + totalPrice                                                                 + '</Line_Amount>' +
-                    '<Line_Discount_Percent>' + discountPercent                                                            + '</Line_Discount_Percent>' +
-                    '<Line_Discount_Amount>'  + lineDiscountAmount                                                         + '</Line_Discount_Amount>' +
+                    '<Unit_Price>'                     + (isSampleOrder ? 0 : (matchedItem.UnitPrice != null ? matchedItem.UnitPrice : 0))                   + '</Unit_Price>' +
+                    '<Line_Amount>'                    + totalPrice                                                                                           + '</Line_Amount>' +
+                    '<Line_Discount_Percent>'          + discountPercent                                                                                      + '</Line_Discount_Percent>' +
+                    '<Line_Discount_Amount>'           + lineDiscountAmount                                                                                   + '</Line_Discount_Amount>' +
                     '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
-                    '<GST_Credit>'            + GST_CREDIT_VALUE                                                           + '</GST_Credit>' +
-                    '<Location_Code>'        + escapeXml(orderLocationCode)                  + '</Location_Code>' +
-                    '<GST_Group_Code>'        + escapeXml(matchedItem.Product2.DRC_NBC_GST_Group_Code__c)                  + '</GST_Group_Code>' +
-                    '<HSN_SAC_Code>'          + escapeXml(matchedItem.Product2.DRC_NBC_HSN_SAC_Code__c)                    + '</HSN_SAC_Code>' +
-                    '<Packing_Details>'       + escapeXml(matchedItem.DRC_NBC_Packing_Size__c)                             + '</Packing_Details>' +
-                    '<No_of_Pkg_for_Qty>'     + (matchedItem.Quantity  != null ? matchedItem.Quantity  : 0)                + '</No_of_Pkg_for_Qty>' +
+                    '<GST_Credit>'                     + GST_CREDIT_VALUE                                                                                     + '</GST_Credit>' +
+                    '<Location_Code>'                  + escapeXml(orderLocationCode)                                                                         + '</Location_Code>' +
+                    '<GST_Group_Code>'                 + escapeXml(gstGroupCode)                                                                              + '</GST_Group_Code>' +
+                    '<HSN_SAC_Code>'                   + escapeXml(hsnSacCode)                                                                                + '</HSN_SAC_Code>' +
+                    '<Packing_Details>'                + escapeXml(matchedItem.DRC_NBC_Packing_Size__c)                                                       + '</Packing_Details>' +
+                    '<No_of_Pkg_for_Qty>'              + (matchedItem.Quantity != null ? matchedItem.Quantity : 0)                                            + '</No_of_Pkg_for_Qty>' +
+                    '<Hazardous>'                      + (matchedItem.DRC_NBC_Hazardous__c == true)                                                           + '</Hazardous>' +
+                    '<MarkNosContainerNos>'            + escapeXml(String.isBlank(matchedItem.DRC_NBC_MARKS_NOS__c) ? '' : matchedItem.DRC_NBC_MARKS_NOS__c.trim()) + '</MarkNosContainerNos>' +
+                    // ✅ UPDATED: Item_Reference_No now from Restricted Product map
+                    '<Item_Reference_No>'              + escapeXml(itemReferenceNo)                                                                           + '</Item_Reference_No>' +
+                    '<Item_Reference_Type>'            + escapeXml(matchedItem.Order.Account.DRC_NBC_Customer_Number__c != null ? matchedItem.Order.Account.DRC_NBC_Customer_Number__c : '') + '</Item_Reference_Type>' +
+                    '<Item_Reference_Type_No>'         + escapeXml(matchedItem.Order.Account.Type != null ? matchedItem.Order.Account.Type : '')              + '</Item_Reference_Type_No>' +
+                    '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
                     '</SalesOrderLineSalesForce>';
             }
             
-            // Other Tax Line
+            // ── Other Tax Line ───────────────────────────────────────────────────────
             if (taxKeys.containsKey('OTHER_TAX') &&
                 ord.DRC_NBC_Other_Tax_Amount__c != null && ord.DRC_NBC_Other_Tax_Amount__c != 0) {
                     
                     String  otherTaxKey    = taxKeys.get('OTHER_TAX');
                     Integer otherTaxLineNo = taxLineNos.get('OTHER_TAX');
+                    String glGstGroup = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_GST_Group_Code : '';
+                    String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
                     
                     soapBody +=
                         '<SalesOrderLineSalesForce>' +
@@ -1216,26 +1176,36 @@ return
                         '<Customer_item_no></Customer_item_no>' +
                         '<Description>Other Tax Amount</Description>' +
                         '<Quantity>1</Quantity>' +
-                        '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
-                        '<Location_Code>'        + escapeXml(orderLocationCode)                  + '</Location_Code>' +
+                        '<Location_Code>'         + escapeXml(orderLocationCode)    + '</Location_Code>' +
                         '<Unit_Price>'            + ord.DRC_NBC_Other_Tax_Amount__c + '</Unit_Price>' +
                         '<Line_Amount>'           + ord.DRC_NBC_Other_Tax_Amount__c + '</Line_Amount>' +
                         '<Line_Discount_Percent>0</Line_Discount_Percent>' +
                         '<Line_Discount_Amount>0</Line_Discount_Amount>' +
                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                         '<GST_Credit>_blank_</GST_Credit>' +
+                        '<GST_Group_Code>'        + escapeXml(glGstGroup)           + '</GST_Group_Code>' +
+                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)             + '</HSN_SAC_Code>' +
+                        '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Packing_Details></Packing_Details>' +
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
+                        '<Hazardous>false</Hazardous>' +
+                        '<MarkNosContainerNos></MarkNosContainerNos>' +
+                        '<Item_Reference_No></Item_Reference_No>' +
+                        '<Item_Reference_Type></Item_Reference_Type>' +
+                        '<Item_Reference_Type_No></Item_Reference_Type_No>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
                         '</SalesOrderLineSalesForce>';
                 }
             
-            // TCS Line
+            // ── TCS Line ─────────────────────────────────────────────────────────────
             if (taxKeys.containsKey('TCS') &&
                 ord.DRC_NBC_TCS_Amount__c != null && ord.DRC_NBC_TCS_Amount__c != 0) {
                     
                     String  tcsKey    = taxKeys.get('TCS');
                     Integer tcsLineNo = taxLineNos.get('TCS');
+                    String glGstGroup = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_GST_Group_Code : '';
+                    String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
                     
                     soapBody +=
                         '<SalesOrderLineSalesForce>' +
@@ -1248,17 +1218,109 @@ return
                         '<Customer_item_no></Customer_item_no>' +
                         '<Description>TCS Amount</Description>' +
                         '<Quantity>1</Quantity>' +
-                        '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
-                        '<Location_Code>'        + escapeXml(orderLocationCode)                  + '</Location_Code>' +
+                        '<Location_Code>'         + escapeXml(orderLocationCode)  + '</Location_Code>' +
                         '<Unit_Price>'            + ord.DRC_NBC_TCS_Amount__c     + '</Unit_Price>' +
                         '<Line_Amount>'           + ord.DRC_NBC_TCS_Amount__c     + '</Line_Amount>' +
                         '<Line_Discount_Percent>0</Line_Discount_Percent>' +
                         '<Line_Discount_Amount>0</Line_Discount_Amount>' +
                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                         '<GST_Credit>_blank_</GST_Credit>' +
+                        '<GST_Group_Code>'        + escapeXml(glGstGroup)         + '</GST_Group_Code>' +
+                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)           + '</HSN_SAC_Code>' +
+                        '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Packing_Details></Packing_Details>' +
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
+                        '<Hazardous>false</Hazardous>' +
+                        '<MarkNosContainerNos></MarkNosContainerNos>' +
+                        '<Item_Reference_No></Item_Reference_No>' +
+                        '<Item_Reference_Type></Item_Reference_Type>' +
+                        '<Item_Reference_Type_No></Item_Reference_Type_No>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                        '</SalesOrderLineSalesForce>';
+                }
+            
+            // ── Freight Charges Line ─────────────────────────────────────────────────
+            if (taxKeys.containsKey('FREIGHT') &&
+                ord.DRC_NBC_Fright_Charges__c != null && ord.DRC_NBC_Fright_Charges__c != 0) {
+                    
+                    String  freightKey    = taxKeys.get('FREIGHT');
+                    Integer freightLineNo = taxLineNos.get('FREIGHT');
+                    String glGstGroup = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_GST_Group_Code : '';
+                    String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
+                    
+                    soapBody +=
+                        '<SalesOrderLineSalesForce>' +
+                        '<Key>'                   + escapeXml(freightKey)             + '</Key>' +
+                        '<Document_Type>Order</Document_Type>' +
+                        '<Document_No>'           + escapeXml(bcOrderNo)              + '</Document_No>' +
+                        '<Line_No>'               + freightLineNo                     + '</Line_No>' +
+                        '<Type>G/L Account</Type>' +
+                        '<No>'                    + Label.DRC_TCS_Tax_Number          + '</No>' +
+                        '<Customer_item_no></Customer_item_no>' +
+                        '<Description>Freight Charges</Description>' +
+                        '<Quantity>1</Quantity>' +
+                        '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
+                        '<Location_Code>'         + escapeXml(orderLocationCode)      + '</Location_Code>' +
+                        '<Unit_Price>'            + ord.DRC_NBC_Fright_Charges__c     + '</Unit_Price>' +
+                        '<Line_Amount>'           + ord.DRC_NBC_Fright_Charges__c     + '</Line_Amount>' +
+                        '<Line_Discount_Percent>0</Line_Discount_Percent>' +
+                        '<Line_Discount_Amount>0</Line_Discount_Amount>' +
+                        '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
+                        '<GST_Credit>_blank_</GST_Credit>' +
+                        '<GST_Group_Code>'        + escapeXml(glGstGroup)             + '</GST_Group_Code>' +
+                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)               + '</HSN_SAC_Code>' +
+                       '<HSN_SAC_Code></HSN_SAC_Code>' +
+                        '<Packing_Details></Packing_Details>' +
+                        '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
+                        '<Hazardous>false</Hazardous>' +
+                        '<MarkNosContainerNos></MarkNosContainerNos>' +
+                        '<Item_Reference_No></Item_Reference_No>' +
+                        '<Item_Reference_Type></Item_Reference_Type>' +
+                        '<Item_Reference_Type_No></Item_Reference_Type_No>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                        '</SalesOrderLineSalesForce>';
+                }
+            
+            // ── Insurance Line ────────────────────────────────────────────────────────
+            if (taxKeys.containsKey('INSURANCE') &&
+                ord.DRC_NBC_Insurance__c != null && ord.DRC_NBC_Insurance__c != 0) {
+                    
+                    String  insuranceKey    = taxKeys.get('INSURANCE');
+                    Integer insuranceLineNo = taxLineNos.get('INSURANCE');
+                    String glGstGroup = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_GST_Group_Code : '';
+                    String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
+                    
+                    soapBody +=
+                        '<SalesOrderLineSalesForce>' +
+                        '<Key>'                   + escapeXml(insuranceKey)          + '</Key>' +
+                        '<Document_Type>Order</Document_Type>' +
+                        '<Document_No>'           + escapeXml(bcOrderNo)             + '</Document_No>' +
+                        '<Line_No>'               + insuranceLineNo                  + '</Line_No>' +
+                        '<Type>G/L Account</Type>' +
+                        '<No>'                    + Label.DRC_TCS_Tax_Number         + '</No>' +
+                        '<Customer_item_no></Customer_item_no>' +
+                        '<Description>Insurance</Description>' +
+                        '<Quantity>1</Quantity>' +
+                        '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
+                        '<Location_Code>'         + escapeXml(orderLocationCode)     + '</Location_Code>' +
+                        '<Unit_Price>'            + ord.DRC_NBC_Insurance__c         + '</Unit_Price>' +
+                        '<Line_Amount>'           + ord.DRC_NBC_Insurance__c         + '</Line_Amount>' +
+                        '<Line_Discount_Percent>0</Line_Discount_Percent>' +
+                        '<Line_Discount_Amount>0</Line_Discount_Amount>' +
+                        '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
+                        '<GST_Credit>_blank_</GST_Credit>' +
+                        '<GST_Group_Code>'        + escapeXml(glGstGroup)            + '</GST_Group_Code>' +
+                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)              + '</HSN_SAC_Code>' +
+                        '<HSN_SAC_Code></HSN_SAC_Code>' +
+                        '<Packing_Details></Packing_Details>' +
+                        '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
+                        '<Hazardous>false</Hazardous>' +
+                        '<MarkNosContainerNos></MarkNosContainerNos>' +
+                        '<Item_Reference_No></Item_Reference_No>' +
+                        '<Item_Reference_Type></Item_Reference_Type>' +
+                        '<Item_Reference_Type_No></Item_Reference_Type_No>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
                         '</SalesOrderLineSalesForce>';
                 }
             

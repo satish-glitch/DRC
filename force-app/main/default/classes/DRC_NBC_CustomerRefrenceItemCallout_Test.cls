@@ -237,7 +237,7 @@ public class DRC_NBC_CustomerRefrenceItemCallout_Test {
         insert rp;
         
         rp = [
-            SELECT Id, DRC_NBC_Customer__c, DRC_NBC_Product__c,
+            SELECT Id,Name, DRC_NBC_Customer__c, DRC_NBC_Product__c,
             DRC_NBC_Product__r.Name,
             DRC_NBC_Product__r.DRC_NBC_FG_Code__c,
             DRC_NBC_Customer_s_Product_code__c
@@ -280,7 +280,7 @@ public class DRC_NBC_CustomerRefrenceItemCallout_Test {
         insert rp;
         
         rp = [
-            SELECT Id, DRC_NBC_Customer__c, DRC_NBC_Product__c,
+            SELECT Id, DRC_NBC_Customer__c, Name, DRC_NBC_Product__c,
             DRC_NBC_Product__r.Name,
             DRC_NBC_Product__r.DRC_NBC_FG_Code__c,
             DRC_NBC_Customer_s_Product_code__c

@@ -47,7 +47,6 @@ global with sharing class DRC_NBC_Integration_Payload {
         global String ProductCategoryL2;
         global String ProductCategoryL3;
         global boolean hazardous;
-        global String marksnos;
     }
     
     global class PackingDetail {

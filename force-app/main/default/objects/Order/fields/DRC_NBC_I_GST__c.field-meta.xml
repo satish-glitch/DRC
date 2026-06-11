@@ -9,10 +9,15 @@
         ),
         AND(
             ISPICKVAL(DRC_NBC_Sample_Type__c, &quot;Paid Sample&quot;),
-            TEXT( Account.BillingStateCode ) &lt;&gt; &quot;MH&quot;
+            TEXT(Account.BillingStateCode) &lt;&gt; &quot;MH&quot;
         )
     ),
-    DRC_NBC_Total_Amount__c * VALUE($Label.DRC_NBC_IGST_Tax_Rate),
+    DRC_NBC_Total_Amount__c *
+    IF(
+        Is_Domestic_Merchnat__c,
+        0.001,
+        VALUE($Label.DRC_NBC_IGST_Tax_Rate)
+    ),
     0
 )</formula>
     <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>

@@ -167,6 +167,10 @@
                 <behavior>Edit</behavior>
                 <field>DRC_NBC_Insurance__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>Is_Domestic_Merchnat__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
