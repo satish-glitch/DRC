@@ -451,6 +451,7 @@
             </defaultValue>
             <fieldText>Lead Products</fieldText>
             <fieldType>MultiSelectCheckboxes</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>false</isRequired>
             <styleProperties>
                 <verticalAlignment>

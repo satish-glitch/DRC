@@ -164,6 +164,7 @@
             </defaultValue>
             <fieldText>Select More Intrested Chemistry</fieldText>
             <fieldType>MultiSelectCheckboxes</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>false</isRequired>
             <styleProperties>
                 <verticalAlignment>

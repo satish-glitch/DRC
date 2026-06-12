@@ -402,6 +402,7 @@
             <dataType>String</dataType>
             <fieldText>New Opportunity Name</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isDisabled>
                 <elementReference>opportunity_ReadOnly</elementReference>
             </isDisabled>
@@ -420,6 +421,7 @@
             <dataType>String</dataType>
             <fieldText>New Quote Name</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isDisabled>
                 <elementReference>quoteName_ReadOnly</elementReference>
             </isDisabled>

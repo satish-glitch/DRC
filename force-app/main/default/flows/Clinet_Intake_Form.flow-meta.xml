@@ -411,6 +411,7 @@
             <dataType>String</dataType>
             <fieldText>Company</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -426,6 +427,7 @@
             <dataType>String</dataType>
             <fieldText>First Name</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -441,6 +443,7 @@
             <dataType>String</dataType>
             <fieldText>Last Name</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -457,6 +460,7 @@
             <dataType>String</dataType>
             <fieldText>Country</fieldText>
             <fieldType>DropdownBox</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -528,6 +532,7 @@
             <dataType>String</dataType>
             <fieldText>Message</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>false</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -544,6 +549,7 @@
             <dataType>String</dataType>
             <fieldText>Trade Show Name</fieldText>
             <fieldType>DropdownBox</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>false</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -559,6 +565,7 @@
             <dataType>String</dataType>
             <fieldText>Other tradeshow name</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>false</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -626,6 +633,7 @@
             <dataType>Boolean</dataType>
             <fieldText>Others</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <styleProperties>
                 <verticalAlignment>
@@ -641,6 +649,7 @@
             <dataType>String</dataType>
             <fieldText>Other Chemistry/Products</fieldText>
             <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <styleProperties>
                 <verticalAlignment>

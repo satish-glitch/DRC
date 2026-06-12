@@ -415,28 +415,28 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             // --- Tax lines: add to update if non-zero ---
             if (bcTaxLines.containsKey('OTHER_TAX') &&
                 ord.DRC_NBC_Other_Tax_Amount__c != null && ord.DRC_NBC_Other_Tax_Amount__c != 0) {
-                BCLineItem taxLine = bcTaxLines.get('OTHER_TAX');
-                linesToUpdate.put(taxLine.lineNo, taxLine.key);
-                System.debug('  OTHER TAX added to UPDATE (amt: ' + ord.DRC_NBC_Other_Tax_Amount__c + ')');
-            }
+                    BCLineItem taxLine = bcTaxLines.get('OTHER_TAX');
+                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                    System.debug('  OTHER TAX added to UPDATE (amt: ' + ord.DRC_NBC_Other_Tax_Amount__c + ')');
+                }
             if (bcTaxLines.containsKey('TCS') &&
                 ord.DRC_NBC_TCS_Amount__c != null && ord.DRC_NBC_TCS_Amount__c != 0) {
-                BCLineItem taxLine = bcTaxLines.get('TCS');
-                linesToUpdate.put(taxLine.lineNo, taxLine.key);
-                System.debug('  TCS added to UPDATE (amt: ' + ord.DRC_NBC_TCS_Amount__c + ')');
-            }
+                    BCLineItem taxLine = bcTaxLines.get('TCS');
+                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                    System.debug('  TCS added to UPDATE (amt: ' + ord.DRC_NBC_TCS_Amount__c + ')');
+                }
             if (bcTaxLines.containsKey('FREIGHT') &&
                 ord.DRC_NBC_Fright_Charges__c != null && ord.DRC_NBC_Fright_Charges__c != 0) {
-                BCLineItem taxLine = bcTaxLines.get('FREIGHT');
-                linesToUpdate.put(taxLine.lineNo, taxLine.key);
-                System.debug('  FREIGHT added to UPDATE (amt: ' + ord.DRC_NBC_Fright_Charges__c + ')');
-            }
+                    BCLineItem taxLine = bcTaxLines.get('FREIGHT');
+                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                    System.debug('  FREIGHT added to UPDATE (amt: ' + ord.DRC_NBC_Fright_Charges__c + ')');
+                }
             if (bcTaxLines.containsKey('INSURANCE') &&
                 ord.DRC_NBC_Insurance__c != null && ord.DRC_NBC_Insurance__c != 0) {
-                BCLineItem taxLine = bcTaxLines.get('INSURANCE');
-                linesToUpdate.put(taxLine.lineNo, taxLine.key);
-                System.debug('  INSURANCE added to UPDATE (amt: ' + ord.DRC_NBC_Insurance__c + ')');
-            }
+                    BCLineItem taxLine = bcTaxLines.get('INSURANCE');
+                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                    System.debug('  INSURANCE added to UPDATE (amt: ' + ord.DRC_NBC_Insurance__c + ')');
+                }
             
             // --- Unmatched BC product lines → delete ---
             Map<Integer, String> linesToDelete = new Map<Integer, String>();
@@ -604,10 +604,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         } catch (Exception ex) {
             System.debug('  *** READ Exception: ' + ex.getMessage());
             DRC_NBC_API_Log_Handler.createApiLog(
-                BC_ORDER_ENDPOINT, requestBody, null,
-                'readOrderFromBC',
-                ex.getMessage(), null, ex.getStackTraceString(),
-                LOG_TYPE_ERROR, sfOrderId
+                BC_ORDER_ENDPOINT, requestBody, null,'readOrderFromBC',ex.getMessage(), null, ex.getStackTraceString(),LOG_TYPE_ERROR, sfOrderId
             );
             return null;
         }
@@ -708,11 +705,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 return 'ORDER_UPDATE_SUCCESS';
             } else {
                 DRC_NBC_API_Log_Handler.createApiLog(
-                    BC_ORDER_ENDPOINT, requestBody, response.getBody(),
-                    'updateOrderInBC',
-                    'Non-200 response. HTTP ' + response.getStatusCode() + ': ' + response.getStatus(),
-                    response.getStatusCode(), null,
-                    LOG_TYPE_ERROR, sfOrderId
+                    BC_ORDER_ENDPOINT, requestBody, response.getBody(), 'updateOrderInBC','Non-200 response. HTTP ' + response.getStatusCode() + ': ' + response.getStatus(),response.getStatusCode(), null,LOG_TYPE_ERROR, sfOrderId
                 );
                 return 'FAILURE: ' + response.getStatusCode();
             }
@@ -720,10 +713,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         } catch (Exception ex) {
             System.debug('  *** UPDATE Exception: ' + ex.getMessage());
             DRC_NBC_API_Log_Handler.createApiLog(
-                BC_ORDER_ENDPOINT, requestBody, null,
-                'updateOrderInBC',
-                ex.getMessage(), null, ex.getStackTraceString(),
-                LOG_TYPE_ERROR, sfOrderId
+                BC_ORDER_ENDPOINT, requestBody, null,'updateOrderInBC',ex.getMessage(), null, ex.getStackTraceString(),LOG_TYPE_ERROR, sfOrderId
             );
             return 'ERROR: ' + ex.getMessage();
         }
@@ -761,11 +751,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     return result;
                 } else {
                     DRC_NBC_API_Log_Handler.createApiLog(
-                        BC_LINE_ITEM_ENDPOINT, requestBody, response.getBody(),
-                        'readMultipleLineItemsWithDetails',
-                        'Non-200 response. HTTP ' + response.getStatusCode() + ': ' + response.getStatus(),
-                        response.getStatusCode(), null,
-                        LOG_TYPE_ERROR, sfOrderId
+                        BC_LINE_ITEM_ENDPOINT, requestBody, response.getBody(),'readMultipleLineItemsWithDetails','Non-200 response. HTTP ' + response.getStatusCode() + ': ' + response.getStatus(),response.getStatusCode(), null,LOG_TYPE_ERROR, sfOrderId
                     );
                     return null;
                 }
@@ -773,10 +759,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             } catch (Exception ex) {
                 System.debug('    *** ReadMultiple Exception: ' + ex.getMessage());
                 DRC_NBC_API_Log_Handler.createApiLog(
-                    BC_LINE_ITEM_ENDPOINT, requestBody, null,
-                    'readMultipleLineItemsWithDetails',
-                    ex.getMessage(), null, ex.getStackTraceString(),
-                    LOG_TYPE_ERROR, sfOrderId
+                    BC_LINE_ITEM_ENDPOINT, requestBody, null,'readMultipleLineItemsWithDetails',ex.getMessage(), null, ex.getStackTraceString(),LOG_TYPE_ERROR, sfOrderId
                 );
                 return null;
             }
@@ -798,22 +781,25 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             System.debug('    *** UpdateMultiple Started ***');
             
-            Order freshOrd = [
-                SELECT DRC_NBC_Warehouse__c, DRC_NBC_Other_Tax_Amount__c,
-                DRC_NBC_TCS_Amount__c, DRC_NBC_Fright_Charges__c, DRC_NBC_Insurance__c,
-                DRC_NBC_Cust_Order_Number__c, RecordType.Name,
-                DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
-                Is_Domestic_Merchnat__c
-                FROM Order
-                WHERE Id = :orderId
-                LIMIT 1
-            ];
-            
-            String requestBody = buildUpdateMultipleSOAPRequest(
-                bcOrderNo, bcLineKeys, orderItems, freshOrd, bcLineDetails, restrictedProductMap);
-            String sfOrderId = String.valueOf(orderId);
+            String sfOrderId   = String.valueOf(orderId);
+            String requestBody = '';
             
             try {
+                // Inside updateMultipleLineItems:
+                Order freshOrd = [
+                    SELECT DRC_NBC_Warehouse__c, DRC_NBC_Other_Tax_Amount__c,
+                    DRC_NBC_TCS_Amount__c, DRC_NBC_Fright_Charges__c, DRC_NBC_Insurance__c,
+                    DRC_NBC_Cust_Order_Number__c, RecordType.Name,
+                    DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
+                    Is_Domestic_Merchnat__c
+                    FROM Order
+                    WHERE Id = :orderId
+                    LIMIT 1
+                ];
+                
+                requestBody = buildUpdateMultipleSOAPRequest(
+                    bcOrderNo, bcLineKeys, orderItems, freshOrd, bcLineDetails, restrictedProductMap);
+                
                 HttpRequest req = new HttpRequest();
                 req.setEndpoint(BC_LINE_ITEM_ENDPOINT);
                 req.setMethod('POST');
@@ -831,11 +817,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     return 'SUCCESS';
                 } else {
                     DRC_NBC_API_Log_Handler.createApiLog(
-                        BC_LINE_ITEM_ENDPOINT, requestBody, response.getBody(),
-                        'updateMultipleLineItems',
-                        'Non-200 response. HTTP ' + response.getStatusCode() + ': ' + response.getStatus(),
-                        response.getStatusCode(), null,
-                        LOG_TYPE_ERROR, sfOrderId
+                        BC_LINE_ITEM_ENDPOINT, requestBody, response.getBody(),'updateMultipleLineItems', 'Non-200 response. HTTP ' + response.getStatusCode() + ': ' + response.getStatus(),  response.getStatusCode(), null,LOG_TYPE_ERROR, sfOrderId
                     );
                     return 'FAILURE: ' + response.getStatusCode();
                 }
@@ -843,15 +825,11 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             } catch (Exception ex) {
                 System.debug('    *** UpdateMultiple Exception: ' + ex.getMessage());
                 DRC_NBC_API_Log_Handler.createApiLog(
-                    BC_LINE_ITEM_ENDPOINT, requestBody, null,
-                    'updateMultipleLineItems',
-                    ex.getMessage(), null, ex.getStackTraceString(),
-                    LOG_TYPE_ERROR, sfOrderId
+                    BC_LINE_ITEM_ENDPOINT, requestBody, null, 'updateMultipleLineItems',ex.getMessage(), null, ex.getStackTraceString(),LOG_TYPE_ERROR, sfOrderId
                 );
                 return 'ERROR: ' + ex.getMessage();
             }
         }
-    
     // ========================================================================
     // SOAP REQUEST BUILDERS
     // ========================================================================
@@ -1109,7 +1087,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 String hsnSacCode   = '';
                 if (matchedItem.Order.Is_Domestic_Merchnat__c == true) {
                     gstGroupCode = Label.Merchnat_GST_Group_Code;
-                 //   hsnSacCode   = Label.Merchnat_HSN_SAC_Code;
+                    //   hsnSacCode   = Label.Merchnat_HSN_SAC_Code;
                 } else {
                     gstGroupCode = String.isNotBlank(matchedItem.Product2.DRC_NBC_GST_Group_Code__c)
                         ? matchedItem.Product2.DRC_NBC_GST_Group_Code__c : '';
@@ -1185,7 +1163,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                         '<GST_Credit>_blank_</GST_Credit>' +
                         '<GST_Group_Code>'        + escapeXml(glGstGroup)           + '</GST_Group_Code>' +
-                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)             + '</HSN_SAC_Code>' +
+                        // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)             + '</HSN_SAC_Code>' +
                         '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Packing_Details></Packing_Details>' +
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
@@ -1227,7 +1205,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                         '<GST_Credit>_blank_</GST_Credit>' +
                         '<GST_Group_Code>'        + escapeXml(glGstGroup)         + '</GST_Group_Code>' +
-                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)           + '</HSN_SAC_Code>' +
+                        // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)           + '</HSN_SAC_Code>' +
                         '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Packing_Details></Packing_Details>' +
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
@@ -1269,8 +1247,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                         '<GST_Credit>_blank_</GST_Credit>' +
                         '<GST_Group_Code>'        + escapeXml(glGstGroup)             + '</GST_Group_Code>' +
-                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)               + '</HSN_SAC_Code>' +
-                       '<HSN_SAC_Code></HSN_SAC_Code>' +
+                        // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)               + '</HSN_SAC_Code>' +
+                        '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Packing_Details></Packing_Details>' +
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
                         '<Hazardous>false</Hazardous>' +
@@ -1311,7 +1289,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                         '<GST_Credit>_blank_</GST_Credit>' +
                         '<GST_Group_Code>'        + escapeXml(glGstGroup)            + '</GST_Group_Code>' +
-                       // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)              + '</HSN_SAC_Code>' +
+                        // '<HSN_SAC_Code>'          + escapeXml(glHsnSac)              + '</HSN_SAC_Code>' +
                         '<HSN_SAC_Code></HSN_SAC_Code>' +
                         '<Packing_Details></Packing_Details>' +
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
