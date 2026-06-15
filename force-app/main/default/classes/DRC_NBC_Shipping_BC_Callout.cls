@@ -130,12 +130,14 @@ System.debug('Shipto code >>> '+  currentMax);
         String street = addr.DRC_NBC_Address__Street__s;
         if (!String.isBlank(street)) {
             if (street.length() > 100) {
-                payload.ShippingAddress = street.substring(0, 99);
-                payload.ShippingAddress2 = street.length() > 149 ? 
-                    street.substring(99, 149) : street.substring(99);
+                payload.ShippingAddress  = street.substring(0, 100);
+                String streetRemainder   = street.substring(100);
+                payload.ShippingAddress2 = streetRemainder.length() > 100 
+                    ? streetRemainder.substring(0, 100) 
+                    : streetRemainder;
             } else {
-                payload.ShippingAddress = street;
-                payload.ShippingAddress2 = '';
+                payload.ShippingAddress  = street;
+                payload.ShippingAddress2 = addr.DRC_NBC_Address__City__s;
             }
         } else {
             payload.ShippingAddress = '';

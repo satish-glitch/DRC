@@ -729,7 +729,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         
         Order ordFull = [
             SELECT Id, DRC_NBC_Cust_Order_Number__c,
-            DRC_NBC_Sample_Shipping_Cost__c
+            DRC_NBC_Sample_Shipping_Cost__c, Is_Domestic_Merchnat__c
             FROM Order WHERE Id = :ord.Id
         ];
         
@@ -803,7 +803,7 @@ private class DRC_NBC_OrderProduct_BC_Batch_Test {
         
         Order ordFull = [
             SELECT Id, DRC_NBC_Cust_Order_Number__c,
-            DRC_NBC_Sample_Amount__c
+            DRC_NBC_Sample_Shipping_Cost__c, Is_Domestic_Merchnat__c
             FROM Order WHERE Id = :ord.Id
         ];
         

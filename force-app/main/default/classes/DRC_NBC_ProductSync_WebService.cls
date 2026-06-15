@@ -52,7 +52,10 @@ global without sharing class DRC_NBC_ProductSync_WebService {
                     DRC_NBC_Category_Level_2__c   = data.product.ProductCategoryL2,
                     DRC_NBC_Category_Level_3__c   = data.product.ProductCategoryL3,
                     DRC_NBC_HSN_SAC_Code__c       = data.product.HSNCode,
-                    DRC_NBC_MARKS_NOS__c       = data.product.productName,
+                    //DRC_NBC_MARKS_NOS__c       = data.product.productName,
+                    DRC_NBC_MARKS_NOS__c = String.isBlank(data.product.marksnos)
+                    ? data.product.productName
+                    : data.product.marksnos,
                     DRC_NBC_Hazardous__c       = data.product.hazardous
                     // ✅ Removed DRC_NBC_Packing_Size__c — now handled via child object
                 );

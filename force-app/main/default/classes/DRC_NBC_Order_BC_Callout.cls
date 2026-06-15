@@ -227,18 +227,28 @@ public class DRC_NBC_Order_BC_Callout implements Database.AllowsCallouts {
             ? ord.Account.BillingStreet
             : '';
         
-        if (billingStreet.length() > 100) {
+     /*   if (billingStreet.length() > 100) {
             payload.Sell_to_Address = billingStreet.substring(0, 100);
             payload.Sell_to_Address_2 = billingStreet.substring(100);
         } else {
             payload.Sell_to_Address = billingStreet;
             payload.Sell_to_Address_2 = '';
+        }*/
+        if (billingStreet.length() > 100) {
+            payload.Sell_to_Address   = billingStreet.substring(0, 100);
+            String billRemainder      = billingStreet.substring(100);
+            payload.Sell_to_Address_2 = billRemainder.length() > 100 
+                ? billRemainder.substring(0, 100) 
+                : billRemainder;
+        } else {
+            payload.Sell_to_Address   = billingStreet;
+            payload.Sell_to_Address_2 = ord.Account.BillingCity;
         }
         payload.Sell_to_Post_Code = String.isNotBlank(ord.Account.BillingPostalCode) ? ord.Account.BillingPostalCode : '';
         payload.Sell_to_City = String.isNotBlank(ord.Account.BillingCity) ? ord.Account.BillingCity : '';
         payload.Order_Date = ord.EffectiveDate != null ? String.valueOf(ord.EffectiveDate) : '';
         payload.Status = 'Open';
-       // payload.Delivery_Terms = String.isNotBlank(ord.DRC_NBC_Delivery_Terms__c) ? ord.DRC_NBC_Delivery_Terms__c : '';
+        payload.Delivery_Terms = String.isNotBlank(ord.DRC_NBC_Delivery_Terms__c) ? ord.DRC_NBC_Delivery_Terms__c : '';
         payload.Sample_Sales = sampleSales;
         payload.Payment_Terms_Code = String.isNotBlank(ord.DRC_NBC_Payment_Terms__c) ? ord.DRC_NBC_Payment_Terms__c : '';
         //payload.Payment_Terms_Code = '10 Days';
@@ -514,13 +524,24 @@ portNameToCodeMap.containsKey(ord.DRC_NBC_Final_Destination__c)
                 }
                 
                 // Split address into two fields (100 char limit each)
-                if (fullAddress.length() > 99) {
+             /*   if (fullAddress.length() > 99) {
                     payload.Ship_to_Address = fullAddress.substring(0, 99);
                     payload.Ship_to_Address_2 = fullAddress.length() > 149 ? 
                         fullAddress.substring(99, 149) : fullAddress.substring(99);
                 } else {
                     payload.Ship_to_Address = fullAddress;
                     payload.Ship_to_Address_2 = '';
+                }*/
+                
+                if (fullAddress.length() > 100) {
+                    payload.Ship_to_Address   = fullAddress.substring(0, 100);
+                    String shipRemainder      = fullAddress.substring(100);
+                    payload.Ship_to_Address_2 = shipRemainder.length() > 100 
+                        ? shipRemainder.substring(0, 100) 
+                        : shipRemainder;
+                } else {
+                    payload.Ship_to_Address   = fullAddress;
+                    payload.Ship_to_Address_2 =address.DRC_NBC_Address__City__s;
                 }
                 
                 payload.Ship_to_Post_Code = String.isNotBlank(address.DRC_NBC_Address__PostalCode__s) ? 

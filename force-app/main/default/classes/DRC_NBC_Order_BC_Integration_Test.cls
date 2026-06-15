@@ -610,7 +610,8 @@ insert testOrder;*/
             DRC_NBC_PLACE_OF_RECEIPT_BY_CARRIAG__c,
             DRC_NBC_Required_Documents__c,
             DRC_NBC_Final_Dispatch_Date__c,
-            DRC_NBC_Select_Bank__c
+            DRC_NBC_Select_Bank__c,
+            DRC_NBC_Delivery_Terms__c
             FROM Order LIMIT 1
         ];
         

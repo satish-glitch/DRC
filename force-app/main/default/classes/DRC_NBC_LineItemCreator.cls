@@ -234,8 +234,8 @@ public class DRC_NBC_LineItemCreator {
                                                                      '<Hazardous>'                      + (item.DRC_NBC_Hazardous__c == true)                                                          + '</Hazardous>' +
                                                                      '<MarkNosContainerNos>'            + escapeXml(String.isBlank(item.DRC_NBC_MARKS_NOS__c) ? '' : item.DRC_NBC_MARKS_NOS__c.trim()) + '</MarkNosContainerNos>' +
                                                                      '<Item_Reference_No>'              + escapeXml(itemReferenceNo)                                                                   + '</Item_Reference_No>' +
-                                                                     '<Item_Reference_Type>'            + escapeXml(itemRefType)                                                                       + '</Item_Reference_Type>' +
-                                                                     '<Item_Reference_Type_No>'         + escapeXml(itemRefTypeNo)                                                                     + '</Item_Reference_Type_No>' +
+                                                                     '<Item_Reference_Type>'            + escapeXml( itemRefTypeNo)                                                                       + '</Item_Reference_Type>' +
+                                                                     '<Item_Reference_Type_No>'         + escapeXml(itemRefType)                                                                     + '</Item_Reference_Type_No>' +
                                                                      '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
                                                                      '</SalesOrderLineSalesForce>';
                                                                  

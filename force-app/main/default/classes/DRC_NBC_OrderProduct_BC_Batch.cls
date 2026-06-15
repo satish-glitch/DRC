@@ -607,8 +607,8 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             ? ''
             : item.DRC_NBC_MARKS_NOS__c.trim();
         payload.Item_Reference_No = itemReferenceNo;
-        payload.Item_Reference_Type = item.Order.Account.DRC_NBC_Customer_Number__c;
-        payload.Item_Reference_Type_No = item.Order.Account.Type;
+        payload.Item_Reference_Type = item.Order.Account.Type;
+        payload.Item_Reference_Type_No = item.Order.Account.DRC_NBC_Customer_Number__c;
         payload.Item_Reference_Unit_of_Measure = 'KGS';
         
         System.debug('  << Payload mapping complete');

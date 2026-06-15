@@ -115,7 +115,7 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         payload.Transporter_Code = String.isBlank(transporterCode) 
             ? '' 
             : transporterCode; 
-       // payload.Transporter_Code = '';
+        // payload.Transporter_Code = '';
         
         
         payload.Other_E_Mail = String.isNotBlank(acc.Other_Email__c)
@@ -139,7 +139,7 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
                     : remainingAddress;
             } else {
                 payload.Address = billingStreet;
-                payload.Address_2 = '';
+                payload.Address_2 = acc.BillingCity;
             }
         } else {
             payload.Address = '';
