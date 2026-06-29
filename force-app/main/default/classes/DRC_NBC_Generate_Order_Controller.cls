@@ -40,11 +40,11 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             throw new AuraHandledException('Error retrieving Order Types: ' + e.getMessage());
         }
     }
-
+    
     /**
-     * NEW: Generic method to fetch picklist values for any Object + Field.
-     * Used by LWC to get picklist options for searchable dropdowns.
-     */
+* NEW: Generic method to fetch picklist values for any Object + Field.
+* Used by LWC to get picklist options for searchable dropdowns.
+*/
     @AuraEnabled
     public static List<OptionsWrapper> getFieldPicklistValues(String objectName, String fieldName) {
         try {
@@ -53,7 +53,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             throw new AuraHandledException('Error retrieving picklist for ' + fieldName + ': ' + e.getMessage());
         }
     }
-
+    
     @AuraEnabled
     public static OrderDefaults getDefaultValues(String quoteID){
         try {
@@ -87,38 +87,38 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             OrderDefaults ord = new OrderDefaults();
             ord.acc = [
                 SELECT
+                ID,
+                CurrencyISOCode,
+                DRC_NBC_Consignee_Bank_Account_Number__c,
+                DRC_NBC_Consignee_Bank_IFSC_Code__c,
+                DRC_NBC_Consignee_Bank_Name__c,
+                DRC_NBC_Consignee_Bank_Address__c,
+                DRC_NBC_Special_Instructions__c,
+                SalesPerson_Code__c,
+                DRC_NBC_Transport_Agent__c,
+                (
+                    SELECT
                     ID,
-                    CurrencyISOCode,
-                    DRC_NBC_Consignee_Bank_Account_Number__c,
-                    DRC_NBC_Consignee_Bank_IFSC_Code__c,
-                    DRC_NBC_Consignee_Bank_Name__c,
-                    DRC_NBC_Consignee_Bank_Address__c,
-                    DRC_NBC_Special_Instructions__c,
-                    SalesPerson_Code__c,
-                    DRC_NBC_Transport_Agent__c,
-                    (
-                        SELECT
-                            ID,
-                            DRC_NBC_Type__c,
-                            DRC_NBC_Address__c
-                        FROM 
-                            Address__r
-                        WHERE
-                            DRC_NBC_Type__c = 'Shipping'
-                    )
+                    DRC_NBC_Type__c,
+                    DRC_NBC_Address__c
+                    FROM 
+                    Address__r
+                    WHERE
+                    DRC_NBC_Type__c = 'Shipping'
+                )
                 FROM
-                    Account
+                Account
                 WHERE
-                    Id =: quoteObj.AccountId 
+                Id =: quoteObj.AccountId 
             ];
             
             ord.opportunityObj = [
                 SELECT
-                    CurrencyIsoCode
+                CurrencyIsoCode
                 FROM
-                    Opportunity
+                Opportunity
                 WHERE
-                    Id =: quoteObj.OpportunityId
+                Id =: quoteObj.OpportunityId
             ];
             
             // Assign related contacts
@@ -142,7 +142,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             // Sales Person Code from Account
             ord.salesPersonCode = ord.acc[0].SalesPerson_Code__c;
             ord.transportAgent = ord.acc[0].DRC_NBC_Transport_Agent__c;   // ← ADD THIS
-
+            
             
             // Add Account Billing Address
             ord.BillingStreet = quoteObj.Account.BillingStreet;
@@ -172,8 +172,8 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                 if (String.isBlank(con.Email)) {
                     return JSON.serialize(new Map<String, Object>{
                         'success' => false,
-                        'error' => 'Please provide email for ' + con.Name
-                    });
+                            'error' => 'Please provide email for ' + con.Name
+                            });
                 }
             }
             
@@ -189,7 +189,20 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             ];
             
             orderObj.OpportunityId = quoteObj.OpportunityId;
-
+            
+            // Add validation here
+            String syncValidationError = validateCustomerItemReferenceSync(
+                quoteObj.AccountId,
+                orderItems
+            );
+            
+            if (String.isNotBlank(syncValidationError)) {
+                return JSON.serialize(new Map<String, Object>{
+                    'success' => false,
+                        'error'   => syncValidationError
+                        });
+            }
+            
             // Populate Location Code from Shipping Address → Warehouse
             if (orderObj.DRC_NBC_Shipping_Address__c != null) {
                 DRC_NBC_Addresses__c addr = [
@@ -200,7 +213,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                 ];
                 
             }
-
+            
             insert orderObj;
             
             // Fetch inserted order
@@ -272,7 +285,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     DRC_NBC_Order__c = insertedOrder.Id
                 ));
             }
-
+            
             if (!addressUpdates.isEmpty()) {
                 update addressUpdates;
             }
@@ -281,8 +294,8 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             if (!missingPBEs.isEmpty()) {
                 return JSON.serialize(new Map<String, Object>{
                     'success' => false,
-                    'error' => 'Missing PricebookEntry for: ' + String.join(missingPBEs, ', ')
-                });
+                        'error' => 'Missing PricebookEntry for: ' + String.join(missingPBEs, ', ')
+                        });
             }
             
             // Insert Order Items
@@ -291,8 +304,8 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             } else {
                 return JSON.serialize(new Map<String, Object>{
                     'success' => false,
-                    'error' => 'No valid Order Items found to insert.'
-                });
+                        'error' => 'No valid Order Items found to insert.'
+                        });
             }
             
             // Sync Quote to Opportunity
@@ -308,13 +321,13 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
             List<Order> createdOrders = [SELECT Id, OrderNumber FROM Order WHERE Id = :insertedOrder.Id];
             return JSON.serialize(new Map<String, Object>{
                 'success' => true,
-                'orders' => createdOrders
-            });
+                    'orders' => createdOrders
+                    });
         } catch (Exception e) {
             return JSON.serialize(new Map<String, Object>{
                 'success' => false,
-                'error' => 'Error creating order: ' + e.getMessage() + ' (Line: ' + e.getLineNumber() + ')'
-            });
+                    'error' => 'Error creating order: ' + e.getMessage() + ' (Line: ' + e.getLineNumber() + ')'
+                    });
         }
     }
     
@@ -342,10 +355,10 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         public List<Opportunity> opportunityObj;
         @AuraEnabled
         public List<DRC_NBC_OrderItemWrapper> orderItems;
-       
+        
         @AuraEnabled 
         public String paymentTerm;
-
+        
         @AuraEnabled 
         public String paymentTermDes;
         @AuraEnabled 
@@ -366,13 +379,13 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         public Decimal tcsAmount;
         @AuraEnabled 
         public Decimal otherTaxAmount;
-
+        
         // Sales Person Code from Account
         @AuraEnabled
         public String salesPersonCode;
         @AuraEnabled
         public String transportAgent;   // ← ADD THIS
-
+        
         
         // Billing Address from Account
         @AuraEnabled public String BillingStreet;
@@ -381,7 +394,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         @AuraEnabled public String BillingPostalCode;
         @AuraEnabled public String BillingCountry;
         @AuraEnabled public String BillingCountryCode;
-
+        
         // Shipping Address
         @AuraEnabled public String ShippingStreet;
         @AuraEnabled public String ShippingCity;
@@ -389,7 +402,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
         @AuraEnabled public String ShippingPostalCode;
         @AuraEnabled public String ShippingCountry;
         @AuraEnabled public String ShippingCountryCode;
-
+        
         // Consignee Bank Address
         @AuraEnabled public String ConsigneeBankStreet;
         @AuraEnabled public String ConsigneeBankCity;
@@ -414,7 +427,7 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
                     oiw.DRC_NBC_Packing_Size     = qli.DRC_NBC_Packing_Size__c;
                     oiw.DRC_NBC_Packing_Quantity = qli.DRC_NBC_Packing_Qauntity__c;
                     oiw.hazardous   = qli.DRC_NBC_Hazardous__c;
-                oiw.marksAndNos = qli.DRC_NBC_MARKS_NOS__c;
+                    oiw.marksAndNos = qli.DRC_NBC_MARKS_NOS__c;
                     
                     // Create Product2 wrapper
                     Product2Wrapper p2w = new Product2Wrapper();
@@ -437,28 +450,28 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
     public static List<QuoteLineItem> getRelatedQLIS(String quoteID){
         return [
             SELECT
-                ID,
-                Description,
-                Product2.Name,
-                Product2.QuantityUnitOfMeasure,
-                Product2.DRC_NBC_HSN_SAC_Code__c,
-                Product2.DRC_NBC_FG_Code__c,
-                Product2Id,
-                TotalPrice,
-                UnitPrice,
-                Discount,
-                Quantity,
-                PriceBookEntryId,
-                DRC_NBC_Packing_Size__c,
-                DRC_NBC_Packing_Qauntity__c,
-                DRC_NBC_Hazardous__c,        
-                DRC_NBC_MARKS_NOS__c 
+            ID,
+            Description,
+            Product2.Name,
+            Product2.QuantityUnitOfMeasure,
+            Product2.DRC_NBC_HSN_SAC_Code__c,
+            Product2.DRC_NBC_FG_Code__c,
+            Product2Id,
+            TotalPrice,
+            UnitPrice,
+            Discount,
+            Quantity,
+            PriceBookEntryId,
+            DRC_NBC_Packing_Size__c,
+            DRC_NBC_Packing_Qauntity__c,
+            DRC_NBC_Hazardous__c,        
+            DRC_NBC_MARKS_NOS__c 
             FROM
-                QuoteLineItem
+            QuoteLineItem
             WHERE
-                QuoteID =: quoteID
+            QuoteID =: quoteID
             AND
-                Product2.IsActive = True
+            Product2.IsActive = True
         ];
     }
     
@@ -502,5 +515,81 @@ public without sharing class DRC_NBC_Generate_Order_Controller {
     public class OptionsWrapper{
         @AuraEnabled public String label;
         @AuraEnabled public String value;
+    }
+    
+    private static String validateCustomerItemReferenceSync(
+        Id accountId,
+        List<DRC_NBC_OrderItemWrapper> orderItems
+    ) {
+        if (accountId == null || orderItems == null || orderItems.isEmpty()) {
+            return null;
+        }
+        
+        Set<Id> selectedProductIds = new Set<Id>();
+        
+        for (DRC_NBC_OrderItemWrapper item : orderItems) {
+            if (String.isNotBlank(item.Product2Id)) {
+                selectedProductIds.add((Id)item.Product2Id);
+            }
+        }
+        
+        if (selectedProductIds.isEmpty()) {
+            return null;
+        }
+        
+        Map<String, String> fgCodeToProductName = new Map<String, String>();
+        Set<String> selectedFgCodes = new Set<String>();
+        
+        for (Product2 prod : [
+            SELECT Id, Name, DRC_NBC_FG_Code__c
+            FROM Product2
+            WHERE Id IN :selectedProductIds
+        ]) {
+            if (String.isNotBlank(prod.DRC_NBC_FG_Code__c)) {
+                String fgCode = prod.DRC_NBC_FG_Code__c.trim().toUpperCase();
+                selectedFgCodes.add(fgCode);
+                fgCodeToProductName.put(fgCode, prod.Name);
+            }
+        }
+        
+        if (selectedFgCodes.isEmpty()) {
+            return null;
+        }
+        
+        Map<String, Boolean> fgCodeToSyncStatus = new Map<String, Boolean>();
+        
+        for (DRC_NBC_Restricted_Product__c rp : [
+            SELECT Id,
+            DRC_NBC_Is_Product_Sync_To_BC__c,
+            DRC_NBC_Product__r.DRC_NBC_FG_Code__c
+            FROM DRC_NBC_Restricted_Product__c
+            WHERE DRC_NBC_Customer__c = :accountId
+            AND DRC_NBC_Product__r.DRC_NBC_FG_Code__c IN :selectedFgCodes
+        ]) {
+            if (String.isNotBlank(rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c)) {
+                String fgCode = rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c.trim().toUpperCase();
+                
+                if (!fgCodeToSyncStatus.containsKey(fgCode)) {
+                    fgCodeToSyncStatus.put(fgCode, rp.DRC_NBC_Is_Product_Sync_To_BC__c);
+                } else if (rp.DRC_NBC_Is_Product_Sync_To_BC__c == true) {
+                    fgCodeToSyncStatus.put(fgCode, true);
+                }
+            }
+        }
+        
+        List<String> notSyncedFgCodes = new List<String>();
+        
+        for (String fgCode : selectedFgCodes) {
+            if (!fgCodeToSyncStatus.containsKey(fgCode) || fgCodeToSyncStatus.get(fgCode) != true) {
+                notSyncedFgCodes.add(fgCode);
+            }
+        }
+        
+        if (!notSyncedFgCodes.isEmpty()) {
+            return 'FG Code(s) ' + String.join(notSyncedFgCodes, ', ') +
+                ' are not synced as Customer Item Reference. Please sync them before creating the order.';
+        }
+        
+        return null;
     }
 }

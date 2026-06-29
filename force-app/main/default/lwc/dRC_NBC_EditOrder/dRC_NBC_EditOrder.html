@@ -85,9 +85,6 @@
                             </div>
                         </template>
                          <template if:true={isExport}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="Fright_Required__c" onchange={handleFieldChange}></lightning-input-field>
-                            </div>
                               <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-input-field field-name="DRC_NBC_Delivery_Terms__c" onchange={handleFieldChange}></lightning-input-field>
                             </div>
@@ -119,9 +116,14 @@
                                 <lightning-input-field field-name="DRC_NBC_Special_Instructions__c" onchange={handleFieldChange}></lightning-input-field>
                             </div>
                         </template>
+                    <template if:true={isDomestic}>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                            <lightning-input-field field-name="Is_Domestic_Merchnat__c" onchange={handleFieldChange}></lightning-input-field>
+                            <lightning-input-field
+                                field-name="Is_Domestic_Merchnat__c"
+                                onchange={handleFieldChange}>
+                            </lightning-input-field>
                         </div>
+                    </template>
                     </div>
                 </lightning-record-edit-form>
             </div>
@@ -417,19 +419,22 @@
                     <lightning-record-edit-form object-api-name="Order" record-id={recordId}>
                         <div class="slds-grid slds-wrap slds-gutters slds-p-top_small">
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Country_of_Origin__c" onchange={handleFieldChange}></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Country_of_Origin__c" onchange={handleFieldChange} required></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Country_of_Final_Destination__c" onchange={handleFieldChange}></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Country_of_Final_Destination__c" onchange={handleFieldChange} required></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-input-field field-name="DRC_NBC_Shipment_Method__c" onchange={handleFieldChange}></lightning-input-field>
+                                <lightning-input-field field-name="DRC_NBC_Shipment_Method__c" onchange={handleFieldChange} required></lightning-input-field>
                             </div>
 
                             <!-- Port of Loading — searchable picklist -->
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <div class="slds-form-element">
-                                    <label class="slds-form-element__label" for="portOfLoadingSearch">Port of Loading</label>
+                                   <label class="slds-form-element__label" for="portOfLoadingSearch">
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        Port of Loading
+                                    </label>
                                     <div class="slds-form-element__control" style="position: relative;">
                                         <input
                                             type="text"
@@ -467,7 +472,10 @@
                             <!-- Port of Discharge — searchable picklist -->
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <div class="slds-form-element">
-                                    <label class="slds-form-element__label" for="portOfDischargeSearch">Port of Discharge</label>
+                                   <label class="slds-form-element__label" for="portOfDischargeSearch">
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        Port of Discharge
+                                    </label>
                                     <div class="slds-form-element__control" style="position: relative;">
                                         <input
                                             type="text"
@@ -520,7 +528,10 @@
                             <!-- Final Destination — searchable picklist -->
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <div class="slds-form-element">
-                                    <label class="slds-form-element__label" for="finalDestinationSearch">Final Destination</label>
+                                   <label class="slds-form-element__label" for="finalDestinationSearch">
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        Final Destination
+                                    </label>
                                     <div class="slds-form-element__control" style="position: relative;">
                                         <input
                                             type="text"
@@ -646,6 +657,11 @@
                                 <lightning-input-field field-name="PoDate" onchange={handleFieldChange}></lightning-input-field>
                             </div>
                         </template>
+                        <template if:true={isExport}>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-input-field field-name="Fright_Required__c" onchange={handleFieldChange}></lightning-input-field>
+                            </div>
+                         </template>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                             <lightning-input-field field-name="DRC_NBC_Other_Tax_Amount__c" onchange={handleFieldChange}></lightning-input-field>
                         </div>
@@ -984,9 +1000,19 @@
                                     </table>
                                 </div>
                             </template>
-                            <template if:false={hasProducts}>
+                           <!-- <template if:false={hasProducts}>
                                 <div class="slds-text-align_center slds-p-around_medium">
                                     <p class="slds-text-color_weak">No products added yet. Click "Add Products" to get started.</p>
+                                </div>
+                            </template>-->
+                            <template if:false={hasProducts}>
+                                <div class="slds-text-align_center slds-p-around_medium">
+                                    <p class="slds-text-color_weak slds-m-bottom_small">
+                                        No products added yet. Click "Add Product" to get started.
+                                    </p>
+                                    <button class="slds-button slds-button_neutral" onclick={handleAddRow}>
+                                        + Add Product
+                                    </button>
                                 </div>
                             </template>
                         </template>

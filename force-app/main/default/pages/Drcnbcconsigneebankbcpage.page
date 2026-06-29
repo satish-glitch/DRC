@@ -1,197 +1,30 @@
-<apex:page controller="DRC_NBC_ConsigneeBank_BC_Queueable"
-           title="Sync Consignee Banks to Business Central"
-           showHeader="true"
-           sidebar="false"
-           standardStylesheets="true"
-           applyBodyTag="true"
-           docType="html-5.0"
-           lightningStylesheets="true">
+<apex:page controller="DRC_NBC_ConsigneeBankBCPageController" action="{!enqueueSync}" sidebar="false" showHeader="true" tabStyle="Account">
 
-    <apex:slds />
+    <apex:form >
+        <apex:pageBlock title="Consignee Bank Sync">
 
-    <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <style>
-            .drc-wrap {
-                max-width: 600px;
-                margin: 40px auto;
-                font-family: 'Salesforce Sans', Arial, sans-serif;
-            }
-            .drc-header {
-                background: #032D60;
-                color: #fff;
-                padding: 18px 24px;
-                border-radius: 8px 8px 0 0;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            .drc-header h1 {
-                font-size: 16px;
-                font-weight: 700;
-                margin: 0;
-            }
-            .drc-header .sub {
-                font-size: 12px;
-                opacity: .75;
-                margin-top: 2px;
-                display: block;
-            }
-            .drc-body {
-                background: #fff;
-                border: 1px solid #e0e0e0;
-                border-top: none;
-                border-radius: 0 0 8px 8px;
-                padding: 24px;
-            }
-            /* Alert banners */
-            .drc-alert {
-                display: flex;
-                gap: 12px;
-                align-items: flex-start;
-                padding: 14px 16px;
-                border-radius: 6px;
-                font-size: 14px;
-                line-height: 1.5;
-                margin-bottom: 20px;
-            }
-            .drc-alert svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
-            .alert-success { background: #EBF7EE; border-left: 4px solid #2E844A; color: #1B5E35; }
-            .alert-error   { background: #FEF0EE; border-left: 4px solid #BA0517; color: #8E0510; }
-            .alert-warning { background: #FFF8E6; border-left: 4px solid #DD7A01; color: #7A4400; }
-            .alert-info    { background: #EEF4FF; border-left: 4px solid #0176D3; color: #014486; }
-            /* Buttons */
-            .drc-btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
-            .drc-btn {
-                padding: 9px 20px;
-                border-radius: 5px;
-                font-size: 13px;
-                font-weight: 600;
-                cursor: pointer;
-                border: none;
-            }
-            .btn-primary { background: #0176D3; color: #fff; }
-            .btn-neutral { background: #fff; color: #333; border: 1px solid #ccc; }
-            .btn-primary:hover { background: #0161b0; }
-            .btn-neutral:hover { background: #f5f5f5; }
-            .drc-footer {
-                margin-top: 16px;
-                font-size: 11px;
-                color: #999;
-                text-align: center;
-            }
-        </style>
-    </head>
-
-    <body>
-    <apex:form id="mainForm">
-    <div class="drc-wrap">
-
-        <!-- Header -->
-        <div class="drc-header">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="28" height="28">
-                <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
-            </svg>
-            <div>
-                <h1>Sync Consignee Banks &#8594; Business Central</h1>
-                <apex:outputText styleClass="sub"
-                    value="Account: {!accountName}"
-                    rendered="{!NOT(ISNULL(accountName))}"/>
-            </div>
-        </div>
-
-        <div class="drc-body">
-
-            <!-- SUCCESS banner -->
-            <apex:outputPanel rendered="{!pageStatus == 'success'}" layout="block">
-                <div class="drc-alert alert-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2E844A">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4-4 1.41-1.41L10 13.67l6.59-6.59L18 8.5l-8 8z"/>
-                    </svg>
-                    <div>
-                        <strong>Success</strong><br/>
-                        <apex:outputText value="{!pageMessage}"/>
+            <apex:outputPanel id="msgBlock">
+                <apex:outputPanel rendered="{!messageType == 'SUCCESS'}">
+                    <div style="background-color:#d4edda; border:1px solid #28a745; color:#155724;
+                                padding:12px 16px; border-radius:4px; margin-bottom:15px; font-size:14px;">
+                        <strong>Success:</strong> {!messageText}
                     </div>
-                </div>
-            </apex:outputPanel>
-
-            <!-- ERROR banner -->
-            <apex:outputPanel rendered="{!pageStatus == 'error'}" layout="block">
-                <div class="drc-alert alert-error">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#BA0517">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                    </svg>
-                    <div>
-                        <strong>Error</strong><br/>
-                        <apex:outputText value="{!pageMessage}"/>
-                    </div>
-                </div>
-            </apex:outputPanel>
-
-            <!-- WARNING banner -->
-            <apex:outputPanel rendered="{!pageStatus == 'warning'}" layout="block">
-                <div class="drc-alert alert-warning">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#DD7A01">
-                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
-                    </svg>
-                    <div>
-                        <strong>Warning</strong><br/>
-                        <apex:outputText value="{!pageMessage}"/>
-                    </div>
-                </div>
-            </apex:outputPanel>
-
-            <!-- INFO / ready-to-sync banner -->
-            <apex:outputPanel rendered="{!pageStatus == 'info'}" layout="block">
-                <div class="drc-alert alert-info">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0176D3">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-                    </svg>
-                    <div>
-                        <strong>Ready to Sync</strong><br/>
-                        <apex:outputText value="{!bankCount}"/> primary bank record(s) found for this account.
-                        Click <strong>Sync to Business Central</strong> to proceed.
-                    </div>
-                </div>
-            </apex:outputPanel>
-
-            <!-- Button Row -->
-            <div class="drc-btn-row">
-
-                <!-- Sync button: show only when info state and not yet enqueued -->
-                <apex:outputPanel rendered="{!AND(NOT(jobEnqueued), hasBankResults)}" layout="inline">
-                    <apex:commandButton value="Sync to Business Central"
-                        action="{!syncToBC}"
-                        reRender="mainForm"
-                        styleClass="drc-btn btn-primary"
-                        status="syncStatus"/>
                 </apex:outputPanel>
 
-                <!-- Back button always visible -->
-                <apex:commandButton value="Back to Account"
-                    action="{!goBack}"
-                    styleClass="drc-btn btn-neutral"
-                    immediate="true"/>
+                <apex:outputPanel rendered="{!messageType == 'ERROR'}">
+                    <div style="background-color:#f8d7da; border:1px solid #dc3545; color:#721c24;
+                                padding:12px 16px; border-radius:4px; margin-bottom:15px; font-size:14px;">
+                        <strong>Error:</strong> {!messageText}
+                    </div>
+                </apex:outputPanel>
+            </apex:outputPanel>
 
-            </div>
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton value="Check Status" action="{!checkStatus}" reRender="msgBlock" rendered="{!showStatusCheck}"/>
+                <apex:commandButton value="Close" action="{!closeAndReturn}"/>
+            </apex:pageBlockButtons>
 
-            <!-- Spinner text while action runs -->
-            <apex:actionStatus id="syncStatus">
-                <apex:facet name="start">
-                    <p style="margin-top:12px; font-size:13px; color:#0176D3;">
-                        &#9203; Enqueueing sync job, please wait&#8230;
-                    </p>
-                </apex:facet>
-            </apex:actionStatus> 
-
-        </div><!-- /drc-body -->
-
-        <div class="drc-footer">
-            DRC NBC &nbsp;&#183;&nbsp; Consignee Bank &#8594; Business Central Sync
-        </div>
-
-    </div>
+        </apex:pageBlock>
     </apex:form>
-    </body>
+
 </apex:page>

@@ -12,7 +12,12 @@ public class DRC_NBC_CustomerRefrenceItems_BC_Callout {
         payload.Item_No             = rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c;
         payload.Unit_of_Measure     = 'KGS';
         payload.Reference_Type      = acc.Type;
-        payload.Reference_No        = rp.Name;
+        if (String.isNotBlank(rp.DRC_NBC_Customer_s_Product_code__c)) {
+            payload.Reference_No = rp.DRC_NBC_Customer_s_Product_code__c;
+        } else {
+            payload.Reference_No = rp.DRC_NBC_Product__r.Name;
+        }
+       // payload.Reference_No        = rp.Name;
         payload.Reference_Type_Name = acc.Name;
         payload.Description         = rp.DRC_NBC_Customer_s_Product_code__c;
         payload.Description_2       = '';

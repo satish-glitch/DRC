@@ -4,6 +4,7 @@
     <columns>NAME</columns>
     <columns>DRC_NBC_Log_Type__c</columns>
     <columns>DRC_NBC_Status_Code__c</columns>
+    <columns>CREATED_DATE</columns>
     <columns>DRC_NBC_Endpoint__c</columns>
     <columns>DRC_NBC_Error_Message__c</columns>
     <filterScope>Everything</filterScope>

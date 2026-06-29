@@ -63,7 +63,6 @@ public class DRC_NBC_Order_BC_Callout implements Database.AllowsCallouts {
                     FROM DRC_NBC_Addresses__c
                     WHERE Id             = :order.DRC_NBC_Shipping_Address__c
                     AND DRC_NBC_Type__c  = 'Shipping'
-                    AND DRC_NBC_Order__c = :orderId
                     ORDER BY CreatedDate ASC
                     LIMIT 1
                 ];
@@ -234,12 +233,34 @@ public class DRC_NBC_Order_BC_Callout implements Database.AllowsCallouts {
             payload.Sell_to_Address = billingStreet;
             payload.Sell_to_Address_2 = '';
         }*/
-        if (billingStreet.length() > 100) {
+      /*  if (billingStreet.length() > 100) {
             payload.Sell_to_Address   = billingStreet.substring(0, 100);
             String billRemainder      = billingStreet.substring(100);
             payload.Sell_to_Address_2 = billRemainder.length() > 100 
                 ? billRemainder.substring(0, 100) 
                 : billRemainder;
+        } else {
+            payload.Sell_to_Address   = billingStreet;
+            payload.Sell_to_Address_2 = ord.Account.BillingCity;
+        }*/
+        
+        if (billingStreet.length() > 100) {
+            String first100Chars = billingStreet.substring(0, 100);
+            Integer commaIndex = first100Chars.lastIndexOf(',');
+            Integer splitIndex;
+            if (commaIndex > -1) {
+                // Split after last comma before 100 chars
+                splitIndex = commaIndex + 1;
+            } else {
+                // No comma found, split at 100 chars
+                splitIndex = 100;
+            }
+            payload.Sell_to_Address = billingStreet.substring(0, splitIndex).trim();
+            String billRemainder = billingStreet.substring(splitIndex).trim();
+            payload.Sell_to_Address_2 = billRemainder.length() > 100 
+                ? billRemainder.substring(0, 49) 
+                : billRemainder;
+            
         } else {
             payload.Sell_to_Address   = billingStreet;
             payload.Sell_to_Address_2 = ord.Account.BillingCity;
@@ -415,6 +436,12 @@ public class DRC_NBC_Order_BC_Callout implements Database.AllowsCallouts {
         payload.Trans_Shipment = String.isBlank(Ord.DRC_NBC_Trans_Shipment__c) 
             ? '' 
             : Ord.DRC_NBC_Trans_Shipment__c;
+      /*  payload.Part_Shipment = String.isBlank(Ord.DRC_NBC_Part_Shipment__c) 
+            ? '' 
+            : (Ord.DRC_NBC_Part_Shipment__c.equalsIgnoreCase('Allowed') ? ' Allowed' : ' Not Allowed');
+                payload.Trans_Shipment = String.isBlank(Ord.DRC_NBC_Trans_Shipment__c) 
+                ? '' 
+                : (Ord.DRC_NBC_Trans_Shipment__c.equalsIgnoreCase('Allowed') ? ' Allowed' : ' Not Allowed');*/
         // Fetch Port Codes from Custom Metadata
         Map<String, String> portNameToCodeMap = new Map<String, String>();
         
@@ -482,6 +509,7 @@ portNameToCodeMap.containsKey(ord.DRC_NBC_Final_Destination__c)
         // payload.Ship_to_GST_Reg_No = '';
         
         // Populate shipping address if available
+        // ✅ FIXED: Removed DRC_NBC_Order__c filter to allow address reuse across orders
         if (ord.DRC_NBC_Shipping_Address__c != null) {
             List<DRC_NBC_Addresses__c> addresses = [
                 SELECT DRC_NBC_Address__Street__s, DRC_NBC_Address__City__s, 
@@ -490,7 +518,7 @@ portNameToCodeMap.containsKey(ord.DRC_NBC_Final_Destination__c)
                 DRC_NBC_Ship_To_Code__c, Name, DRC_Inco_Term__c
                 FROM DRC_NBC_Addresses__c
                 WHERE Id = :ord.DRC_NBC_Shipping_Address__c
-                AND DRC_NBC_Order__c = :ord.Id
+                AND DRC_NBC_Type__c = 'Shipping'
                 ORDER BY CreatedDate ASC
                 LIMIT 1
             ];
@@ -533,7 +561,7 @@ portNameToCodeMap.containsKey(ord.DRC_NBC_Final_Destination__c)
                     payload.Ship_to_Address_2 = '';
                 }*/
                 
-                if (fullAddress.length() > 100) {
+              /*  if (fullAddress.length() > 100) {
                     payload.Ship_to_Address   = fullAddress.substring(0, 100);
                     String shipRemainder      = fullAddress.substring(100);
                     payload.Ship_to_Address_2 = shipRemainder.length() > 100 
@@ -542,8 +570,29 @@ portNameToCodeMap.containsKey(ord.DRC_NBC_Final_Destination__c)
                 } else {
                     payload.Ship_to_Address   = fullAddress;
                     payload.Ship_to_Address_2 =address.DRC_NBC_Address__City__s;
-                }
+                }*/
                 
+                if (fullAddress.length() > 100) {
+                    String first100Chars = fullAddress.substring(0, 100);
+                    Integer commaIndex = first100Chars.lastIndexOf(',');
+                    Integer splitIndex;
+                    if (commaIndex > -1) {
+                        // Split after last comma before 100 chars
+                        splitIndex = commaIndex + 1;
+                    } else {
+                        // No comma found, split at 100 chars
+                        splitIndex = 100;
+                    }
+                    payload.Ship_to_Address = fullAddress.substring(0, splitIndex).trim();
+                    String shipRemainder = fullAddress.substring(splitIndex).trim();
+                    payload.Ship_to_Address_2 = shipRemainder.length() > 100 
+                        ? shipRemainder.substring(0, 49) 
+                        : shipRemainder;
+                    
+                } else {
+                    payload.Ship_to_Address   = fullAddress;
+                    payload.Ship_to_Address_2 = address.DRC_NBC_Address__City__s;
+                }
                 payload.Ship_to_Post_Code = String.isNotBlank(address.DRC_NBC_Address__PostalCode__s) ? 
                     address.DRC_NBC_Address__PostalCode__s : '';
                 String countryCode = address.DRC_NBC_Address__CountryCode__s != null 
@@ -564,64 +613,64 @@ portNameToCodeMap.containsKey(ord.DRC_NBC_Final_Destination__c)
         
         return payload;
     }
-    /*  public static Boolean checkSalespersonInBC(Id contactId) {
-try {
-// Build SOAP XML envelope with ContactId as the Code
-String soapBody =
-'<?xml version="1.0" encoding="utf-8"?>' +
-'<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">' +
-'<Body>' +
-'<Read xmlns="urn:microsoft-dynamics-schemas/page/salespersonsalesforce">' +
-'<Code>' + String.valueOf(contactId) + '</Code>' +
-'</Read>' +
-'</Body>' +
-'</Envelope>';
-
-System.debug('SOAP Request Body: ' + soapBody);
-
-String endpoint = 'https://salesforceuat.drcresins.com:2023/DR_LiveSSL/WS/D.R.%20Coats%20live/Page/SalesPersonSalesForce';
-
-// ✅ Build Basic Auth header
-String username = 'Salesforce';
-String password = 'Admin@2026';
-String credentials = username + ':' + password;
-String encodedCredentials = EncodingUtil.base64Encode(Blob.valueOf(credentials));
-
-HttpRequest req = new HttpRequest();
-req.setEndpoint(endpoint);
-req.setMethod('POST');
-req.setHeader('Content-Type', 'text/xml; charset=utf-8');
-req.setHeader('SOAPAction', '"urn:microsoft-dynamics-schemas/page/salespersonsalesforce:Read"');
-req.setHeader('Authorization', 'Basic ' + encodedCredentials); // ✅ Basic Auth header
-req.setBody(soapBody);
-req.setTimeout(30000);
-
-Http http = new Http();
-HttpResponse res = http.send(req);
-
-System.debug('SOAP READ Response Status: ' + res.getStatusCode());
-System.debug('SOAP READ Response Body: ' + res.getBody());
-
-// ✅ If 200 OK → Contact exists in BC
-if (res.getStatusCode() == 200) {
-String responseBody = res.getBody();
-if (String.isNotBlank(responseBody) && responseBody.contains('<Code>')) {
-System.debug('Salesperson found in BC for ContactId: ' + contactId);
-return true;
-}
-}
-
-// 404 or any error → Contact does NOT exist in BC
-System.debug('Salesperson NOT found in BC for ContactId: ' + contactId);
-return false;
-
-} catch (Exception e) {
-System.debug('Exception in checkSalespersonInBC: ' + e.getMessage());
-System.debug('Stack: ' + e.getStackTraceString());
-return false;
-}
-}*/
-    
+/*  public static Boolean checkSalespersonInBC(Id contactId) {
+        try {
+        // Build SOAP XML envelope with ContactId as the Code
+        String soapBody =
+        '<?xml version="1.0" encoding="utf-8"?>' +
+        '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">' +
+        '<Body>' +
+        '<Read xmlns="urn:microsoft-dynamics-schemas/page/salespersonsalesforce">' +
+        '<Code>' + String.valueOf(contactId) + '</Code>' +
+        '</Read>' +
+        '</Body>' +
+        '</Envelope>';
+        
+        System.debug('SOAP Request Body: ' + soapBody);
+        
+        String endpoint = 'https://salesforceuat.drcresins.com:2023/DR_LiveSSL/WS/D.R.%20Coats%20live/Page/SalesPersonSalesForce';
+        
+        // ✅ Build Basic Auth header
+        String username = 'Salesforce';
+        String password = 'Admin@2026';
+        String credentials = username + ':' + password;
+        String encodedCredentials = EncodingUtil.base64Encode(Blob.valueOf(credentials));
+        
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint(endpoint);
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'text/xml; charset=utf-8');
+        req.setHeader('SOAPAction', '"urn:microsoft-dynamics-schemas/page/salespersonsalesforce:Read"');
+        req.setHeader('Authorization', 'Basic ' + encodedCredentials); // ✅ Basic Auth header
+        req.setBody(soapBody);
+        req.setTimeout(30000);
+        
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+        
+        System.debug('SOAP READ Response Status: ' + res.getStatusCode());
+        System.debug('SOAP READ Response Body: ' + res.getBody());
+        
+        // ✅ If 200 OK → Contact exists in BC
+        if (res.getStatusCode() == 200) {
+        String responseBody = res.getBody();
+        if (String.isNotBlank(responseBody) && responseBody.contains('<Code>')) {
+        System.debug('Salesperson found in BC for ContactId: ' + contactId);
+        return true;
+        }
+        }
+        
+        // 404 or any error → Contact does NOT exist in BC
+        System.debug('Salesperson NOT found in BC for ContactId: ' + contactId);
+        return false;
+        
+        } catch (Exception e) {
+        System.debug('Exception in checkSalespersonInBC: ' + e.getMessage());
+        System.debug('Stack: ' + e.getStackTraceString());
+        return false;
+        }
+        }*/
+            
     private void logError(String errorMsg) {
         DRC_NBC_API_Log_Handler.createApiLog(
             'DRC_NBC_Order_BC_Callout',

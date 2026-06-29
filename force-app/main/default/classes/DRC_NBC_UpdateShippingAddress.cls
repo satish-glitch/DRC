@@ -274,8 +274,73 @@ public class DRC_NBC_UpdateShippingAddress {
                                                      String email     = '';   // Add DRC_NBC_Email__c to object if required
                                                      String shipmentMethodCode = ''; // Add DRC_NBC_Shipment_Method_Code__c if required
                                                      
-                                                     String street   = escapeXml(shipAddr.DRC_NBC_Address__Street__s);
-                                                     String city     = escapeXml(shipAddr.DRC_NBC_Address__City__s);
+                                                    // String street   = escapeXml(shipAddr.DRC_NBC_Address__Street__s);
+                                                   //  String city     = escapeXml(shipAddr.DRC_NBC_Address__City__s);
+                                                    /* String rawStreet = String.isBlank(shipAddr.DRC_NBC_Address__Street__s)
+                                                         ? ''
+                                                         : shipAddr.DRC_NBC_Address__Street__s.trim();
+                                                     
+                                                     String rawCity = String.isBlank(shipAddr.DRC_NBC_Address__City__s)
+                                                         ? ''
+                                                         : shipAddr.DRC_NBC_Address__City__s.trim();
+                                                     
+                                                     String shippingAddress = rawStreet;
+                                                     String shippingAddress2 = rawCity;
+                                                     
+                                                     // If street is more than 99 characters,
+                                                     // send first 99 chars in ShippingAddress
+                                                     // and remaining chars in ShippingAddress2.
+                                                     if (rawStreet.length() > 99) {
+                                                         shippingAddress = rawStreet.substring(0, 99);
+                                                         shippingAddress2 = rawStreet.substring(99);
+                                                         
+                                                         // Optional safety if BC Address2 also has 99 char limit
+                                                         if (shippingAddress2.length() > 99) {
+                                                             shippingAddress2 = shippingAddress2.substring(0, 99);
+                                                         }
+                                                     }*/
+                                                     
+                                                     String rawStreet = String.isBlank(shipAddr.DRC_NBC_Address__Street__s)
+                                                         ? ''
+                                                         : shipAddr.DRC_NBC_Address__Street__s.trim();
+                                                     String rawCity = String.isBlank(shipAddr.DRC_NBC_Address__City__s)
+                                                         ? ''
+                                                         : shipAddr.DRC_NBC_Address__City__s.trim();
+                                                     String shippingAddress = '';
+                                                     String shippingAddress2 = '';
+                                                     if (String.isNotBlank(rawStreet)) {
+                                                         if (rawStreet.length() > 100) {
+                                                             String first100Chars = rawStreet.substring(0, 100);
+                                                             Integer commaIndex = first100Chars.lastIndexOf(',');
+                                                             Integer splitIndex;
+                                                             if (commaIndex > -1) {
+                                                                 // Split after last comma before 100 chars
+                                                                 splitIndex = commaIndex + 1;
+                                                             } else {
+                                                                 // No comma found, split at 100 chars
+                                                                 splitIndex = 100;
+                                                             }
+                                                             
+                                                             shippingAddress = rawStreet.substring(0, splitIndex).trim();
+                                                             
+                                                             String streetRemainder = rawStreet.substring(splitIndex).trim();
+                                                             
+                                                             shippingAddress2 = streetRemainder.length() > 100
+                                                                 ? streetRemainder.substring(0, 49)
+                                                                 : streetRemainder;
+                                                             
+                                                         } else {
+                                                             shippingAddress = rawStreet;
+                                                             shippingAddress2 = rawCity;
+                                                         }
+                                                     } else {
+                                                         shippingAddress = '';
+                                                         shippingAddress2 = '';
+                                                     }
+                                                     
+                                                     String street   = escapeXml(shippingAddress);
+                                                     String address2 = escapeXml(shippingAddress2);
+                                                     String city     = escapeXml(rawCity);
                                                      String postCode = escapeXml(shipAddr.DRC_NBC_Address__PostalCode__s);
                                                      String countryCode = shipAddr.DRC_NBC_Address__CountryCode__s;
                                                      String country = escapeXml(
@@ -297,9 +362,9 @@ public class DRC_NBC_UpdateShippingAddress {
                                                          '<CustomerNo>'                    + escapeXml(customerNo) + '</CustomerNo>' +
                                                          '<ShiptoCode>'                    + escapeXml(shipToCode) + '</ShiptoCode>' +
                                                          '<Name>'                          + name                  + '</Name>' +
-                                                         '<ShippingAddress>'               + street                + '</ShippingAddress>' +
-                                                         '<ShippingAddress2></ShippingAddress2>' +
-                                                         '<ShippingCity>'                  + city                  + '</ShippingCity>' +
+                                                         '<ShippingAddress>'                + street               + '</ShippingAddress>' +
+                                                         '<ShippingAddress2>'               + address2             + '</ShippingAddress2>' +
+                                                         '<ShippingCity>'                   + city                 + '</ShippingCity>' +
                                                          '<ShippingPostCode>'              + postCode              + '</ShippingPostCode>' +
                                                          '<ShippingCountry>'               + country               + '</ShippingCountry>' +
                                                          '<ShippingPhoneNo>'               + phone                 + '</ShippingPhoneNo>' +

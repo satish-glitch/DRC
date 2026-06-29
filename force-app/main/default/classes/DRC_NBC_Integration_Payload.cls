@@ -203,6 +203,8 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Courier_Number;
         public String Courier_Date;
         public String Delivery_Terms;
+        //public String Ship_to_GST_Customer_Type;
+        // public String Ship_to_GST_Reg_No;
     }
     
     public class OrderLinePayload {
@@ -305,6 +307,5 @@ global with sharing class DRC_NBC_Integration_Payload {
         public String Name;
         public String E_Mail;
     } 
-    
     
 }

@@ -109,32 +109,57 @@ public class DRC_NBC_Shipping_BC_Callout implements Queueable, Database.AllowsCa
         payload.CustomerNo = acc.DRC_NBC_Customer_Number__c;
         payload.ShiptoCode = addr.DRC_NBC_Ship_To_Code__c;
         /*If (payload.ShiptoCode == null) {
-AggregateResult result = [
-SELECT MAX(DRC_NBC_Ship_To_Code__c) maxSeq
-FROM DRC_NBC_Addresses__c
-WHERE DRC_NBC_Type__c = 'Shipping'
-];
-
-String maxSeqStr = (String) result.get('maxSeq');
-Integer currentMax = String.isBlank(maxSeqStr) ? 0 : Integer.valueOf(maxSeqStr);
-currentMax++;
-
-payload.ShiptoCode = String.valueOf(currentMax);
-System.debug('Shipto code >>> '+  currentMax);
-
-}*/
+            AggregateResult result = [
+            SELECT MAX(DRC_NBC_Ship_To_Code__c) maxSeq
+            FROM DRC_NBC_Addresses__c
+            WHERE DRC_NBC_Type__c = 'Shipping'
+            ];
+            
+            String maxSeqStr = (String) result.get('maxSeq');
+            Integer currentMax = String.isBlank(maxSeqStr) ? 0 : Integer.valueOf(maxSeqStr);
+            currentMax++;
+            
+            payload.ShiptoCode = String.valueOf(currentMax);
+            System.debug('Shipto code >>> '+  currentMax);
+        
+        }*/
         System.debug('Shipto code >>> '+  payload.ShiptoCode);
         payload.Name = acc.Name;
         
         // Address split (100 char limit per field)
         String street = addr.DRC_NBC_Address__Street__s;
-        if (!String.isBlank(street)) {
+      /*  if (!String.isBlank(street)) {
             if (street.length() > 100) {
                 payload.ShippingAddress  = street.substring(0, 100);
                 String streetRemainder   = street.substring(100);
                 payload.ShippingAddress2 = streetRemainder.length() > 100 
                     ? streetRemainder.substring(0, 100) 
                     : streetRemainder;
+            }*/
+        if (!String.isBlank(street)) {
+            if (street.length() > 100) {
+                
+                String first100Chars = street.substring(0, 100);
+                Integer commaIndex = first100Chars.lastIndexOf(',');
+                
+                Integer splitIndex;
+                
+                if (commaIndex > -1) {
+                    // Split after last comma before 100 chars
+                    splitIndex = commaIndex + 1;
+                } else {
+                    // No comma found, split at 100 chars
+                    splitIndex = 100;
+                }
+                
+                payload.ShippingAddress = street.substring(0, splitIndex).trim();
+                
+                String streetRemainder = street.substring(splitIndex).trim();
+                
+                payload.ShippingAddress2 = streetRemainder.length() > 100 
+                    ? streetRemainder.substring(0, 49) 
+                    : streetRemainder;
+                
             } else {
                 payload.ShippingAddress  = street;
                 payload.ShippingAddress2 = addr.DRC_NBC_Address__City__s;
@@ -143,7 +168,6 @@ System.debug('Shipto code >>> '+  currentMax);
             payload.ShippingAddress = '';
             payload.ShippingAddress2 = '';
         }
-        
         payload.ShippingCity = addr.DRC_NBC_Address__City__s;
         payload.State = addr.DRC_NBC_Address__StateCode__s;
         payload.ShippingPostCode = addr.DRC_NBC_Address__PostalCode__s;

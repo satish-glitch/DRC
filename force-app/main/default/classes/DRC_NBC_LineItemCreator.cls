@@ -66,6 +66,42 @@ public class DRC_NBC_LineItemCreator {
                                                              System.debug('Skipping Restricted Product Map — ord or AccountId is null');
                                                          }
                                                          
+                                                         // ── Build Restricted Product Map
+                                                         // Product2Id → Customer Product Code if available, otherwise Product Name
+                                                       /*  Map<Id, String> restrictedProductMap = new Map<Id, String>();
+                                                         
+                                                         if (ord != null && ord.AccountId != null) {
+                                                             try {
+                                                                 for (DRC_NBC_Restricted_Product__c rp : [
+                                                                     SELECT Id,
+                                                                     Name,
+                                                                     DRC_NBC_Product__c,
+                                                                     DRC_NBC_Product__r.Name,
+                                                                     DRC_NBC_Customer_s_Product_code__c
+                                                                     FROM DRC_NBC_Restricted_Product__c
+                                                                     WHERE DRC_NBC_Customer__c = :ord.AccountId
+                                                                 ]) {
+                                                                     if (rp.DRC_NBC_Product__c != null) {
+                                                                         
+                                                                         String itemReferenceNo = String.isNotBlank(rp.DRC_NBC_Customer_s_Product_code__c)
+                                                                             ? rp.DRC_NBC_Customer_s_Product_code__c
+                                                                             : rp.DRC_NBC_Product__r.Name;
+                                                                         
+                                                                         restrictedProductMap.put(rp.DRC_NBC_Product__c, itemReferenceNo);
+                                                                     }
+                                                                 }
+                                                                 
+                                                                 System.debug('Restricted Product Map built. Size: ' + restrictedProductMap.size());
+                                                                 System.debug('Restricted Product Map: ' + restrictedProductMap);
+                                                                 
+                                                             } catch (Exception ex) {
+                                                                 System.debug('!!! ERROR building Restricted Product Map: ' + ex.getMessage());
+                                                                 System.debug('Stack Trace: ' + ex.getStackTraceString());
+                                                             }
+                                                         } else {
+                                                             System.debug('Skipping Restricted Product Map — ord or AccountId is null');
+                                                         }*/
+                                                         
                                                          try {
                                                              String requestBody = buildCreateMultipleSOAPRequest(bcOrderNo, orderItems, startingLineNo, ord, restrictedProductMap);
                                                              
@@ -191,8 +227,10 @@ public class DRC_NBC_LineItemCreator {
                                                                  }
                                                                  
                                                                  // ✅ Packing quantity — same logic as batch
-                                                                 Decimal packingQty    = String.isNotBlank(item.DRC_NBC_Packing_Quantity__c)
-                                                                     ? Decimal.valueOf(item.DRC_NBC_Packing_Quantity__c) : 0;
+                                                                 String packingQtyText = String.isNotBlank(item.DRC_NBC_Packing_Quantity__c)
+                                                                     ? item.DRC_NBC_Packing_Quantity__c.replace(',', '').trim()
+                                                                     : '0';
+                                                                 Decimal packingQty = Decimal.valueOf(packingQtyText);
                                                                  Decimal noOfPkgForQty = packingQty > 0
                                                                      ? (item.Quantity != null ? item.Quantity / packingQty : 0)
                                                                      : (item.Quantity != null ? item.Quantity : 0);
@@ -218,25 +256,32 @@ public class DRC_NBC_LineItemCreator {
                                                                      '<No>'                             + escapeXml(item.Product2.DRC_NBC_FG_Code__c)                                                  + '</No>' +
                                                                      '<Customer_item_no>'               + escapeXml(item.Product2.DRC_NBC_FG_Code__c)                                                  + '</Customer_item_no>' +
                                                                      '<Description>'                    + escapeXml(item.Description != null ? item.Description : '')                                  + '</Description>' +
-                                                                     '<Location_Code>'                  + escapeXml(locationCode)                                                                      + '</Location_Code>' +
                                                                      '<Quantity>'                       + (item.Quantity != null ? item.Quantity : 0)                                                  + '</Quantity>' +
                                                                      '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
-                                                                     '<Unit_Price>'                     + (isSampleOrder ? 0 : (item.UnitPrice != null ? item.UnitPrice : 0))                         + '</Unit_Price>' +
+                                                                     '<Unit_Price>'                     + (item.UnitPrice != null ? item.UnitPrice : 0)                       + '</Unit_Price>' +
                                                                      '<Line_Amount>'                    + totalPrice                                                                                   + '</Line_Amount>' +
                                                                      '<Line_Discount_Percent>'          + discountPercent                                                                              + '</Line_Discount_Percent>' +
                                                                      '<Line_Discount_Amount>'           + lineDiscountAmount                                                                           + '</Line_Discount_Amount>' +
                                                                      '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                                                                      '<GST_Credit>'                     + GST_CREDIT_VALUE                                                                             + '</GST_Credit>' +
                                                                      '<GST_Group_Code>'                 + escapeXml(gstGroupCode)                                                                      + '</GST_Group_Code>' +
-                                                                     '<HSN_SAC_Code>'                   + escapeXml(hsnSacCode)                                                                        + '</HSN_SAC_Code>' +
+                                                                     '<HSN_SAC_Code>' +
+                                                                     escapeXml(
+                                                                         item.Product2 != null &&
+                                                                         String.isNotBlank(item.Product2.DRC_NBC_HSN_SAC_Code__c)
+                                                                         ? item.Product2.DRC_NBC_HSN_SAC_Code__c
+                                                                         : ''
+                                                                     ) +
+                                                                     '</HSN_SAC_Code>' +
                                                                      '<No_of_Pkg_for_Qty>'              + noOfPkgForQty                                                                               + '</No_of_Pkg_for_Qty>' +
                                                                      '<Packing_Details>'                + escapeXml(item.DRC_NBC_Packing_Size__c != null ? item.DRC_NBC_Packing_Size__c : '')          + '</Packing_Details>' +
                                                                      '<Hazardous>'                      + (item.DRC_NBC_Hazardous__c == true)                                                          + '</Hazardous>' +
                                                                      '<MarkNosContainerNos>'            + escapeXml(String.isBlank(item.DRC_NBC_MARKS_NOS__c) ? '' : item.DRC_NBC_MARKS_NOS__c.trim()) + '</MarkNosContainerNos>' +
-                                                                     '<Item_Reference_No>'              + escapeXml(itemReferenceNo)                                                                   + '</Item_Reference_No>' +
+                                                                   /*  '<Item_Reference_No>'              + escapeXml(itemReferenceNo)                                                                   + '</Item_Reference_No>' +
                                                                      '<Item_Reference_Type>'            + escapeXml( itemRefTypeNo)                                                                       + '</Item_Reference_Type>' +
                                                                      '<Item_Reference_Type_No>'         + escapeXml(itemRefType)                                                                     + '</Item_Reference_Type_No>' +
-                                                                     '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                                                                     '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +*/
+                                                                     '<Location_Code>'                  + escapeXml(locationCode)                                                                      + '</Location_Code>' +
                                                                      '</SalesOrderLineSalesForce>';
                                                                  
                                                                  currentLineNo += 10000;

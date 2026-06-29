@@ -13,6 +13,11 @@
 *  6. SOAP CreateMultiple  (if toCreate non-empty)
 *  7. SOAP UpdateMultiple  (if toUpdate non-empty)
 *  8. Write all API logs   (DML only AFTER all callouts)
+*  9. Mark DRC_NBC_Is_Product_Sync_To_BC__c = true for:
+*       • Products already present in BC (found via ReadMultiple) — marked immediately
+*         after parsing the ReadMultiple response, regardless of Update outcome
+*       • Products successfully created in BC (CreateMultiple succeeded)
+*     Any failure case → checkbox is left as-is (not changed)
 *
 * Rules respected
 * ────────────────
@@ -23,7 +28,7 @@
 *  • All callouts finish before any DML
 *
 * @Author : Satish YADAV
-* @Last Modified On : June 12, 2026
+* @Last Modified On : June 24, 2026
 */
 public class CustomerItemReferenceSOAPQueueable
 implements System.Queueable, Database.AllowsCallouts {
@@ -91,6 +96,29 @@ implements System.Queueable, Database.AllowsCallouts {
         
         List<Map<String, Object>> logEntries = new List<Map<String, Object>>();
         
+        // ─────────────────────────────────────────────────────────────────────
+        // syncedRestrictedProductIds
+        // ─────────────────────────────────────────────────────────────────────
+        // Tracks every Restricted Product Id that should have
+        // DRC_NBC_Is_Product_Sync_To_BC__c = true set after all callouts.
+        //
+        // Populated in THREE situations:
+        //   A) ReadMultiple   → product ALREADY EXISTS in BC
+        //                       (added right after parseReadMultiple — before any
+        //                        Create/Update callout, so the record is marked even
+        //                        if the subsequent UpdateMultiple were to fail)
+        //   B) CreateMultiple → product NEWLY CREATED in BC (only on HTTP 200 + no fault)
+        //   C) UpdateMultiple → (unchanged — products already in set from case A)
+        //
+        // Failure rule:
+        //   • If CreateMultiple fails  → createRestrictedProductIds are NOT added here
+        //   • If UpdateMultiple fails  → the products were already added in step A
+        //                                (they exist in BC) so sync = true is still correct
+        //   • Any other exception      → set is populated only up to the point of failure;
+        //                                products not yet confirmed are left untouched
+        // ─────────────────────────────────────────────────────────────────────
+        Set<Id> syncedRestrictedProductIds = new Set<Id>();
+        
         try {
             
             // ── 1. Account ────────────────────────────────────────────────
@@ -143,6 +171,10 @@ implements System.Queueable, Database.AllowsCallouts {
             List<ItemRefPayload> toCreate = new List<ItemRefPayload>();
             List<ItemRefPayload> toUpdate = new List<ItemRefPayload>();
             
+            Set<Id> createRestrictedProductIds = new Set<Id>();
+            // updateRestrictedProductIds are added to syncedRestrictedProductIds
+            // immediately below (case A) because they already exist in BC.
+            
             for (DRC_NBC_Restricted_Product__c rp : products) {
                 
                 String itemNo = rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c;
@@ -153,7 +185,12 @@ implements System.Queueable, Database.AllowsCallouts {
                 p.Item_No             = itemNo;
                 p.Unit_of_Measure     = 'KGS';
                 p.Reference_Type      = acc.Type;
-                p.Reference_No        = rp.Name;
+                if (String.isNotBlank(rp.DRC_NBC_Customer_s_Product_code__c)) {
+                    p.Reference_No = rp.DRC_NBC_Customer_s_Product_code__c;
+                } else {
+                    p.Reference_No = rp.DRC_NBC_Product__r.Name;
+                }
+          //      p.Reference_No        = rp.Name;
                 p.Reference_Type_Name = acc.Name;
                 p.Description         = rp.DRC_NBC_Customer_s_Product_code__c;
                 p.Description_2       = '';
@@ -162,10 +199,19 @@ implements System.Queueable, Database.AllowsCallouts {
                 String existingKey = bcRefKeyMap.get(mapKey);
                 
                 if (String.isBlank(existingKey)) {
+                    // Product does NOT yet exist in BC → queue for Create
                     toCreate.add(p);
+                    createRestrictedProductIds.add(rp.Id);
+                    
                 } else {
+                    // ── CASE A ─────────────────────────────────────────────
+                    // Product ALREADY EXISTS in BC (found via ReadMultiple).
+                    // Mark sync = true immediately — independent of whether the
+                    // subsequent UpdateMultiple succeeds or fails.  The record
+                    // is confirmed to be in BC, so the checkbox is correct regardless.
                     p.Key = existingKey;
                     toUpdate.add(p);
+                    syncedRestrictedProductIds.add(rp.Id);
                 }
             }
             
@@ -173,6 +219,14 @@ implements System.Queueable, Database.AllowsCallouts {
             if (!toCreate.isEmpty()) {
                 String       createRequest = buildCreateEnvelope(toCreate);
                 HttpResponse createRes     = doCallout(endpoint, 'CreateMultiple', createRequest);
+                Boolean createSuccess = isSoapSuccess(createRes);
+                
+                // ── CASE B ─────────────────────────────────────────────────
+                // Mark products as synced ONLY if CreateMultiple succeeded.
+                // On failure the checkbox is left unchanged (not added to set).
+                if (createSuccess) {
+                    syncedRestrictedProductIds.addAll(createRestrictedProductIds);
+                }
                 
                 logEntries.add(new Map<String, Object>{
                     'operation'    => 'CreateMultiple',
@@ -189,6 +243,14 @@ implements System.Queueable, Database.AllowsCallouts {
                 String       updateRequest = buildUpdateEnvelope(toUpdate);
                 HttpResponse updateRes     = doCallout(endpoint, 'UpdateMultiple', updateRequest);
                 
+                Boolean updateSuccess = isSoapSuccess(updateRes);
+                
+                // Note: update-bucket product IDs were already added to
+                // syncedRestrictedProductIds in Step 5 (CASE A) because those
+                // products were confirmed present in BC via ReadMultiple.
+                // No additional action needed here regardless of updateSuccess.
+                // The sync checkbox correctly reflects the BC state.
+                
                 logEntries.add(new Map<String, Object>{
                     'operation'    => 'UpdateMultiple',
                         'requestBody'  => updateRequest,
@@ -198,6 +260,8 @@ implements System.Queueable, Database.AllowsCallouts {
                                     'itemNos'      => String.join(collectItemNos(toUpdate), ', ')
                                     });
             }
+            
+            
             
         } catch (Exception e) {
             System.debug('CustomerItemReference SOAP Queueable exception: ' + e.getMessage() +
@@ -213,6 +277,15 @@ implements System.Queueable, Database.AllowsCallouts {
         } finally {
             // ── 8. Flush all logs (DML after ALL callouts) ─────────────────
             flushLogs(logEntries, endpoint);
+            
+            // ── 9. Mark synced Restricted Products (DML after ALL callouts) ──
+            // syncedRestrictedProductIds contains:
+            //   A) Products ALREADY IN BC   — added after ReadMultiple parse (Step 5)
+            //   B) Products NEWLY CREATED   — added only on CreateMultiple success (Step 6)
+            //
+            // Products whose callout FAILED are intentionally excluded from the set,
+            // so their DRC_NBC_Is_Product_Sync_To_BC__c checkbox is left unchanged.
+            updateRestrictedProductSyncCheckbox(syncedRestrictedProductIds);
         }
     }
     
@@ -496,5 +569,63 @@ return null;
             .replace('>',  '&gt;')
             .replace('"',  '&quot;')
             .replace('\'', '&apos;');
+    }
+    
+    private Boolean isSoapSuccess(HttpResponse res) {
+        if (res == null || res.getStatusCode() != 200) {
+            return false;
+        }
+        
+        String body = res.getBody();
+        
+        if (String.isBlank(body)) {
+            return true;
+        }
+        
+        String lowerBody = body.toLowerCase();
+        
+        if (
+            lowerBody.contains('<fault') ||
+            lowerBody.contains(':fault') ||
+            lowerBody.contains('technical problem')
+        ) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+* Updates DRC_NBC_Is_Product_Sync_To_BC__c = true for all Restricted Products
+* whose corresponding BC record was either:
+*   a) Already present in BC (found via ReadMultiple in Step 5 — CASE A)
+*      Marked regardless of UpdateMultiple outcome — the record EXISTS in BC.
+*   b) Successfully CREATED via CreateMultiple (only on HTTP 200 + no fault — CASE B)
+*
+* Failure rule:
+*   • CreateMultiple failure → those Ids are NOT in the set → checkbox unchanged
+*   • UpdateMultiple failure → Ids already added from ReadMultiple (CASE A) → sync = true
+*     is still correct because the record IS confirmed in BC
+*   • Any exception mid-flow → set contains only IDs confirmed up to that point
+*
+* Called from the finally block — after ALL callouts — to respect the
+* Salesforce "no DML before callout" governor rule.
+*/
+    private void updateRestrictedProductSyncCheckbox(Set<Id> restrictedProductIds) {
+        if (restrictedProductIds == null || restrictedProductIds.isEmpty()) {
+            return;
+        }
+        
+        List<DRC_NBC_Restricted_Product__c> productsToUpdate =
+            new List<DRC_NBC_Restricted_Product__c>();
+        
+        for (Id rpId : restrictedProductIds) {
+            productsToUpdate.add(new DRC_NBC_Restricted_Product__c(
+                Id = rpId,
+                DRC_NBC_Is_Product_Sync_To_BC__c = true
+            ));
+        }
+        
+        Database.update(productsToUpdate, false);
     }
 }

@@ -129,7 +129,7 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
         // payload.Payment_Terms_Code = '10 DAYS';
         String billingStreet = acc.BillingStreet;
         
-        if (String.isNotBlank(billingStreet)) {
+      /*  if (String.isNotBlank(billingStreet)) {
             if (billingStreet.length() > 100) {
                 payload.Address = billingStreet.substring(0, 100);
                 
@@ -137,7 +137,32 @@ public class DRC_NBC_Account_BC_Callout implements Database.AllowsCallouts {
                 payload.Address_2 = remainingAddress.length() > 100
                     ? remainingAddress.substring(0, 100)
                     : remainingAddress;
-            } else {
+            }*/
+        if (String.isNotBlank(billingStreet)) {
+            if (billingStreet.length() > 100) {
+                
+                String first100Chars = billingStreet.substring(0, 100);
+                Integer commaIndex = first100Chars.lastIndexOf(',');
+                
+                Integer splitIndex;
+                
+                if (commaIndex > -1) {
+                    // Split after last comma before 100 chars
+                    splitIndex = commaIndex + 1;
+                } else {
+                    // No comma found, split at 100 chars
+                    splitIndex = 100;
+                }
+                
+                payload.Address = billingStreet.substring(0, splitIndex).trim();
+                
+                String remainingAddress = billingStreet.substring(splitIndex).trim();
+                
+                payload.Address_2 = remainingAddress.length() > 100
+                    ? remainingAddress.substring(0, 49)
+                    : remainingAddress;
+                
+            }else {
                 payload.Address = billingStreet;
                 payload.Address_2 = acc.BillingCity;
             }

@@ -366,10 +366,10 @@
                 <p><strong>E-Mail </strong><span>{!email}</span></p>
                 <p><strong>Bank </strong><span>{!Bank}</span></p>
                 <p><strong>Account No. </strong><span>{!AccountNo}</span></p>
+                <p><strong>IFSC Code </strong><span>{!ifscCode}</span></p>
                 <p><strong>SalesPerson </strong><span>{!salesPerson}</span></p>
                 <p><strong>Customer GST Reg No. </strong><span>{!CustomerGSTRegNo}</span></p>
-                <p><strong>Transporter Name </strong><span>{!transporter}</span></p>
-                <p><strong>Agent </strong><span>{!agent}</span></p>
+                <p><strong>Transporter Agent </strong><span>{!agent}</span></p>
             </div>         
             <div style="clear: both;"></div>
             

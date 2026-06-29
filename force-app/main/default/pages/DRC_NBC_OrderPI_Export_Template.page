@@ -20,6 +20,7 @@
                 color: #000;
                 line-height: 1.3;
                 }
+                
                 .page-header {
                 position: running(header);
                 width: 100%;
@@ -27,14 +28,12 @@
                 padding-left: 10px;
                 }
                 
-                
                 .page-footer {
                 position: running(footer);
                 text-align: center; 
                 font-size: 7pt; 
                 margin-top: 5px; 
-                border-top: 1px 
-                solid #000; 
+                border-top: 1px solid #000; 
                 padding-top: 5px;
                 }
                 
@@ -44,11 +43,13 @@
                 margin-bottom: 17px;
                 text-align: center;
                 }
+                
                 .logo-left {
                 position: absolute;
                 left: 0;
                 top: 0;
                 }
+                
                 .company-header h1 {
                 font-size: 12pt;
                 font-weight: bold;
@@ -73,16 +74,17 @@
                 border-bottom: 2px solid #000;
                 margin: 5px 0;
                 }
+                
                 .header-divider1 {
                 border-bottom: 1px solid #000;
                 margin: 5px 0;
                 }
+                
                 .invoice-title {
                 font-size: 14pt;
                 font-weight: bold;
                 margin: 0;
                 }
-                
                 
                 .shipping-details {
                 display: flex;
@@ -146,27 +148,27 @@
                 text-transform: uppercase;
                 }
                 
+                /* ===== FIXED: Two-Column Layout for Documents and Special Instructions ===== */
                 .document-instruction-wrapper {
-                display: flex;
-                justify-content: flex-start;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
                 margin: 15px 0;
-                position: relative;
                 page-break-inside: avoid;
-                
+                width: 100%;
                 }
                 
                 .documents-section {
                 width: 100%;
                 font-size: 8pt;
-                position: relative;
                 page-break-inside: avoid;
-                
                 }
                 
                 .documents-section h3 {
                 font-size: 9pt;
                 font-weight: bold;
                 margin-bottom: 5px;
+                margin-top: 0;
                 }
                 
                 .documents-section ul {
@@ -180,23 +182,20 @@
                 padding-left: 5px;
                 }
                 
-                /* Special Instructions aligned toward middle-right */
+                /* ===== FIXED: Special Instructions - No absolute positioning ===== */
                 .SpecialInstruction-inline {
-                position: absolute;
-                top: 0;
-                left: 320px;
-                width: 300px;
                 font-size: 8pt;
-                padding-left: 30px;
-                margin-top: -2px;
                 page-break-inside: avoid;
-                
+                padding-left: 0;
+                margin: 0;
+                width: 100%;
                 }
                 
                 .SpecialInstruction-inline h3 {
                 font-size: 9pt;
                 font-weight: bold;
                 margin-bottom: 5px;
+                margin-top: 0;
                 text-align: left;
                 }
                 
@@ -205,15 +204,14 @@
                 text-align: left;
                 white-space: pre-wrap;
                 page-break-inside: avoid;
-                
+                font-size: 8pt;
                 }
                 
-                
+                /* ===== Bank Details ===== */
                 .bank-details {
                 margin: 15px 0;
                 font-size: 7pt;
                 page-break-inside: avoid;
-                
                 }
                 
                 .bank-details h3 {
@@ -226,6 +224,7 @@
                 margin: 2px 0;
                 }
                 
+                /* ===== Declaration ===== */
                 .declaration {
                 margin: 10px 0;
                 font-size: 7pt;
@@ -234,6 +233,7 @@
                 page-break-inside: avoid;
                 }
                 
+                /* ===== Terms and Conditions ===== */
                 .terms-section {
                 margin-top: 20px;
                 font-size: 7pt;

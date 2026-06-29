@@ -479,7 +479,7 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
                 ProductName:                    selected.Name,
                 Name:                           selected.Name,
                 Product2Id:                     selected.Product2Id,
-                Description:                    '',
+                Description:                    selected.Name,
                 UnitPrice:                      unitPrice,
                 OriginalUnitPrice:              unitPrice,
                 DRC_NBC_HSN_SAC_Code__c:        selected.HSNCode               || '-',
@@ -629,6 +629,24 @@ export default class DRC_NBC_Generate_Quotes extends NavigationMixin(LightningEl
             }
             if (row.quantityError) {
                 this.showToast('Error', `Row ${i + 1}: ${row.quantityError}`, 'error'); return false;
+            }
+                    // Product has no packing size data configured at all
+            if (!row.packingSizeOptions || row.packingSizeOptions.length === 0) {
+                this.showToast(
+                    'Error',
+                    `Row ${i + 1}: "${row.ProductName || row.Name}" has no Packing Size configured and cannot be added to this quote. Please select a different product.`,
+                    'error'
+                );
+                return false;
+            }
+            // Product has packing sizes available but user hasn't picked one
+            if (!row.selectedPackingSize) {
+                this.showToast(
+                    'Error',
+                    `Row ${i + 1}: Please select a Packing Size for "${row.ProductName || row.Name}".`,
+                    'error'
+                );
+                return false;
             }
         }
         return true;

@@ -322,6 +322,16 @@
                 <identifier>RecordAddressField</identifier>
             </fieldInstance>
         </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Website</fieldItem>
+                <identifier>RecordWebsiteField</identifier>
+            </fieldInstance>
+        </itemInstances>
         <name>Facet-713216fb-7136-4507-bc05-0827a53c41b1</name>
         <type>Facet</type>
     </flexiPageRegions>
@@ -342,8 +352,8 @@
                     <name>uiBehavior</name>
                     <value>none</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.Website</fieldItem>
-                <identifier>RecordWebsiteField</identifier>
+                <fieldItem>Record.DRC_NBC_LandLine__c</fieldItem>
+                <identifier>RecordDRC_NBC_LandLine_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <name>Facet-aa9f2bce-919e-4766-a509-c84d1d513558</name>

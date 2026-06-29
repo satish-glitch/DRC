@@ -119,7 +119,7 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
         
         String street = addr.DRC_NBC_Address__Street__s;
 
-        if (!String.isBlank(street)) {
+     /*   if (!String.isBlank(street)) {
             if (street.length() > 100) {
                 payload.ShippingAddress = street.substring(0, 99);
                 payload.ShippingAddress2 = street.length() > 149
@@ -127,7 +127,44 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
                     : street.substring(99);
             } else {
                 payload.ShippingAddress = street;
-                payload.ShippingAddress2 = '';
+                payload.ShippingAddress2 = addr.DRC_NBC_Address__City__s;
+            }
+        } else {
+            payload.ShippingAddress = '';
+            payload.ShippingAddress2 = '';
+        }*/
+        
+        
+        String rawStreet = String.isBlank(street) ? '' : street.trim();
+        String rawCity   = String.isBlank(addr.DRC_NBC_Address__City__s)
+            ? ''
+            : addr.DRC_NBC_Address__City__s.trim();
+        
+        if (String.isNotBlank(rawStreet)) {
+            if (rawStreet.length() > 100) {
+                String first100Chars = rawStreet.substring(0, 100);
+                Integer commaIndex = first100Chars.lastIndexOf(',');
+                Integer splitIndex;
+                
+                if (commaIndex > -1) {
+                    // Split after last comma before 100 characters
+                    splitIndex = commaIndex + 1;
+                } else {
+                    // No comma found, split at 100 characters
+                    splitIndex = 100;
+                }
+                
+                payload.ShippingAddress = rawStreet.substring(0, splitIndex).trim();
+                
+                String streetRemainder = rawStreet.substring(splitIndex).trim();
+                
+                payload.ShippingAddress2 = streetRemainder.length() > 100
+                    ? streetRemainder.substring(0, 49)
+                    : streetRemainder;
+                
+            } else {
+                payload.ShippingAddress = rawStreet;
+                payload.ShippingAddress2 = rawCity;
             }
         } else {
             payload.ShippingAddress = '';
@@ -137,12 +174,29 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
         payload.ShippingCity              = addr.DRC_NBC_Address__City__s;
         payload.State                     = addr.DRC_NBC_Address__StateCode__s;
         payload.ShippingPostCode          = addr.DRC_NBC_Address__PostalCode__s;
-        payload.ShippingCountry           = addr.DRC_NBC_Address__CountryCode__s == 'IN'
+     /*   payload.ShippingCountry           = addr.DRC_NBC_Address__CountryCode__s == 'IN'
                                             ? 'IND'
                                             : addr.DRC_NBC_Address__CountryCode__s;
         payload.ShippingPhoneNo           = addr.DRC_NBC_Account__r.Phone;
         payload.ShippingGSTRegistrationNo = addr.DRC_NBC_GST_Number__c;
-        payload.Ship_to_GST_Customer_Type = addr.DRC_Shipping_Gst_Customer_Type__c;
+        payload.Ship_to_GST_Customer_Type = addr.DRC_Shipping_Gst_Customer_Type__c;*/
+
+        String countryCode = String.isBlank(addr.DRC_NBC_Address__CountryCode__s)
+        ? ''
+        : addr.DRC_NBC_Address__CountryCode__s.trim();
+
+        Boolean isIndia = countryCode.equalsIgnoreCase('IN') || countryCode.equalsIgnoreCase('IND');
+
+        payload.ShippingCountry = isIndia ? 'IND' : countryCode;
+        payload.ShippingPhoneNo = addr.DRC_NBC_Account__r.Phone;
+
+        if (isIndia) {
+            payload.ShippingGSTRegistrationNo = addr.DRC_NBC_GST_Number__c;
+            payload.Ship_to_GST_Customer_Type = addr.DRC_Shipping_Gst_Customer_Type__c;
+        } else {
+            payload.ShippingGSTRegistrationNo = null;
+            payload.Ship_to_GST_Customer_Type = null;
+        }
         
         List<Warehouse_Location_Code__mdt> wMeta = [
             SELECT DRC_NBC_Code__c
@@ -436,8 +490,7 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
             +         xmlTag('ShippingPhoneNo', p.ShippingPhoneNo)
             +         xmlTag('ShippingEmail', p.ShippingEmail)
             +         xmlTag('State', p.State)
-            +         xmlTag('Ship_to_GST_Customer_Type', p.Ship_to_GST_Customer_Type)
-            +         xmlTag('ShippingGSTRegistrationNo', p.ShippingGSTRegistrationNo)
+            +         gstTagsForIndia(p)
             +         xmlTag('Shipment_Method_Code', p.Shipment_Method_Code)
             +         xmlTag('Location_Code', p.Location_Code)
             +       '</CustomerShiptoAddressSalesForce>'
@@ -636,5 +689,20 @@ public class DRC_NBC_Shipping_BC_Integration_SOAP {
                 );
             }
         }
+    }
+
+    private static String gstTagsForIndia(DRC_NBC_Integration_Payload.ShipToPayload p) {
+        Boolean isIndia = !String.isBlank(p.ShippingCountry) &&
+            (
+                p.ShippingCountry.equalsIgnoreCase('IN') ||
+                p.ShippingCountry.equalsIgnoreCase('IND')
+            );
+
+        if (!isIndia) {
+            return '';
+        }
+
+        return xmlTag('Ship_to_GST_Customer_Type', p.Ship_to_GST_Customer_Type)
+            + xmlTag('ShippingGSTRegistrationNo', p.ShippingGSTRegistrationNo);
     }
 }

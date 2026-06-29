@@ -20,6 +20,10 @@
                 <behavior>Edit</behavior>
                 <field>DRC_NBC_Customer_s_Product_code__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>DRC_NBC_Is_Product_Sync_To_BC__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

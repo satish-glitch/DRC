@@ -8,6 +8,7 @@ public class DRC_NBC_GenerateDomOrderPIController {
     public String SalesPerson { get; set; }
     public String importSequence { get; set; }
     public String exportSequence { get; set; }
+    public String ifscCode { get; set; }
 
     public String customerName { get; set; }
     public String customerNumber { get; set; }
@@ -93,7 +94,8 @@ public class DRC_NBC_GenerateDomOrderPIController {
                    Account.BillingCity,
                    Account.BillingState,
                    Account.BillingPostalCode,
-                   Account.BillingCountry,
+                    Account.BillingCountry,
+                    DRC_NBC_Select_Bank__c,
                    DRC_NBC_C_GST__c,
                    DRC_NBC_I_GST__c,
                    DRC_NBC_S_GST__c,
@@ -161,8 +163,33 @@ public class DRC_NBC_GenerateDomOrderPIController {
         email = Label.DRC_NBC_Email;
         phoneNumber = Label.DRC_NBC_Phone;
         website = Label.DRC_NBC_Website;
-        Bank = Label.DRC_NBC_Bank;
-        AccountNo = Label.DRC_NBC_AccountNo;
+       // Bank = Label.DRC_NBC_Bank;
+       // AccountNo = Label.DRC_NBC_AccountNo;
+       // ifscCode = Label.DRC_NBC_IFSC
+        if (ord.DRC_NBC_Select_Bank__c != null) {
+            List<DRC_NBC_Bank_Master__mdt> bankRecords = [
+                SELECT DeveloperName,MasterLabel,
+                DRC_NBC_Account_Number__c,
+                DRC_Name_Bank_Name__c,
+                DRC_NBC_IFSC_Code__c
+                FROM DRC_NBC_Bank_Master__mdt
+                WHERE MasterLabel = :ord.DRC_NBC_Select_Bank__c
+                LIMIT 1
+            ];
+            
+            if (!bankRecords.isEmpty()) {
+                Bank = bankRecords[0].DRC_Name_Bank_Name__c != null 
+                    ? bankRecords[0].DRC_Name_Bank_Name__c : '';
+                AccountNo = bankRecords[0].DRC_NBC_Account_Number__c != null 
+                    ? bankRecords[0].DRC_NBC_Account_Number__c : '';
+                ifscCode = bankRecords[0].DRC_NBC_IFSC_Code__c != null 
+                    ? bankRecords[0].DRC_NBC_IFSC_Code__c : '';
+            }
+        } else {
+            Bank = '';
+            AccountNo = '';
+            ifscCode = '';
+        }
 
         if (ord.DRC_NBC_Type__c == 'Domestic' && ord.DRC_NBC_Import_Starting_Sequence__c != null) {
             importSequence = String.valueOf(ord.DRC_NBC_Import_Starting_Sequence__c.intValue());

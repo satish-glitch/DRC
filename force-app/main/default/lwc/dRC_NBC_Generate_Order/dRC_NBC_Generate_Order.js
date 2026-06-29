@@ -742,6 +742,7 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
                 { field: 'DRC_NBC_Country_of_Final_Destination__c', message: 'Enter Country of Final Destination.' },
                 { field: 'DRC_NBC_Port_of_Loading__c',              message: 'Enter Port of Loading.' },
                 { field: 'DRC_NBC_Port_Of_Discharge__c',            message: 'Enter Port of Discharge.' },
+                { field: 'DRC_NBC_Shipment_Method__c',            message: 'Enter Pre carrige by.' },
                 { field: 'DRC_NBC_Final_Destination__c',            message: 'Enter Final Destination.' }
             );
         }
@@ -757,6 +758,13 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
                 this.showToastMessage('Error', v.message, 'error');
                 return false;
             }
+        }
+
+        const poNumber = this.samplingRec.PoNumber ? String(this.samplingRec.PoNumber) : '';
+
+        if (poNumber.length > 34) {
+            this.showToastMessage('Error', 'PO Number cannot be more than 34 characters.', 'error');
+            return false;
         }
 
         if (!this.selectedShippingId) {
@@ -809,6 +817,12 @@ export default class DRC_NBC_Generate_Order extends NavigationMixin(LightningEle
             }
             if (!item.Quantity || item.Quantity <= 0) {
                 this.showToastMessage('Error', 'Enter valid Quantity for all selected products.', 'error'); return false;
+            }
+
+            if (!item.DRC_NBC_Packing_Size__c) {
+                console.log('Packing size check - item:', item.QuoteLineItemId, 'value:', item.DRC_NBC_Packing_Size__c, typeof item.DRC_NBC_Packing_Size__c);
+                this.showToastMessage('Error', `Enter Packing Size for product ${item.Product2?.Name || ''}.`, 'error'); 
+                return false;
             }
         }
         return true;

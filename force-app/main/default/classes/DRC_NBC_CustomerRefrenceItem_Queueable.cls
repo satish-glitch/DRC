@@ -24,7 +24,6 @@ implements System.Queueable, Database.AllowsCallouts {
                 DRC_NBC_CustomerItems_BC_Callout.getRestrictedProducts(accountId);
             
             if (products == null || products.isEmpty()) {
-                // ✅ No products — still mark as posted
                 DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
                 return;
             }
@@ -34,6 +33,10 @@ implements System.Queueable, Database.AllowsCallouts {
             
             List<Map<String, Object>> logEntries = new List<Map<String, Object>>();
             
+            // Collect successful products and update checkbox after callouts
+            List<DRC_NBC_Restricted_Product__c> productsToUpdate =
+                new List<DRC_NBC_Restricted_Product__c>();
+            
             for (DRC_NBC_Restricted_Product__c rp : products) {
                 DRC_NBC_Integration_Payload.CustomerItemReferencePayload payload =
                     DRC_NBC_CustomerRefrenceItems_BC_Callout.mapToPayload(rp, customerNumber, acc);
@@ -42,21 +45,54 @@ implements System.Queueable, Database.AllowsCallouts {
                 
                 DRC_NBC_CustomerItems_BC_Integration integration =
                     new DRC_NBC_CustomerItems_BC_Integration(
-                        endpoint, 'POST', jsonBody, accountId);
+                        endpoint, 'POST', jsonBody, accountId
+                    );
                 
                 HttpResponse response = integration.executeAndReturnResponse();
+                
+                Integer statusCode = response != null ? response.getStatusCode() : null;
+                Boolean isSuccess = statusCode != null && statusCode >= 200 && statusCode < 300;
+                
+                if (isSuccess) {
+                    productsToUpdate.add(new DRC_NBC_Restricted_Product__c(
+                        Id = rp.Id,
+                        DRC_NBC_Is_Product_Sync_To_BC__c = true
+                    ));
+                }
                 
                 logEntries.add(new Map<String, Object>{
                     'requestBody'  => jsonBody,
                     'responseBody' => response != null ? response.getBody() : 'null',
-                    'statusCode'   => response != null ? String.valueOf(response.getStatusCode()) : 'null',
-                    'status'       => (response != null && response.getStatusCode() == 201) ? 'Success' : 'Error',
-                    'itemNo'       => rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c
+                    'statusCode'   => statusCode,
+                    'status'       => isSuccess ? 'Success' : 'Error',
+                    'itemNo'       => rp.DRC_NBC_Product__r != null
+                                        ? rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c
+                                        : null
                 });
+            }
+            
+            // Update checkbox only for successfully synced restricted products
+            if (!productsToUpdate.isEmpty()) {
+                Database.SaveResult[] results = Database.update(productsToUpdate, false);
+                
+                for (Integer i = 0; i < results.size(); i++) {
+                    if (!results[i].isSuccess()) {
+                        logError(
+                            'Failed to update DRC_NBC_Is_Product_Sync_To_BC__c for Restricted Product Id: ' +
+                            productsToUpdate[i].Id +
+                            ' | Error: ' +
+                            results[i].getErrors()[0].getMessage(),
+                            accountId
+                        );
+                    }
+                }
             }
             
             for (Map<String, Object> entry : logEntries) {
                 String status = (String) entry.get('status');
+                Integer apiStatusCode = entry.get('statusCode') != null
+                    ? Integer.valueOf(String.valueOf(entry.get('statusCode')))
+                    : null;
                 
                 DRC_NBC_API_Log_Handler.createApiLog(
                     'DRC_NBC_CustomerItems_BC_Integration',
@@ -64,9 +100,7 @@ implements System.Queueable, Database.AllowsCallouts {
                     (String) entry.get('requestBody'),
                     'POST',
                     (String) entry.get('responseBody'),
-                    entry.get('statusCode') != null
-                        ? Integer.valueOf(String.valueOf(entry.get('statusCode')))
-                        : null,
+                    apiStatusCode,
                     null,
                     status,
                     accountId
@@ -81,7 +115,6 @@ implements System.Queueable, Database.AllowsCallouts {
                 }
             }
             
-            // ✅ Final step in the chain — mark account as posted
             DRC_NBC_Account_BC_Callout.updatePostedStatus(accountId);
             
         } catch (Exception e) {

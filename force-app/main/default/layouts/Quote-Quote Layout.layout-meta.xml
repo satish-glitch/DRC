@@ -62,6 +62,10 @@
                 <behavior>Readonly</behavior>
                 <field>Converted_INR_Amount__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>Highest_Authority_User__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

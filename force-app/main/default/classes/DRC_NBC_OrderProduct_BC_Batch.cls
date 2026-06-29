@@ -82,6 +82,34 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
             System.debug('Stack Trace: ' + ex.getStackTraceString());
         }
         
+     /*   try {
+            Id accountId = ((OrderItem) scope[0]).Order.AccountId;
+            System.debug('Building Restricted Product Map for AccountId: ' + accountId);
+            
+            for (DRC_NBC_Restricted_Product__c rp : [
+                SELECT Id,
+                Name,
+                DRC_NBC_Product__c,
+                DRC_NBC_Product__r.Name,
+                DRC_NBC_Customer_s_Product_code__c
+                FROM DRC_NBC_Restricted_Product__c
+                WHERE DRC_NBC_Customer__c = :accountId
+            ]) {
+                String referenceNo = String.isNotBlank(rp.DRC_NBC_Customer_s_Product_code__c)
+                    ? rp.DRC_NBC_Customer_s_Product_code__c
+                    : rp.DRC_NBC_Product__r.Name;
+                
+                restrictedProductMap.put(rp.DRC_NBC_Product__c, referenceNo);
+            }
+            
+            System.debug('Restricted Product Map built. Size: ' + restrictedProductMap.size());
+            System.debug('Restricted Product Map: ' + restrictedProductMap);
+            
+        } catch (Exception ex) {
+            System.debug('!!! ERROR building Restricted Product Map: ' + ex.getMessage());
+            System.debug('Stack Trace: ' + ex.getStackTraceString());
+        }*/
+        
         List<Map<String, Object>> requestList = new List<Map<String, Object>>();
         Integer lineCounter = 1;
         Integer requestCounter = 1;
@@ -520,6 +548,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         System.debug('=== BATCH FINISH METHOD ===');
         System.debug('All OrderItems processed for Order: ' + orderId);
         System.debug('=======================================================');
+        System.enqueueJob(new DRC_NBC_SalesCommentLineSF_Queueable(orderId)); 
     }
     
     // ==========================================================
@@ -581,7 +610,7 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.Location_Code = locationCode;
         payload.Quantity = item.Quantity != null ? item.Quantity : 0;
         payload.Unit_of_Measure_Code = 'KGS';
-        payload.Unit_Price = isSampleOrder ? 0 : (item.UnitPrice != null ? item.UnitPrice : 0);
+        payload.Unit_Price = item.UnitPrice;
             payload.Line_Amount = totalPrice;
         payload.Line_Discount_Percent = discountPercent;
         payload.Line_Discount_Amount = lineDiscountAmount;
@@ -596,9 +625,10 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         
         payload.GST_Credit = 'Availment';
         payload.Packing_Details = String.isNotBlank(item.DRC_NBC_Packing_Size__c) ? item.DRC_NBC_Packing_Size__c : '';
-        Decimal packingQty = String.isNotBlank(item.DRC_NBC_Packing_Quantity__c) 
-            ? Decimal.valueOf(item.DRC_NBC_Packing_Quantity__c)
-            : 0;
+        String packingQtyText = String.isNotBlank(item.DRC_NBC_Packing_Quantity__c)
+            ? item.DRC_NBC_Packing_Quantity__c.replace(',', '').trim()
+            : '0';
+        Decimal packingQty = Decimal.valueOf(packingQtyText);
         payload.No_of_Pkg_for_Qty = packingQty > 0
             ? item.Quantity / packingQty
             : item.Quantity;
@@ -606,10 +636,10 @@ public class DRC_NBC_OrderProduct_BC_Batch implements Database.Batchable<SObject
         payload.MarkNosContainerNos = String.isBlank(item.DRC_NBC_MARKS_NOS__c)
             ? ''
             : item.DRC_NBC_MARKS_NOS__c.trim();
-        payload.Item_Reference_No = itemReferenceNo;
+       /* payload.Item_Reference_No = itemReferenceNo;
         payload.Item_Reference_Type = item.Order.Account.Type;
         payload.Item_Reference_Type_No = item.Order.Account.DRC_NBC_Customer_Number__c;
-        payload.Item_Reference_Unit_of_Measure = 'KGS';
+        payload.Item_Reference_Unit_of_Measure = 'KGS';*/
         
         System.debug('  << Payload mapping complete');
         return payload;

@@ -464,6 +464,24 @@ export default class DRC_NBC_AddProductsToQuotes extends NavigationMixin(Lightni
                 this.showToastEvent('Error', `Row ${rowCount}: ${row.quantityError}`, 'error');
                 isValid = false;
             }
+             // ── Packing Size validation ─────────────────────────────────────
+            if (row.Product2Id) {
+                if (!row.packingSizeOptions || row.packingSizeOptions.length === 0) {
+                    this.showToastEvent(
+                        'Error',
+                        `Row ${rowCount}: "${row.Name || row.ProductName}" has no Packing Size configured and cannot be added to this quote. Please select a different product.`,
+                        'error'
+                    );
+                    isValid = false;
+                } else if (!row.selectedPackingSize) {
+                    this.showToastEvent(
+                        'Error',
+                        `Row ${rowCount}: Please select a Packing Size for "${row.Name || row.ProductName}".`,
+                        'error'
+                    );
+                    isValid = false;
+                }
+            }
         }
 
         if (!this.quoteRec?.ExpirationDate) {

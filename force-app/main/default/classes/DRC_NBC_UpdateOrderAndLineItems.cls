@@ -42,10 +42,11 @@ public class DRC_NBC_UpdateOrderAndLineItems {
     // INNER CLASSES
     // ========================================================================
     
-    /** Holds BC Order Read result (Key + Status) */
+    /** Holds BC Order Read result (Key + Status + Location_Code) */
     public class BCOrderReadResult {
         public String key;
         public String status;
+        public String locationCode;
         public BCOrderReadResult(String key, String status) {
             this.key    = key;
             this.status = status;
@@ -233,8 +234,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             BCOrderReadResult readResult = readOrderFromBC(ord);
             
             System.debug('DEBUG PAYLOAD >>> readResult: ' + (readResult != null
-                ? ('Key=' + readResult.key + ' | Status=' + readResult.status)
-                : 'NULL'));
+                                                             ? ('Key=' + readResult.key + ' | Status=' + readResult.status)
+                                                             : 'NULL'));
             
             if (readResult == null || String.isBlank(readResult.key)) {
                 System.debug('DEBUG PAYLOAD >>> Read Order from BC failed. Halting process.');
@@ -260,8 +261,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 System.debug('--- Step 2b: Re-reading Order for fresh Key after reopen ---');
                 BCOrderReadResult freshRead = readOrderFromBC(ord);
                 System.debug('DEBUG PAYLOAD >>> freshRead: ' + (freshRead != null
-                    ? ('Key=' + freshRead.key + ' | Status=' + freshRead.status)
-                    : 'NULL'));
+                                                                ? ('Key=' + freshRead.key + ' | Status=' + freshRead.status)
+                                                                : 'NULL'));
                 
                 if (freshRead == null || String.isBlank(freshRead.key)) {
                     System.debug('DEBUG PAYLOAD >>> Re-read after Reopen failed. Halting process.');
@@ -328,6 +329,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         );
         
         System.debug('*** processOrderSync ENDED *** resultMessage=' + resultMessage);
+        System.enqueueJob(new DRC_NBC_SalesCommentLineSF_Queueable(ord.Id));
         return resultMessage;
     }
     
@@ -358,7 +360,9 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 DRC_NBC_Discount__c,
                 Order.DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
                 Order.DRC_NBC_TCS_Amount__c, Order.DRC_NBC_Other_Tax_Amount__c,
-                Order.DRC_NBC_Fright_Charges__c,
+                Order.DRC_NBC_Fright_Charges__c, 
+                Order.DRC_NBC_Sample_Shipping_Cost__c, 
+                Order.DRC_NBC_Sample_Amount__c,
                 Order.DRC_NBC_Insurance__c,
                 DRC_NBC_Total_Price__c, Order.DRC_NBC_Cust_Order_Number__c,
                 Order.Account.DRC_NBC_Customer_Number__c, Order.Account.Type,
@@ -377,7 +381,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             // --- Order for Tax amounts ---
             Order ord = [
                 SELECT DRC_NBC_Other_Tax_Amount__c,AccountId, DRC_NBC_TCS_Amount__c,
-                DRC_NBC_Fright_Charges__c, DRC_NBC_Insurance__c,
+                DRC_NBC_Fright_Charges__c, DRC_NBC_Insurance__c, 
+                DRC_NBC_Sample_Shipping_Cost__c, DRC_NBC_Sample_Amount__c,
                 DRC_NBC_Cust_Order_Number__c, RecordType.Name,
                 DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c, DRC_NBC_Warehouse__c,
                 Is_Domestic_Merchnat__c
@@ -408,6 +413,42 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             } else {
                 System.debug('DEBUG PAYLOAD >>> Skipping Restricted Product Map — accountId is null');
             }
+            
+            // ── Build Restricted Product Map
+            // Product2Id → Customer Product Code if available, otherwise Product Name
+           /* Map<Id, String> restrictedProductMap = new Map<Id, String>();
+            
+            if (accountId != null) {
+                try {
+                    for (DRC_NBC_Restricted_Product__c rp : [
+                        SELECT Id,
+                        Name,
+                        DRC_NBC_Product__c,
+                        DRC_NBC_Product__r.Name,
+                        DRC_NBC_Customer_s_Product_code__c
+                        FROM DRC_NBC_Restricted_Product__c
+                        WHERE DRC_NBC_Customer__c = :accountId
+                    ]) {
+                        if (rp.DRC_NBC_Product__c != null) {
+                            
+                            String itemReferenceNo = String.isNotBlank(rp.DRC_NBC_Customer_s_Product_code__c)
+                                ? rp.DRC_NBC_Customer_s_Product_code__c
+                                : rp.DRC_NBC_Product__r.Name;
+                            
+                            restrictedProductMap.put(rp.DRC_NBC_Product__c, itemReferenceNo);
+                        }
+                    }
+                    
+                    System.debug('  Restricted Product Map built. Size: ' + restrictedProductMap.size());
+                    System.debug('DEBUG PAYLOAD >>> Restricted Product Map: ' + JSON.serializePretty(restrictedProductMap));
+                    
+                } catch (Exception ex) {
+                    System.debug('  !!! ERROR building Restricted Product Map: ' + ex.getMessage());
+                    System.debug('  Stack Trace: ' + ex.getStackTraceString());
+                }
+            } else {
+                System.debug('DEBUG PAYLOAD >>> Skipping Restricted Product Map — accountId is null');
+            }*/
             
             System.debug('  SF Product Items: ' + orderItems.size());
             System.debug('  BC Line Items: '    + bcLineDetails.size());
@@ -452,6 +493,11 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         bcTaxLines.put('FREIGHT', bcLine);
                     } else if (bcLine.description != null && bcLine.description.contains('Insurance')) {
                         bcTaxLines.put('INSURANCE', bcLine);
+                    }
+                    else if (bcLine.description != null && bcLine.description.contains('Sample Shipping Cost')) {
+                        bcTaxLines.put('SAMPLE_SHIPPING_COST', bcLine);
+                    } else if (bcLine.description != null && bcLine.description.contains('Sample Amount')) {
+                        bcTaxLines.put('SAMPLE_AMOUNT', bcLine);
                     }
                 }
             }
@@ -517,6 +563,19 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     System.debug('  INSURANCE added to UPDATE (amt: ' + ord.DRC_NBC_Insurance__c + ') | Line: ' + taxLine.lineNo + ' | Key: ' + taxLine.key);
                 }
             
+            if (bcTaxLines.containsKey('SAMPLE_SHIPPING_COST') &&
+                ord.DRC_NBC_Sample_Shipping_Cost__c != null && ord.DRC_NBC_Sample_Shipping_Cost__c != 0) {
+                    BCLineItem taxLine = bcTaxLines.get('SAMPLE_SHIPPING_COST');
+                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                    System.debug('  SAMPLE_SHIPPING_COST added to UPDATE (amt: ' + ord.DRC_NBC_Sample_Shipping_Cost__c + ') | Line: ' + taxLine.lineNo + ' | Key: ' + taxLine.key);
+                }
+            if (bcTaxLines.containsKey('SAMPLE_AMOUNT') &&
+                ord.DRC_NBC_Sample_Amount__c != null && ord.DRC_NBC_Sample_Amount__c != 0) {
+                    BCLineItem taxLine = bcTaxLines.get('SAMPLE_AMOUNT');
+                    linesToUpdate.put(taxLine.lineNo, taxLine.key);
+                    System.debug('  SAMPLE_AMOUNT added to UPDATE (amt: ' + ord.DRC_NBC_Sample_Amount__c + ') | Line: ' + taxLine.lineNo + ' | Key: ' + taxLine.key);
+                }
+            
             System.debug('DEBUG PAYLOAD >>> linesToUpdate (after tax additions): ' + JSON.serializePretty(linesToUpdate));
             
             // --- Unmatched BC product lines → delete ---
@@ -570,6 +629,26 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 }
             }
             
+            if (bcTaxLines.containsKey('SAMPLE_SHIPPING_COST')) {
+                if (ord.DRC_NBC_Sample_Shipping_Cost__c == null || ord.DRC_NBC_Sample_Shipping_Cost__c == 0) {
+                    BCLineItem taxLine = bcTaxLines.get('SAMPLE_SHIPPING_COST');
+                    linesToDelete.put(taxLine.lineNo, taxLine.key);
+                    linesToUpdate.remove(taxLine.lineNo);
+                    System.debug('  SAMPLE_SHIPPING_COST marked for DELETE (amount → zero) | Line: ' + taxLine.lineNo + ' | Key: ' + taxLine.key);
+                } else {
+                    System.debug('  SAMPLE_SHIPPING_COST PRESERVED (amt: ' + ord.DRC_NBC_Sample_Shipping_Cost__c + ')');
+                }
+            }
+            if (bcTaxLines.containsKey('SAMPLE_AMOUNT')) {
+                if (ord.DRC_NBC_Sample_Amount__c == null || ord.DRC_NBC_Sample_Amount__c == 0) {
+                    BCLineItem taxLine = bcTaxLines.get('SAMPLE_AMOUNT');
+                    linesToDelete.put(taxLine.lineNo, taxLine.key);
+                    linesToUpdate.remove(taxLine.lineNo);
+                    System.debug('  SAMPLE_AMOUNT marked for DELETE (amount → zero) | Line: ' + taxLine.lineNo + ' | Key: ' + taxLine.key);
+                } else {
+                    System.debug('  SAMPLE_AMOUNT PRESERVED (amt: ' + ord.DRC_NBC_Sample_Amount__c + ')');
+                }
+            }
             System.debug('DEBUG PAYLOAD >>> linesToUpdate (FINAL): ' + JSON.serializePretty(linesToUpdate));
             System.debug('DEBUG PAYLOAD >>> linesToDelete (FINAL): ' + JSON.serializePretty(linesToDelete));
             System.debug('DEBUG PAYLOAD >>> itemsToCreate (FINAL count=' + itemsToCreate.size() + ')');
@@ -685,8 +764,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             if (response.getStatusCode() == 200) {
                 BCOrderReadResult result = extractKeyAndStatusFromReadResponse(response.getBody());
                 System.debug('DEBUG PAYLOAD >>> readOrderFromBC | Extracted Result: ' + (result != null
-                    ? ('Key=' + result.key + ' | Status=' + result.status)
-                    : 'NULL'));
+                                                                                         ? ('Key=' + result.key + ' | Status=' + result.status + ' | Location_Code=' + result.locationCode)
+                                                                                         : 'NULL'));
                 
                 if (result == null || String.isBlank(result.key)) {
                     System.debug('DEBUG PAYLOAD >>> readOrderFromBC | Key or Status missing. Logging error.');
@@ -796,12 +875,80 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         System.debug('  *** UPDATE Order Operation Started ***');
         System.debug('=================================================================');
         
+        
+        Order freshOrd = [
+            SELECT   Id, 
+            Name, 
+            AccountId,
+            EffectiveDate,
+            OrderNumber, 
+            PoDate,
+            PoNumber,
+            DRC_NBC_Warehouse__c,
+            ShipToContactId,
+            DRC_NBC_Cust_Order_Number__c, 
+            Status,
+            DRC_NBC_Payment_Terms__c,
+            RecordType.Name,
+            ShippingCountryCode, 
+            DRC_NBC_Inco_Terms__c,
+            CreatedDate,
+            Account.Name,
+            ShippingCity, 
+            ShippingCountry,
+            Is_Domestic_Merchnat__c,
+            DRC_NBC_Order_Sync_To_BC__c,
+            ShippingPostalCode, 
+            ShippingStreet, 
+            DRC_NBC_Shipping_Address__c,
+            Account.DRC_NBC_Posted_To_BC__c, 
+            Account.DRC_NBC_Customer_Number__c,
+            DRC_NBC_Grand_Total__c,
+            Account.BillingStreet,
+            Account.BillingPostalCode,
+            Account.DRC_NBC_BC_Approval_Status__c,
+            Account.BillingCity, 
+            CurrencyIsoCode,
+            DRC_NBC_SalesPerson_Code__c,
+            DRC_NBC_Record_Type_Name__c,
+            DRC_NBC_Type__c,
+            DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
+            DRC_NBC_Shipping_Address__r.DRC_NBC_Ship_To_Code__c,
+            DRC_NBC_Transport_Agent__c, 
+            DRC_NBC_Shipment_Date__c,
+            DRC_NBC_Shipment_Method__c,
+            DRC_NBC_Courier_Number__c,
+            DRC_NBC_Expected_Delivery_Date__c,
+            DRC_NBC_Courier_date__c,
+            DRC_NBC_Courier_service__c,
+            DRC_NBC_Special_request__c,
+            DRC_NBC_Remarks__c,
+            NBC_DRC_Dispatch_Date__c,
+            DRC_NBC_Country_of_Origin__c,   
+            DRC_NBC_Country_of_Final_Destination__c,
+            DRC_NBC_Trans_Shipment__c,
+            DRC_NBC_Part_Shipment__c,
+            DRC_NBC_Port_Of_Discharge__c,
+            DRC_NBC_Port_of_Loading__c,
+            DRC_NBC_Final_Destination__c,
+            DRC_NBC_Vessel_no_Flight_no__c,
+            DRC_NBC_Notify_Party__c,
+            DRC_NBC_PLACE_OF_RECEIPT_BY_CARRIAG__c,
+            DRC_NBC_Required_Documents__c,
+            DRC_NBC_Final_Dispatch_Date__c,
+            DRC_NBC_Select_Bank__c,
+            DRC_NBC_Delivery_Terms__c
+            FROM Order
+            WHERE Id = :ord.Id
+            LIMIT 1
+        ];
+        
         DRC_NBC_Integration_Payload.OrderPayload payload =
-            DRC_NBC_Order_BC_Callout.mapOrderToBCPayload(ord);
+            DRC_NBC_Order_BC_Callout.mapOrderToBCPayload(freshOrd);
         
         System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Mapped OrderPayload (BEFORE Location_Code lookup): ' + JSON.serializePretty(payload));
         
-        String requestBody = buildUpdateOrderSOAPRequest(bcKey, payload, ord);
+        String requestBody = buildUpdateOrderSOAPRequest(bcKey, payload, freshOrd);
         String sfOrderId   = String.valueOf(ord.Id);
         
         System.debug('========== ORDER UPDATE PAYLOAD ==========');
@@ -837,6 +984,60 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             
             if (response.getStatusCode() == 200) {
                 System.debug('  Order Updated Successfully in BC');
+                
+                // ========================================================
+                // VERIFY: Location_Code sometimes comes back null after Update.
+                // Read the order back from BC and, if Location_Code is blank
+                // but we DID have a value to send, retry the Update once
+                // with the same resolved Location_Code.
+                // ========================================================
+                System.debug('  Verifying Location_Code via Read after Update...');
+                BCOrderReadResult verifyRead    = readOrderFromBC(freshOrd);
+                String            verifiedLocCode = (verifyRead != null) ? verifyRead.locationCode : null;
+                System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Post-update Read | Location_Code: ' + verifiedLocCode
+                             + ' | payload.Location_Code (expected): ' + payload.Location_Code);
+                
+                if (String.isBlank(verifiedLocCode) && String.isNotBlank(payload.Location_Code)) {
+                    System.debug('  Location_Code came back blank from BC after Update. Retrying Update with Location_Code: ' + payload.Location_Code);
+                    
+                    String retryKey         = (verifyRead != null && String.isNotBlank(verifyRead.key)) ? verifyRead.key : bcKey;
+                    String retryRequestBody = buildUpdateOrderSOAPRequest(retryKey, payload, freshOrd);
+                    
+                    System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Location_Code Retry | retryKey: ' + retryKey);
+                    System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Location_Code Retry | Request Body: ' + retryRequestBody);
+                    
+                    HttpRequest retryReq = new HttpRequest();
+                    retryReq.setEndpoint(BC_ORDER_ENDPOINT);
+                    retryReq.setMethod('POST');
+                    retryReq.setHeader('Content-Type', 'text/xml; charset=utf-8');
+                    retryReq.setHeader('SOAPAction', SOAP_ORDER_NAMESPACE + ':Update');
+                    retryReq.setHeader('Authorization',
+                                  'Basic ' + EncodingUtil.base64Encode(Blob.valueOf(BC_USERNAME + ':' + BC_PASSWORD)));
+                    retryReq.setBody(retryRequestBody);
+                    retryReq.setTimeout(120000);
+                    
+                    HttpResponse retryResponse = new Http().send(retryReq);
+                    System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Location_Code Retry | Response Status Code: ' + retryResponse.getStatusCode());
+                    System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Location_Code Retry | Response Status: '      + retryResponse.getStatus());
+                    System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Location_Code Retry | Response Body: '        + retryResponse.getBody());
+                    
+                    if (retryResponse.getStatusCode() == 200) {
+                        System.debug('  Location_Code Retry Update Successful');
+                    } else {
+                        System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Location_Code Retry | Non-200 response. Logging error.');
+                        DRC_NBC_API_Log_Handler.createApiLog(
+                            BC_ORDER_ENDPOINT, retryRequestBody, retryResponse.getBody(),
+                            'updateOrderInBC-LocationCodeRetry',
+                            'Non-200 response on Location_Code retry. HTTP ' + retryResponse.getStatusCode() + ': ' + retryResponse.getStatus(),
+                            retryResponse.getStatusCode(), null,
+                            LOG_TYPE_ERROR, sfOrderId
+                        );
+                        return 'FAILURE: Location_Code retry failed - ' + retryResponse.getStatusCode();
+                    }
+                } else {
+                    System.debug('  Location_Code verified OK on first attempt (or no Location_Code to set). No retry needed.');
+                }
+                
                 return 'ORDER_UPDATE_SUCCESS';
             } else {
                 System.debug('DEBUG PAYLOAD >>> updateOrderInBC | Non-200 response. Logging error.');
@@ -943,7 +1144,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 Order freshOrd = [
                     SELECT DRC_NBC_Warehouse__c, DRC_NBC_Other_Tax_Amount__c,
                     DRC_NBC_TCS_Amount__c, DRC_NBC_Fright_Charges__c, DRC_NBC_Insurance__c,
-                    DRC_NBC_Cust_Order_Number__c, RecordType.Name,
+                    DRC_NBC_Cust_Order_Number__c, RecordType.Name, DRC_NBC_Sample_Shipping_Cost__c, 
+                    DRC_NBC_Sample_Amount__c,
                     DRC_NBC_Shipping_Address__r.DRC_NBC_Warehouse__c,
                     Is_Domestic_Merchnat__c
                     FROM Order
@@ -1146,7 +1348,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 '<External_Document_No>'            + escapeXml(payload.External_Document_No)        + '</External_Document_No>' +
                 '<Salesperson_Code>'                + escapeXml(payload.Salesperson_Code)            + '</Salesperson_Code>' +
                 '<Status>Open</Status>' +
-                '<Location_Code>'                   + escapeXml(payload.Location_Code)               + '</Location_Code>' +
                 '<Payment_Terms_Code>'              + escapeXml(payload.Payment_Terms_Code)          + '</Payment_Terms_Code>' +
                 '<Shipment_Method_Code>'            + escapeXml(payload.Shipment_Method_Code)        + '</Shipment_Method_Code>' +
                 '<Sample_Sales>'                    + payload.Sample_Sales                           + '</Sample_Sales>' +
@@ -1167,8 +1368,8 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 '<Courier_Date>'                    + escapeXml(courierDateVal)                      + '</Courier_Date>' +
                 '<DispatchDate>'                    + escapeXml(dispatchDateVal)                     + '</DispatchDate>' +
                 '<Mode_of_Transport>'               + escapeXml(modeOfTransportVal)                  + '</Mode_of_Transport>' +
-                '<Part_Shipment>'                   + escapeXml(partShipmentVal)                     + '</Part_Shipment>' +
-                '<Trans_Shipment>'                  + escapeXml(transShipmentVal)                    + '</Trans_Shipment>' +
+                /*  '<Part_Shipment>'                   + escapeXml(partShipmentVal)                     + '</Part_Shipment>' +
+					'<Trans_Shipment>'                  + escapeXml(transShipmentVal)                    + '</Trans_Shipment>' +*/
                 '<Delivery_Terms>'                  + escapeXml(deliveryTermsVal)                    + '</Delivery_Terms>' +
                 '<Transporter_Code>'                + escapeXml(transporterCodeVal)                  + '</Transporter_Code>' +
                 '<Courier_Number>'                  + escapeXml(courierNumberVal)                    + '</Courier_Number>' +
@@ -1181,6 +1382,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 '<Port_Of_Discharge>'               + escapeXml(portOfDischargeVal)                  + '</Port_Of_Discharge>' +
                 '<Port_of_Loading>'                 + escapeXml(portOfLoadingVal)                    + '</Port_of_Loading>' +
                 '<Final_Destination>'               + escapeXml(finalDestinationVal)                 + '</Final_Destination>' +
+                '<Location_Code>'                   + escapeXml(payload.Location_Code)               + '</Location_Code>' +
                 '</SalesOrderSalesForce>' +
                 '</Update>' +
                 '</soap:Body>' +
@@ -1229,6 +1431,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             System.debug('DEBUG PAYLOAD >>> buildUpdateMultipleSOAPRequest | restrictedProductMap: ' + JSON.serializePretty(restrictedProductMap));
             
             String orderLocationCode = getLocationCodeFromWarehouse(ord.DRC_NBC_Warehouse__c);
+            
             System.debug('DEBUG PAYLOAD >>> buildUpdateMultipleSOAPRequest | orderLocationCode: ' + orderLocationCode);
             System.debug('orderLocationCode: ' + orderLocationCode);
             
@@ -1262,6 +1465,12 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         } else if (bcLine.description != null && bcLine.description.contains('Insurance')) {
                             taxKeys.put('INSURANCE', bcKey);
                             taxLineNos.put('INSURANCE', lineNo);
+                        }  else if (bcLine.description != null && bcLine.description.contains('Sample Shipping Cost')) {
+                            taxKeys.put('SAMPLE_SHIPPING_COST', bcKey);
+                            taxLineNos.put('SAMPLE_SHIPPING_COST', lineNo);
+                        } else if (bcLine.description != null && bcLine.description.contains('Sample Amount')) {
+                            taxKeys.put('SAMPLE_AMOUNT', bcKey);
+                            taxLineNos.put('SAMPLE_AMOUNT', lineNo);
                         }
                     }
                 }
@@ -1307,14 +1516,14 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 }
                 
                 System.debug('DEBUG PAYLOAD >>> Product Line | lineNo: ' + lineNo
-                    + ' | bcKey: ' + bcKey
-                    + ' | itemNo: ' + bcLine.itemNo
-                    + ' | isSampleOrder: ' + isSampleOrder
-                    + ' | discountPercent: ' + discountPercent
-                    + ' | totalPrice: ' + totalPrice
-                    + ' | lineDiscountAmount: ' + lineDiscountAmount
-                    + ' | UnitPrice(raw): ' + matchedItem.UnitPrice
-                    + ' | Quantity: ' + matchedItem.Quantity);
+                             + ' | bcKey: ' + bcKey
+                             + ' | itemNo: ' + bcLine.itemNo
+                             + ' | isSampleOrder: ' + isSampleOrder
+                             + ' | discountPercent: ' + discountPercent
+                             + ' | totalPrice: ' + totalPrice
+                             + ' | lineDiscountAmount: ' + lineDiscountAmount
+                             + ' | UnitPrice(raw): ' + matchedItem.UnitPrice
+                             + ' | Quantity: ' + matchedItem.Quantity);
                 
                 // ✅ GST fields respect Is_Domestic_Merchnat__c
                 String gstGroupCode = '';
@@ -1330,20 +1539,30 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 }
                 
                 System.debug('DEBUG PAYLOAD >>> Product Line | lineNo: ' + lineNo
-                    + ' | Is_Domestic_Merchnat__c: ' + matchedItem.Order.Is_Domestic_Merchnat__c
-                    + ' | gstGroupCode: ' + gstGroupCode
-                    + ' | hsnSacCode: ' + hsnSacCode);
+                             + ' | Is_Domestic_Merchnat__c: ' + matchedItem.Order.Is_Domestic_Merchnat__c
+                             + ' | gstGroupCode: ' + gstGroupCode
+                             + ' | hsnSacCode: ' + hsnSacCode);
                 
                 // ✅ Item_Reference_No from Restricted Product map — same logic as batch
                 String itemReferenceNo = restrictedProductMap.containsKey(matchedItem.Product2Id)
                     ? restrictedProductMap.get(matchedItem.Product2Id)
                     : '';
+                Decimal itemQty = matchedItem.Quantity != null ? matchedItem.Quantity : 0;
+                
+                String packingQtyText = String.isNotBlank(matchedItem.DRC_NBC_Packing_Quantity__c)
+                    ? matchedItem.DRC_NBC_Packing_Quantity__c.replace(',', '').trim()
+                    : '0';
+                
+                Decimal packingQty = Decimal.valueOf(packingQtyText);    
+                Decimal noOfPkgForQty = packingQty > 0
+                    ? itemQty / packingQty
+                    : itemQty;
                 System.debug('  Item Reference No (Restricted Product Name): ' + itemReferenceNo + ' for FG: ' + bcLine.itemNo);
                 System.debug('DEBUG PAYLOAD >>> Product Line | lineNo: ' + lineNo
-                    + ' | Product2Id: ' + matchedItem.Product2Id
-                    + ' | itemReferenceNo: ' + itemReferenceNo
-                    + ' | Item_Reference_Type_No (CustomerNumber): ' + matchedItem.Order.Account.DRC_NBC_Customer_Number__c
-                    + ' | Item_Reference_Type (AccountType): ' + matchedItem.Order.Account.Type);
+                             + ' | Product2Id: ' + matchedItem.Product2Id
+                             + ' | itemReferenceNo: ' + itemReferenceNo
+                             + ' | Item_Reference_Type_No (CustomerNumber): ' + matchedItem.Order.Account.DRC_NBC_Customer_Number__c
+                             + ' | Item_Reference_Type (AccountType): ' + matchedItem.Order.Account.Type);
                 
                 soapBody +=
                     '<SalesOrderLineSalesForce>' +
@@ -1357,25 +1576,26 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     '<Description>'                    + escapeXml(matchedItem.Description != null ? matchedItem.Description : '')                            + '</Description>' +
                     '<Quantity>'                       + (matchedItem.Quantity  != null ? matchedItem.Quantity  : 0)                                          + '</Quantity>' +
                     '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
-                    '<Unit_Price>'                     + (isSampleOrder ? 0 : (matchedItem.UnitPrice != null ? matchedItem.UnitPrice : 0))                   + '</Unit_Price>' +
+                    '<Unit_Price>'                     + (matchedItem.UnitPrice != null ? matchedItem.UnitPrice : 0)                   + '</Unit_Price>' +
                     '<Line_Amount>'                    + totalPrice                                                                                           + '</Line_Amount>' +
                     '<Line_Discount_Percent>'          + discountPercent                                                                                      + '</Line_Discount_Percent>' +
                     '<Line_Discount_Amount>'           + lineDiscountAmount                                                                                   + '</Line_Discount_Amount>' +
                     '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
                     '<GST_Credit>'                     + GST_CREDIT_VALUE                                                                                     + '</GST_Credit>' +
-                    '<Location_Code>'                  + escapeXml(orderLocationCode)                                                                         + '</Location_Code>' +
                     '<GST_Group_Code>'                 + escapeXml(gstGroupCode)                                                                              + '</GST_Group_Code>' +
                     '<HSN_SAC_Code>'                   + escapeXml(hsnSacCode)                                                                                + '</HSN_SAC_Code>' +
                     '<Packing_Details>'                + escapeXml(matchedItem.DRC_NBC_Packing_Size__c)                                                       + '</Packing_Details>' +
-                    '<No_of_Pkg_for_Qty>'              + (matchedItem.Quantity != null ? matchedItem.Quantity : 0)                                            + '</No_of_Pkg_for_Qty>' +
+                    '<No_of_Pkg_for_Qty>' + noOfPkgForQty + '</No_of_Pkg_for_Qty>' +              
                     '<Hazardous>'                      + (matchedItem.DRC_NBC_Hazardous__c == true)                                                           + '</Hazardous>' +
                     '<MarkNosContainerNos>'            + escapeXml(String.isBlank(matchedItem.DRC_NBC_MARKS_NOS__c) ? '' : matchedItem.DRC_NBC_MARKS_NOS__c.trim()) + '</MarkNosContainerNos>' +
                     // ✅ UPDATED: Item_Reference_No now from Restricted Product map
-                    '<Item_Reference_No>'              + escapeXml(itemReferenceNo)                                                                           + '</Item_Reference_No>' +
+                  /*  '<Item_Reference_No>'              + escapeXml(itemReferenceNo)                                                                           + '</Item_Reference_No>' +
                     '<Item_Reference_Type_No>'        + escapeXml(matchedItem.Order.Account.DRC_NBC_Customer_Number__c != null ? matchedItem.Order.Account.DRC_NBC_Customer_Number__c : '') + '</Item_Reference_Type_No>' +
                     '<Item_Reference_Type>'         + escapeXml(matchedItem.Order.Account.Type != null ? matchedItem.Order.Account.Type : '')              + '</Item_Reference_Type>' +
-
-                    '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                    
+                    '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +*/
+                    '<Location_Code>'                  + escapeXml(orderLocationCode)                                                                         + '</Location_Code>' +
+                    
                     '</SalesOrderLineSalesForce>';
             }
             
@@ -1389,10 +1609,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
                     
                     System.debug('DEBUG PAYLOAD >>> Other Tax Line | lineNo: ' + otherTaxLineNo
-                        + ' | key: ' + otherTaxKey
-                        + ' | amount: ' + ord.DRC_NBC_Other_Tax_Amount__c
-                        + ' | glGstGroup: ' + glGstGroup
-                        + ' | glHsnSac: ' + glHsnSac);
+                                 + ' | key: ' + otherTaxKey
+                                 + ' | amount: ' + ord.DRC_NBC_Other_Tax_Amount__c
+                                 + ' | glGstGroup: ' + glGstGroup
+                                 + ' | glHsnSac: ' + glHsnSac);
                     
                     soapBody +=
                         '<SalesOrderLineSalesForce>' +
@@ -1400,7 +1620,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Document_Type>Order</Document_Type>' +
                         '<Document_No>'           + escapeXml(bcOrderNo)            + '</Document_No>' +
                         '<Line_No>'               + otherTaxLineNo                  + '</Line_No>' +
-                        '<Type>G/L Account</Type>' +
+                        '<Type>G_L_Account</Type>' +
                         '<No>70563200</No>' +
                         '<Customer_item_no></Customer_item_no>' +
                         '<Description>Other Tax Amount</Description>' +
@@ -1420,10 +1640,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
                         '<Hazardous>false</Hazardous>' +
                         '<MarkNosContainerNos></MarkNosContainerNos>' +
-                        '<Item_Reference_No></Item_Reference_No>' +
+                       /* '<Item_Reference_No></Item_Reference_No>' +
                         '<Item_Reference_Type></Item_Reference_Type>' +
                         '<Item_Reference_Type_No></Item_Reference_Type_No>' +
-                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +*/
                         '</SalesOrderLineSalesForce>';
                 }
             
@@ -1437,10 +1657,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
                     
                     System.debug('DEBUG PAYLOAD >>> TCS Line | lineNo: ' + tcsLineNo
-                        + ' | key: ' + tcsKey
-                        + ' | amount: ' + ord.DRC_NBC_TCS_Amount__c
-                        + ' | glGstGroup: ' + glGstGroup
-                        + ' | glHsnSac: ' + glHsnSac);
+                                 + ' | key: ' + tcsKey
+                                 + ' | amount: ' + ord.DRC_NBC_TCS_Amount__c
+                                 + ' | glGstGroup: ' + glGstGroup
+                                 + ' | glHsnSac: ' + glHsnSac);
                     
                     soapBody +=
                         '<SalesOrderLineSalesForce>' +
@@ -1448,7 +1668,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Document_Type>Order</Document_Type>' +
                         '<Document_No>'           + escapeXml(bcOrderNo)          + '</Document_No>' +
                         '<Line_No>'               + tcsLineNo                     + '</Line_No>' +
-                        '<Type>G/L Account</Type>' +
+                        '<Type>G_L_Account</Type>' +
                         '<No>70563200</No>' +
                         '<Customer_item_no></Customer_item_no>' +
                         '<Description>TCS Amount</Description>' +
@@ -1468,10 +1688,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
                         '<Hazardous>false</Hazardous>' +
                         '<MarkNosContainerNos></MarkNosContainerNos>' +
-                        '<Item_Reference_No></Item_Reference_No>' +
+                        /*'<Item_Reference_No></Item_Reference_No>' +
                         '<Item_Reference_Type></Item_Reference_Type>' +
                         '<Item_Reference_Type_No></Item_Reference_Type_No>' +
-                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +*/
                         '</SalesOrderLineSalesForce>';
                 }
             
@@ -1485,11 +1705,11 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
                     
                     System.debug('DEBUG PAYLOAD >>> Freight Line | lineNo: ' + freightLineNo
-                        + ' | key: ' + freightKey
-                        + ' | amount: ' + ord.DRC_NBC_Fright_Charges__c
-                        + ' | glGstGroup: ' + glGstGroup
-                        + ' | glHsnSac: ' + glHsnSac
-                        + ' | GLAccountNo (Label.DRC_TCS_Tax_Number): ' + Label.DRC_TCS_Tax_Number);
+                                 + ' | key: ' + freightKey
+                                 + ' | amount: ' + ord.DRC_NBC_Fright_Charges__c
+                                 + ' | glGstGroup: ' + glGstGroup
+                                 + ' | glHsnSac: ' + glHsnSac
+                                 + ' | GLAccountNo (Label.DRC_TCS_Tax_Number): ' + Label.DRC_TCS_Tax_Number);
                     
                     soapBody +=
                         '<SalesOrderLineSalesForce>' +
@@ -1497,7 +1717,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Document_Type>Order</Document_Type>' +
                         '<Document_No>'           + escapeXml(bcOrderNo)              + '</Document_No>' +
                         '<Line_No>'               + freightLineNo                     + '</Line_No>' +
-                        '<Type>G/L Account</Type>' +
+                        '<Type>G_L_Account</Type>' +
                         '<No>'                    + Label.DRC_TCS_Tax_Number          + '</No>' +
                         '<Customer_item_no></Customer_item_no>' +
                         '<Description>Freight Charges</Description>' +
@@ -1517,10 +1737,10 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
                         '<Hazardous>false</Hazardous>' +
                         '<MarkNosContainerNos></MarkNosContainerNos>' +
-                        '<Item_Reference_No></Item_Reference_No>' +
+                       /* '<Item_Reference_No></Item_Reference_No>' +
                         '<Item_Reference_Type></Item_Reference_Type>' +
                         '<Item_Reference_Type_No></Item_Reference_Type_No>' +
-                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +*/
                         '</SalesOrderLineSalesForce>';
                 }
             
@@ -1534,11 +1754,11 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                     String glHsnSac   = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_HSN_SAC_Code   : '';
                     
                     System.debug('DEBUG PAYLOAD >>> Insurance Line | lineNo: ' + insuranceLineNo
-                        + ' | key: ' + insuranceKey
-                        + ' | amount: ' + ord.DRC_NBC_Insurance__c
-                        + ' | glGstGroup: ' + glGstGroup
-                        + ' | glHsnSac: ' + glHsnSac
-                        + ' | GLAccountNo (Label.DRC_TCS_Tax_Number): ' + Label.DRC_TCS_Tax_Number);
+                                 + ' | key: ' + insuranceKey
+                                 + ' | amount: ' + ord.DRC_NBC_Insurance__c
+                                 + ' | glGstGroup: ' + glGstGroup
+                                 + ' | glHsnSac: ' + glHsnSac
+                                 + ' | GLAccountNo (Label.DRC_TCS_Tax_Number): ' + Label.DRC_TCS_Tax_Number);
                     
                     soapBody +=
                         '<SalesOrderLineSalesForce>' +
@@ -1546,7 +1766,7 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<Document_Type>Order</Document_Type>' +
                         '<Document_No>'           + escapeXml(bcOrderNo)             + '</Document_No>' +
                         '<Line_No>'               + insuranceLineNo                  + '</Line_No>' +
-                        '<Type>G/L Account</Type>' +
+                        '<Type>G_L_Account</Type>' +
                         '<No>'                    + Label.DRC_TCS_Tax_Number         + '</No>' +
                         '<Customer_item_no></Customer_item_no>' +
                         '<Description>Insurance</Description>' +
@@ -1566,10 +1786,90 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                         '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
                         '<Hazardous>false</Hazardous>' +
                         '<MarkNosContainerNos></MarkNosContainerNos>' +
-                        '<Item_Reference_No></Item_Reference_No>' +
+                       /* '<Item_Reference_No></Item_Reference_No>' +
                         '<Item_Reference_Type></Item_Reference_Type>' +
                         '<Item_Reference_Type_No></Item_Reference_Type_No>' +
-                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +
+                        '<Item_Reference_Unit_of_Measure>KGS</Item_Reference_Unit_of_Measure>' +*/
+                        '</SalesOrderLineSalesForce>';
+                }
+            
+            // ── Sample Shipping Cost Line ────────────────────────────────────────────────
+            if (taxKeys.containsKey('SAMPLE_SHIPPING_COST') &&
+                ord.DRC_NBC_Sample_Shipping_Cost__c != null && ord.DRC_NBC_Sample_Shipping_Cost__c != 0) {
+                    
+                    String  sscKey    = taxKeys.get('SAMPLE_SHIPPING_COST');
+                    Integer sscLineNo = taxLineNos.get('SAMPLE_SHIPPING_COST');
+                    String glGstGroup = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_GST_Group_Code : '';
+                    
+                    System.debug('DEBUG PAYLOAD >>> Sample Shipping Cost Line | lineNo: ' + sscLineNo
+                                 + ' | key: ' + sscKey
+                                 + ' | amount: ' + ord.DRC_NBC_Sample_Shipping_Cost__c);
+                    
+                    soapBody +=
+                        '<SalesOrderLineSalesForce>' +
+                        '<Key>'                   + escapeXml(sscKey)                          + '</Key>' +
+                        '<Document_Type>Order</Document_Type>' +
+                        '<Document_No>'           + escapeXml(bcOrderNo)                       + '</Document_No>' +
+                        '<Line_No>'               + sscLineNo                                  + '</Line_No>' +
+                        '<Type>G_L_Account</Type>' +
+                        '<No>'                    + Label.DRC_TCS_Tax_Number                   + '</No>' +
+                        '<Customer_item_no></Customer_item_no>' +
+                        '<Description>Sample Shipping Cost</Description>' +
+                        '<Quantity>1</Quantity>' +
+                        '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
+                        '<Location_Code>'         + escapeXml(orderLocationCode)               + '</Location_Code>' +
+                        '<Unit_Price>'            + ord.DRC_NBC_Sample_Shipping_Cost__c        + '</Unit_Price>' +
+                        '<Line_Amount>'           + ord.DRC_NBC_Sample_Shipping_Cost__c        + '</Line_Amount>' +
+                        '<Line_Discount_Percent>0</Line_Discount_Percent>' +
+                        '<Line_Discount_Amount>0</Line_Discount_Amount>' +
+                        '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
+                        '<GST_Credit>_blank_</GST_Credit>' +
+                        '<GST_Group_Code>'        + escapeXml(glGstGroup)                      + '</GST_Group_Code>' +
+                        '<HSN_SAC_Code></HSN_SAC_Code>' +
+                        '<Packing_Details></Packing_Details>' +
+                        '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
+                        '<Hazardous>false</Hazardous>' +
+                        '<MarkNosContainerNos></MarkNosContainerNos>' +
+                        '</SalesOrderLineSalesForce>';
+                }
+            
+            // ── Sample Amount Line ────────────────────────────────────────────────────────
+            if (taxKeys.containsKey('SAMPLE_AMOUNT') &&
+                ord.DRC_NBC_Sample_Amount__c != null && ord.DRC_NBC_Sample_Amount__c != 0) {
+                    
+                    String  saKey    = taxKeys.get('SAMPLE_AMOUNT');
+                    Integer saLineNo = taxLineNos.get('SAMPLE_AMOUNT');
+                    String glGstGroup = ord.Is_Domestic_Merchnat__c == true ? Label.Merchnat_GST_Group_Code : '';
+                    
+                    System.debug('DEBUG PAYLOAD >>> Sample Amount Line | lineNo: ' + saLineNo
+                                 + ' | key: ' + saKey
+                                 + ' | amount: ' + ord.DRC_NBC_Sample_Amount__c);
+                    
+                    soapBody +=
+                        '<SalesOrderLineSalesForce>' +
+                        '<Key>'                   + escapeXml(saKey)                           + '</Key>' +
+                        '<Document_Type>Order</Document_Type>' +
+                        '<Document_No>'           + escapeXml(bcOrderNo)                       + '</Document_No>' +
+                        '<Line_No>'               + saLineNo                                   + '</Line_No>' +
+                        '<Type>G_L_Account</Type>' +
+                        '<No>'                    + Label.DRC_TCS_Tax_Number                   + '</No>' +
+                        '<Customer_item_no></Customer_item_no>' +
+                        '<Description>Sample Amount</Description>' +
+                        '<Quantity>1</Quantity>' +
+                        '<Unit_of_Measure_Code>KGS</Unit_of_Measure_Code>' +
+                        '<Location_Code>'         + escapeXml(orderLocationCode)               + '</Location_Code>' +
+                        '<Unit_Price>'            + ord.DRC_NBC_Sample_Amount__c               + '</Unit_Price>' +
+                        '<Line_Amount>'           + ord.DRC_NBC_Sample_Amount__c               + '</Line_Amount>' +
+                        '<Line_Discount_Percent>0</Line_Discount_Percent>' +
+                        '<Line_Discount_Amount>0</Line_Discount_Amount>' +
+                        '<Inv_Discount_Amount>0</Inv_Discount_Amount>' +
+                        '<GST_Credit>_blank_</GST_Credit>' +
+                        '<GST_Group_Code>'        + escapeXml(glGstGroup)                      + '</GST_Group_Code>' +
+                        '<HSN_SAC_Code></HSN_SAC_Code>' +
+                        '<Packing_Details></Packing_Details>' +
+                        '<No_of_Pkg_for_Qty>1</No_of_Pkg_for_Qty>' +
+                        '<Hazardous>false</Hazardous>' +
+                        '<MarkNosContainerNos></MarkNosContainerNos>' +
                         '</SalesOrderLineSalesForce>';
                 }
             
@@ -1594,8 +1894,9 @@ public class DRC_NBC_UpdateOrderAndLineItems {
             doc.load(xmlResponse);
             Dom.XmlNode root = doc.getRootElement();
             
-            String key    = null;
-            String status = null;
+            String key          = null;
+            String status       = null;
+            String locationCode = null;
             
             for (Dom.XmlNode bodyNode : root.getChildElements()) {
                 if (bodyNode.getName().contains('Body')) {
@@ -1604,8 +1905,9 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                             for (Dom.XmlNode salesOrderNode : resultNode.getChildElements()) {
                                 if (salesOrderNode.getName().contains('SalesOrderSalesForce')) {
                                     for (Dom.XmlNode fieldNode : salesOrderNode.getChildElements()) {
-                                        if (fieldNode.getName() == 'Key')    { key    = fieldNode.getText(); }
-                                        if (fieldNode.getName() == 'Status') { status = fieldNode.getText(); }
+                                        if (fieldNode.getName() == 'Key')           { key          = fieldNode.getText(); }
+                                        if (fieldNode.getName() == 'Status')        { status       = fieldNode.getText(); }
+                                        if (fieldNode.getName() == 'Location_Code') { locationCode = fieldNode.getText(); }
                                     }
                                 }
                             }
@@ -1614,9 +1916,14 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                 }
             }
             
-            System.debug('  Parsed Key: ' + key + ' | Status: ' + status);
-            System.debug('DEBUG PAYLOAD >>> extractKeyAndStatusFromReadResponse | Parsed Key: ' + key + ' | Parsed Status: ' + status);
-            return (key != null) ? new BCOrderReadResult(key, status) : null;
+            System.debug('  Parsed Key: ' + key + ' | Status: ' + status + ' | Location_Code: ' + locationCode);
+            System.debug('DEBUG PAYLOAD >>> extractKeyAndStatusFromReadResponse | Parsed Key: ' + key + ' | Parsed Status: ' + status + ' | Parsed Location_Code: ' + locationCode);
+            
+            if (key == null) { return null; }
+            
+            BCOrderReadResult result = new BCOrderReadResult(key, status);
+            result.locationCode = locationCode;
+            return result;
             
         } catch (Exception ex) {
             System.debug('Exception extracting Key/Status: ' + ex.getMessage());
@@ -1667,12 +1974,12 @@ public class DRC_NBC_UpdateOrderAndLineItems {
                                                 lineDetailsMap.put(lineNo,
                                                                    new BCLineItem(key, lineNo, lineType, itemNo, quantity, description));
                                                 System.debug('DEBUG PAYLOAD >>> extractLineDetailsFromReadMultiple | Parsed Line: '
-                                                    + 'lineNo=' + lineNo
-                                                    + ' | key=' + key
-                                                    + ' | type=' + lineType
-                                                    + ' | itemNo=' + itemNo
-                                                    + ' | qty=' + quantity
-                                                    + ' | desc=' + description);
+                                                             + 'lineNo=' + lineNo
+                                                             + ' | key=' + key
+                                                             + ' | type=' + lineType
+                                                             + ' | itemNo=' + itemNo
+                                                             + ' | qty=' + quantity
+                                                             + ' | desc=' + description);
                                             }
                                         }
                                     }
@@ -1717,5 +2024,6 @@ public class DRC_NBC_UpdateOrderAndLineItems {
         String result = metaList.isEmpty() ? '' : metaList[0].DRC_NBC_Code__c;
         System.debug('DEBUG PAYLOAD >>> getLocationCodeFromWarehouse | Resolved Code: ' + result);
         return result;
-    }
+    }    
+    
 }

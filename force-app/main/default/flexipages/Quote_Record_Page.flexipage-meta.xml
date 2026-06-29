@@ -8,13 +8,6 @@
                     <valueList>
                         <valueListItems>
                             <value>Quote.Create_Edit_Quote_Line_Items</value>
-                            <visibilityRule>
-                                <criteria>
-                                    <leftValue>{!Record.Status}</leftValue>
-                                    <operator>EQUAL</operator>
-                                    <rightValue>Draft</rightValue>
-                                </criteria>
-                            </visibilityRule>
                         </valueListItems>
                         <valueListItems>
                             <value>Quote.Generate_Order</value>
@@ -74,6 +67,10 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>hideChatterActions</name>
+                    <value>false</value>
+                </componentInstanceProperties>
+                <componentInstanceProperties>
+                    <name>hideSlackAction</name>
                     <value>false</value>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -142,10 +139,20 @@
             <fieldInstance>
                 <fieldInstanceProperties>
                     <name>uiBehavior</name>
-                    <value>required</value>
+                    <value>none</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.DRC_NBC_Payemnt_Term__c</fieldItem>
-                <identifier>RecordDRC_NBC_Payemnt_Term_cField</identifier>
+                <fieldItem>Record.DRC_NBC_Payment_Term_Description__c</fieldItem>
+                <identifier>RecordDRC_NBC_Payment_Term_Description__cField</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.CurrencyIsoCode</fieldItem>
+                <identifier>RecordCurrencyIsoCodeField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
@@ -156,6 +163,12 @@
                 </fieldInstanceProperties>
                 <fieldItem>Record.DRC_NBC_Special_Requirements__c</fieldItem>
                 <identifier>RecordDRC_NBC_Special_Requirements_cField</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldItem>Record.Highest_Authority_User__c</fieldItem>
+                <identifier>RecordHighest_Authority_User__cField</identifier>
             </fieldInstance>
         </itemInstances>
         <name>Facet-644f7377-8b92-49fb-9fc8-1ebb50225027</name>
@@ -186,20 +199,20 @@
             <fieldInstance>
                 <fieldInstanceProperties>
                     <name>uiBehavior</name>
-                    <value>none</value>
+                    <value>required</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.CurrencyIsoCode</fieldItem>
-                <identifier>RecordCurrencyIsoCodeField</identifier>
+                <fieldItem>Record.DRC_NBC_Inco_terms__c</fieldItem>
+                <identifier>RecordDRC_NBC_Inco_terms_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
                 <fieldInstanceProperties>
                     <name>uiBehavior</name>
-                    <value>required</value>
+                    <value>none</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.DRC_NBC_Inco_terms__c</fieldItem>
-                <identifier>RecordDRC_NBC_Inco_terms_cField</identifier>
+                <fieldItem>Record.DRC_NBC_Payment_Terms__c</fieldItem>
+                <identifier>RecordDRC_NBC_Payment_Terms__cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>

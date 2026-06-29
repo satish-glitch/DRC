@@ -375,6 +375,21 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         return null;
     }
 
+      _validatePackingSize(rowData) {
+        if (this.isSample) return null;
+        if (!rowData.Product2Id) return null;
+
+        const hasOptions = rowData.packingSizeOptions && rowData.packingSizeOptions.length > 0;
+
+        if (!hasOptions) {
+            return 'This product has no Packing Size configured and cannot be added to the order.';
+        }
+        if (!rowData.selectedPackingSize) {
+            return 'Packing Size is required for this product.';
+        }
+        return null;
+    }
+
     // ─── Order data fetching ──────────────────────────────────────────────────
 
     fetchOrderDetails() {
@@ -772,12 +787,21 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         this.showAddProducts  = false;
     }
 
-    handleRemoveRow(event) {
+   /* handleRemoveRow(event) {
         const index = event.target.dataset.index;
         const id    = event.target.dataset.id;
         if (id) { this.oliIdsToDelete.push(id); }
         this.filteredData.splice(index, 1);
         if (this.filteredData.length === 0) { this.showAddProducts = true; }
+    }*/
+
+    handleRemoveRow(event) {
+        const index = parseInt(event.target.dataset.index);
+        const id    = event.target.dataset.id;
+        if (id) { this.oliIdsToDelete.push(id); }
+        this.filteredData.splice(index, 1);
+        this.filteredData    = [...this.filteredData];          // triggers reactivity
+        this.showAddProducts = this.filteredData.length === 0;  // show button when empty
     }
 
     handleCancel() {
@@ -808,7 +832,8 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 showSearch:              false,
                 Name:                    selectedProduct.Product2.Name,
                 Product2Id:              product2Id,
-                Description:             selectedProduct.Product2.Description,
+              //  Description:             selectedProduct.Product2.Description,
+                Description: selectedProduct.Product2.Name,
                 UnitPrice:               unitPrice,
                 OriginalUnitPrice:       unitPrice,
                 DRC_NBC_HSN_SAC_Code__c: selectedProduct.Product2.DRC_NBC_HSN_SAC_Code__c,
@@ -854,11 +879,25 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
                 isValid = false;
             }
 
+            // PO Number max 34 characters
+            if (this.orderRec?.PoNumber && String(this.orderRec.PoNumber).length > 34) {
+                this.showToastEvent('Error', 'PO Number cannot exceed 35 characters.', 'error');
+                isValid = false;
+            }
+
             if (!this.isSample) {
                 const qtyError = this._validateQuantityMultiple(row);
                 if (qtyError) {
                     record.recordData.quantityError = qtyError;
                     this.showToastEvent("Error", `Row ${rowCount}: ${qtyError}`, 'error');
+                    isValid = false;
+                }
+
+                    // NEW: block save if packing size is missing/unselected
+                const sizeError = this._validatePackingSize(row);
+                if (sizeError) {
+                    record.recordData.packingSizeError = sizeError;
+                    this.showToastEvent("Error", `Row ${rowCount}: ${sizeError}`, 'error');
                     isValid = false;
                 }
             }
@@ -883,6 +922,24 @@ export default class DRC_NBC_EditOrder extends NavigationMixin(LightningElement)
         if (!this.billToContactId)         { this.showToastEvent("Error", "Bill To Contact is required",  "error"); isValid = false; }
         if (!this.shipToContactId)         { this.showToastEvent("Error", "Ship To Contact is required",  "error"); isValid = false; }
         if (!this.selectedShipToAddressId) { this.showToastEvent("Error", "Ship To Address is required",  "error"); isValid = false; }
+      
+
+        if (this.isExport) {
+            const exportValidations = [
+                { field: 'DRC_NBC_Country_of_Origin__c',            message: 'Enter Country of Origin.' },
+                { field: 'DRC_NBC_Country_of_Final_Destination__c', message: 'Enter Country of Final Destination.' },
+                { field: 'DRC_NBC_Port_of_Loading__c',              message: 'Enter Port of Loading.' },
+                { field: 'DRC_NBC_Port_Of_Discharge__c',            message: 'Enter Port of Discharge.' },
+                { field: 'DRC_NBC_Shipment_Method__c',              message: 'Enter Pre Carriage by.' },
+                { field: 'DRC_NBC_Final_Destination__c',            message: 'Enter Final Destination.' }
+            ];
+            exportValidations.forEach(({ field, message }) => {
+                if (!this.orderRec?.[field]) {
+                    this.showToastEvent("Error", message, "error");
+                    isValid = false;
+                }
+            });
+        }
 
         const dateChecks = [
             ['DRC_NBC_Expected_Delivery_Date__c', 'Expected Delivery Date'],

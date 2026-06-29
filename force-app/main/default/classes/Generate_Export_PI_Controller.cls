@@ -287,10 +287,14 @@ lineItem.marksAndNos = '';
                 
                 lineItem.hscCode       = oi.Product2.DRC_NBC_HSN_SAC_Code__c;
                 String packingQtyStr = oi.DRC_NBC_Packing_Quantity__c;
+                
                 if (
                     oi.Quantity != null &&
                     String.isNotBlank(packingQtyStr)
                 ) {
+                    // Remove comma from values like 1,000 before converting to Decimal
+                    packingQtyStr = packingQtyStr.replace(',', '');
+                    
                     Decimal packingQty = Decimal.valueOf(packingQtyStr);
                     
                     if (packingQty > 0) {

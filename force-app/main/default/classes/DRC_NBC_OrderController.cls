@@ -4,7 +4,7 @@
 * @Author : Satish Yadav
 * @Test_Class : DRC_NBC_OrderControllerTest
 * @Last Modified By : Satish Yadav
-* @Last Modified On : June 05, 2026
+* @Last Modified On : June 26, 2026
 * @Modification Log :
 *==============================================================================
 * Ver | Date | Author | Modification
@@ -20,6 +20,8 @@
 *     |                   |              | restored else fallback so accounts with no restrictions see all products
 * 1.6 | June 05, 2026     |              | Fixed olisToUpdate block missing DRC_NBC_MARKS_NOS__c and
 *     |                   |              | DRC_NBC_Hazardous__c — both fields now persisted on existing OLI updates
+* 1.7 | June 26, 2026     |              | Added validateCustomerItemReferenceSync to prevent save of orders with
+*     |                   |              | unsynced products; validation now enforced in saveOrderLineItems
 **/
 
 public class DRC_NBC_OrderController {
@@ -118,7 +120,8 @@ public class DRC_NBC_OrderController {
                 Opportunity.Name,
                 Opportunity.CurrencyIsoCode,
                 DRC_NBC_Order_PartiallyShipped__c,
-                Quote.Name
+                Quote.Name,
+                DRC_NBC_Delivery_Terms__c
                 FROM Order
                 WHERE Id = :orderId
                 LIMIT 1
@@ -457,7 +460,23 @@ public class DRC_NBC_OrderController {
         Order           orderData
     ) {
         try {
-            // ── Step 1: Update the Order record ──────────────────────────────────────
+            // ── Step 1: Validate Customer Item Reference sync ────────────────────────
+            Order freshOrder = [
+                SELECT AccountId
+                FROM Order
+                WHERE Id = :orderData.Id
+                LIMIT 1
+            ];
+
+            String syncValidationError = validateCustomerItemReferenceSync(
+                freshOrder.AccountId,
+                oliList
+            );
+            if (String.isNotBlank(syncValidationError)) {
+                throw new AuraHandledException(syncValidationError);
+            }
+
+            // ── Step 2: Update the Order record ──────────────────────────────────────
             if (orderData != null && orderData.Id != null) {
                 Order ordToUpdate = new Order(
                     Id                                       = orderData.Id,
@@ -490,7 +509,7 @@ public class DRC_NBC_OrderController {
                     OpportunityId                            = orderData.OpportunityId,
                     QuoteId                                  = orderData.QuoteId,
                     BillToContactId                          = orderData.BillToContactId,
-                    Is_Domestic_Merchnat__c =                  orderData.Is_Domestic_Merchnat__c,
+                    Is_Domestic_Merchnat__c                  = orderData.Is_Domestic_Merchnat__c,
                     ShipToContactId                          = orderData.ShipToContactId,
                     DRC_NBC_Shipping_Address__c              = orderData.DRC_NBC_Shipping_Address__c
                 );
@@ -565,15 +584,15 @@ public class DRC_NBC_OrderController {
                 update ordToUpdate;
             }
 
-            // ── Step 2: Re-fetch order after update ───────────────────────────────────
-            Order freshOrder = [
+            // ── Step 3: Re-fetch order after update ───────────────────────────────────
+            Order refetchedOrder = [
                 SELECT Id, Pricebook2Id, CurrencyIsoCode
                 FROM Order
                 WHERE Id = :orderData.Id
                 LIMIT 1
             ];
-            String orderCurrency = freshOrder.CurrencyIsoCode;
-            Id    orderPricebook = freshOrder.Pricebook2Id;
+            String orderCurrency = refetchedOrder.CurrencyIsoCode;
+            Id    orderPricebook = refetchedOrder.Pricebook2Id;
 
             if (orderPricebook == null) {
                 Pricebook2 stdPb = [
@@ -585,7 +604,7 @@ public class DRC_NBC_OrderController {
                 update new Order(Id = orderData.Id, Pricebook2Id = orderPricebook);
             }
 
-            // ── Step 3: Collect Product2Ids ───────────────────────────────────────────
+            // ── Step 4: Collect Product2Ids ───────────────────────────────────────────
             Set<Id> product2IdsToRemap = new Set<Id>();
             for (OrderItem oli : oliList) {
                 if (String.isBlank(oli.Product2Id)) {
@@ -600,7 +619,7 @@ public class DRC_NBC_OrderController {
                 product2IdsToRemap.add(oli.Product2Id);
             }
 
-            // ── Step 4: Get or auto-create PricebookEntries in the order's currency ───
+            // ── Step 5: Get or auto-create PricebookEntries in the order's currency ───
             Map<Id, Id> product2IdToPbeId = new Map<Id, Id>();
             if (!product2IdsToRemap.isEmpty()) {
                 product2IdToPbeId = getOrCreatePricebookEntries(
@@ -608,7 +627,7 @@ public class DRC_NBC_OrderController {
                 );
             }
 
-            // ── Step 5: Split into INSERT (new) and UPDATE (existing) ─────────────────
+            // ── Step 6: Split into INSERT (new) and UPDATE (existing) ─────────────────
             List<OrderItem> olisToInsert = new List<OrderItem>();
             List<OrderItem> olisToUpdate = new List<OrderItem>();
 
@@ -636,9 +655,6 @@ public class DRC_NBC_OrderController {
                     ));
                 } else {
                     // ── Existing line item: update editable fields ────────────────────
-                    // FIX v1.6: DRC_NBC_MARKS_NOS__c and DRC_NBC_Hazardous__c were
-                    // previously omitted here, causing edits to those fields to be
-                    // silently discarded on save for existing order line items.
                     olisToUpdate.add(new OrderItem(
                         Id                          = oli.Id,
                         Quantity                    = oli.Quantity,
@@ -652,7 +668,7 @@ public class DRC_NBC_OrderController {
                 }
             }
 
-            // ── Step 6: Delete → Insert → Update ─────────────────────────────────────
+            // ── Step 7: Delete → Insert → Update ─────────────────────────────────────
             if (!oliIdsToDelete.isEmpty()) {
                 delete [SELECT Id FROM OrderItem WHERE Id IN :oliIdsToDelete];
             }
@@ -714,6 +730,89 @@ public class DRC_NBC_OrderController {
             result.put(fieldName, values);
         }
         return result;
+    }
+
+    /**
+     * @description Validates that all products in the order have been synced as Customer Item References.
+     * This prevents orders from being saved with products that haven't been synced to Business Central.
+     * @param accountId The Account ID associated with the order
+     * @param orderItemList The list of OrderItems to validate
+     * @return String — Error message if validation fails; null if validation passes
+     */
+    private static String validateCustomerItemReferenceSync(
+        Id accountId,
+        List<OrderItem> orderItemList
+    ) {
+        if (accountId == null || orderItemList == null || orderItemList.isEmpty()) {
+            return null;
+        }
+
+        Set<Id> selectedProductIds = new Set<Id>();
+        for (OrderItem oli : orderItemList) {
+            if (String.isNotBlank(oli.Product2Id)) {
+                selectedProductIds.add(oli.Product2Id);
+            }
+        }
+
+        if (selectedProductIds.isEmpty()) {
+            return null;
+        }
+
+        // ── Fetch FG Codes for selected products ──────────────────────────────────
+        Map<String, String> fgCodeToProductName = new Map<String, String>();
+        Set<String> selectedFgCodes = new Set<String>();
+
+        for (Product2 prod : [
+            SELECT Id, Name, DRC_NBC_FG_Code__c
+            FROM Product2
+            WHERE Id IN :selectedProductIds
+        ]) {
+            if (String.isNotBlank(prod.DRC_NBC_FG_Code__c)) {
+                String fgCode = prod.DRC_NBC_FG_Code__c.trim().toUpperCase();
+                selectedFgCodes.add(fgCode);
+                fgCodeToProductName.put(fgCode, prod.Name);
+            }
+        }
+
+        if (selectedFgCodes.isEmpty()) {
+            return null;
+        }
+
+        // ── Check sync status in DRC_NBC_Restricted_Product__c ────────────────────
+        Map<String, Boolean> fgCodeToSyncStatus = new Map<String, Boolean>();
+
+        for (DRC_NBC_Restricted_Product__c rp : [
+            SELECT Id,
+                   DRC_NBC_Is_Product_Sync_To_BC__c,
+                   DRC_NBC_Product__r.DRC_NBC_FG_Code__c
+            FROM DRC_NBC_Restricted_Product__c
+            WHERE DRC_NBC_Customer__c = :accountId
+              AND DRC_NBC_Product__r.DRC_NBC_FG_Code__c IN :selectedFgCodes
+        ]) {
+            if (String.isNotBlank(rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c)) {
+                String fgCode = rp.DRC_NBC_Product__r.DRC_NBC_FG_Code__c.trim().toUpperCase();
+                if (!fgCodeToSyncStatus.containsKey(fgCode)) {
+                    fgCodeToSyncStatus.put(fgCode, rp.DRC_NBC_Is_Product_Sync_To_BC__c);
+                } else if (rp.DRC_NBC_Is_Product_Sync_To_BC__c == true) {
+                    fgCodeToSyncStatus.put(fgCode, true);
+                }
+            }
+        }
+
+        // ── Identify unsynced FG codes ───────────────────────────────────────────
+        List<String> notSyncedFgCodes = new List<String>();
+        for (String fgCode : selectedFgCodes) {
+            if (!fgCodeToSyncStatus.containsKey(fgCode) || fgCodeToSyncStatus.get(fgCode) != true) {
+                notSyncedFgCodes.add(fgCode);
+            }
+        }
+
+        if (!notSyncedFgCodes.isEmpty()) {
+            return 'FG Code(s) ' + String.join(notSyncedFgCodes, ', ') +
+                ' are not synced as Customer Item Reference. Please sync them before saving the order.';
+        }
+
+        return null;
     }
 
     public class oliWrapper {
